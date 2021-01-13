@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "sexcontrol-6c000": {
+      "hosting": {
+        "app": [
+          "sexcontrol-6c000"
+        ]
+      }
+    }
+  }
+}
