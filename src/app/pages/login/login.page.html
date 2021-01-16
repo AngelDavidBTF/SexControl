@@ -7,40 +7,54 @@
 <ion-content>
   <form>
     <ion-item lines="full">
+      <ion-img src="../../assets/logo-login.svg"></ion-img>
+    </ion-item>
+
+    <ion-item lines="full">
       <ion-label position="floating">Email</ion-label>
       <ion-input type="text" #email required></ion-input>
     </ion-item>
     
     <ion-item lines="full">
-      <ion-label position="floating">Password</ion-label>
+      <ion-label position="floating">Contraseña</ion-label>
       <ion-input type="password" #password required></ion-input>
     </ion-item>
-    <ion-row>
-      <ion-col>
-        <ion-button type="submit" (click)="onLogin(email, password)" expand="block">Login</ion-button>
-      </ion-col>
-    </ion-row>
+
     <ion-row>
       <ion-col>
         <p class="ion-text-end">
-          <a routerLink="/forgot-password">Forgot password? </a>
+          <small><a routerLink="/forgot-password">¿Has olvidado tu contraseña? </a></small>
         </p>
       </ion-col>
     </ion-row>
-    <span class="center-span"> or </span>
+
     <ion-row>
       <ion-col>
-        <ion-button type="submit" color="danger" (click)="onLoginGoogle()" expand="block"
-          >Login with Google
+        <ion-button type="submit" (click)="onLogin(email, password)" expand="block" color="primary">Entrar<ion-icon name="enter" slot="end"></ion-icon></ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        <ion-button type="submit" color="danger" expand="block" (click)="onLoginGoogle()">
+          <ion-icon name="logo-google" slot="start"></ion-icon>Entrar con Google
         </ion-button>
       </ion-col>
     </ion-row>
+
+    <ion-item-divider class="divider">
+      <ion-label>
+        ¿No tienes una cuenta?
+      </ion-label>
+    </ion-item-divider>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col>
+          <ion-button color="tertiary" expand="block" routerLink="/register">
+            <ion-icon name="document-text" slot="start"></ion-icon> Registrarse
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
   </form>
-  <ion-row>
-    <ion-col>
-      <p class="ion-text-end">
-        <a routerLink="/register">Create an account </a>
-      </p>
-    </ion-col>
-  </ion-row>
 </ion-content>

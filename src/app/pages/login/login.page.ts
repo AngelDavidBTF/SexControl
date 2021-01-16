@@ -38,7 +38,7 @@ export class LoginPage implements OnInit {
 
   private redirectUser(isVerified: boolean): void {
     if (isVerified) {
-      this.router.navigate(['admin']);
+      this.router.navigate(['tabs/sumar']);
     } else {
       this.router.navigate(['verify-email']);
     }

@@ -1,30 +1,51 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>Register User</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-header titulo="Registrarse"></app-header>
 
 <ion-content>
+  <ion-item lines="full">
+    <ion-img src="../../assets/logo-login.svg"></ion-img>
+  </ion-item>
+
   <form>
     <ion-item lines="full">
-      <ion-label position="floating">Email</ion-label>
+      <ion-label position="floating">Nombre *</ion-label>
+      <ion-input type="text" #user required></ion-input>
+    </ion-item>
+
+    <ion-item lines="full">
+      <ion-label position="floating">Email *</ion-label>
       <ion-input type="text" #email required></ion-input>
     </ion-item>
+
     <ion-item lines="full">
-      <ion-label position="floating">Password</ion-label>
+      <ion-label position="floating">Contraseña *</ion-label>
       <ion-input type="password" #password required></ion-input>
     </ion-item>
+
+    <ion-item lines="full">
+      <ion-label position="floating">Repite la contraseña *</ion-label>
+      <ion-input type="text" #repitPassword required></ion-input>
+    </ion-item>
+
     <ion-row>
       <ion-col>
-        <ion-button type="submit" (click)="onRegister(email, password)" expand="block">Register</ion-button>
+        <ion-button type="submit" (click)="onRegister(email, password)" color="tertiary" expand="block">
+          <ion-icon name="document-text" slot="start"></ion-icon>Registrarse
+        </ion-button>
       </ion-col>
     </ion-row>
   </form>
+
+  <ion-item-divider class="divider">
+    <ion-label>
+      ¿Ya tienes una cuenta?
+    </ion-label>
+  </ion-item-divider>
+  
   <ion-row>
     <ion-col>
-      <p>
-        <a routerLink="/login">Already have an account? </a>
-      </p>
+      <ion-button color="secondary" expand="block" routerLink="/login">
+        <ion-icon name="arrow-back-circle" slot="start"></ion-icon> Volver
+      </ion-button>
     </ion-col>
   </ion-row>
 </ion-content>

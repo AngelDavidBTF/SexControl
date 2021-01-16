@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-back',
+  selector: 'app-header',
   templateUrl: './back.component.html',
   styleUrls: ['./back.component.scss']
 })
 export class BackComponent implements OnInit {
+
+  @Input() titulo:string = '';
 
   constructor() { }
 

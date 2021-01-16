@@ -9,7 +9,7 @@ export const environment = {
 export const firebaseConfig = {
   apiKey: 'AIzaSyBqZd-4qjannmt-HhNG6x0gzawNYNmwX_k',
   authDomain: 'sexcontrol-6c000.firebaseapp.com',
-  databaseURL: 'https://sexcontrol-6c000-default-rtdb.firebaseio.com/',
+  databaseURL: 'https://sexcontrol-6c000-default-rtdb.firebaseio.com',
   projectId: 'sexcontrol-6c000',
   storageBucket: 'sexcontrol-6c000.appspot.com',
   messagingSenderId: '275373132188',
