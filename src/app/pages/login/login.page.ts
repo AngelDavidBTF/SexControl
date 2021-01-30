@@ -1,6 +1,7 @@
 import { Component, NgZone, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
+import { UiServiceService } from 'src/app/services/ui-service.service';
 
 @Component({
   selector: 'app-login',
@@ -8,8 +9,10 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./login.page.scss'],
 })
 export class LoginPage implements OnInit {
-  constructor(private authSvc: AuthService, private router: Router) {}
-  
+  constructor(private authSvc: AuthService,
+              private router: Router,
+              private uiServiceService: UiServiceService) {}
+
   ngOnInit(): void {}
 
   async onLogin(email, password) {
@@ -20,7 +23,8 @@ export class LoginPage implements OnInit {
         this.redirectUser(isVerified);
       }
     } catch (error) {
-      console.log('Error->', error);
+      this.uiServiceService.alertaInformativa(error);
+      //console.log('Error->', error);
     }
   }
 

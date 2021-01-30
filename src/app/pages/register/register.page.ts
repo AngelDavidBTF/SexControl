@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
 
@@ -8,9 +9,19 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./register.page.scss'],
 })
 export class RegisterPage implements OnInit {
-  constructor(private authSvc: AuthService, private router: Router) {}
 
-  ngOnInit() {}
+  public registerForm: FormGroup;
+
+  constructor(private authSvc: AuthService,
+              private router: Router,
+              private formBuilder: FormBuilder) {}
+
+  ngOnInit() {
+    this.registerForm = this.formBuilder.group({
+      usuario: ['', Validators.required],
+      password: ['', Validators.required],
+    });
+  }
 
   async onRegister(email, password) {
     try {

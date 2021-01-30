@@ -1,0 +1,48 @@
+
+  .numero {
+    padding: 10px;
+    margin: 10px;
+    margin-top: 1px;
+    font-size: 50px;
+    font-weight: bold;
+  }
+
+  .contenedorNumeros {
+    display: flex;
+    justify-content: center;
+    flex-direction:row;
+    align-items: flex-end;
+    text-align: center;
+    margin-bottom: 70px;
+  }
+
+  .contenedorBoton {
+    display: flex;
+    justify-content: center;
+    flex-direction:row;
+    align-items: flex-end;
+    text-align: center;
+  } 
+
+  .boton {
+    padding: 10px;
+    margin: 10px;
+  }
+
+  .letras {
+    margin-bottom: -10px;
+    font-weight: 600;
+    margin-top: 10px;
+    margin-right: 10px;
+    margin-left: 10px;
+  }
+
+  ion-img {
+    display: inline-block;
+    position: relative;
+    left: 50%;
+    webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    height: 180px;
+    padding: 20px;
+  }

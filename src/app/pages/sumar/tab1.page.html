@@ -1,5 +1,8 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="first"></ion-menu-button>
+    </ion-buttons>
     <ion-title>
       Sumar
     </ion-title>
@@ -7,10 +10,43 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Sumar</ion-title>
-    </ion-toolbar>
-  </ion-header>
 
+  <h5 class="ion-margin">Hola, {{ user.displayName }}, este es tu resumen.</h5>
+
+  <ion-img src="../../assets/logo-login.svg"></ion-img>
+  
+  <div class="contenedorNumeros">
+    <ion-text color="secondary">
+      <p class="letras">En compañia</p>
+      <h1 class="numero">{{ numberC }}</h1>
+    </ion-text>
+    <ion-text color="primary">
+      <p class="letras">En solitario</p>
+      <h1 class="numero">{{ numberS }}</h1>
+    </ion-text>
+  </div>
+
+  <div class="contenedorBoton">
+    <ion-grid fixed>
+      <ion-row>
+        <ion-col size="6">
+          <div class="boton">
+            <ion-button size="default" color="secondary" (click)="sumar(false)">En compañía</ion-button>
+          </div>
+        </ion-col>
+        <ion-col size="6">
+          <div class="boton">
+            <ion-button size="default" color="primary" (click)="sumar(true)">En solitario</ion-button>
+          </div>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col size="12">
+          <div class="boton">
+            <ion-button size="default" color="light" (click)="borrar()">Restar último</ion-button>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
 </ion-content>

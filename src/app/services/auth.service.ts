@@ -97,4 +97,8 @@ export class AuthService {
 
     return userRef.set(data, { merge: true });
   }
+
+  public getUserAuth() {
+    return this.afAuth.authState;
+  }
 }
