@@ -1,0 +1,21 @@
+<app-header titulo="Solicitudes de amistad"></app-header>
+
+<ion-content>
+  <ion-searchbar placeholder="Buscar petición"
+                 (ionChange)="onSearchChange($event)"
+                 inputmode="text"
+                 animated></ion-searchbar>
+
+  <ion-item
+    *ngFor="let user of requestUsers | filtro:textoBuscar:'data.email'" button
+    (click)="showAlert(user)">
+    <ion-avatar slot="start">
+      <img [src]="user.data.photoURL" />
+    </ion-avatar>
+    <ion-label>
+      <h2>{{ user.data.displayName }}</h2>
+      <p text-wrap>{{ user.data.email }}</p>
+    </ion-label>
+    <ion-icon name="person-add" slot="end"></ion-icon>
+  </ion-item>
+</ion-content>

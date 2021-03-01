@@ -7,8 +7,87 @@
       Amigos
     </ion-title>
   </ion-toolbar>
+
+  <ion-segment value="amigos" mode="md" color="secondary" (ionChange)="segmentChanged($event)" [(ngModel)]="segmentModel">
+    <ion-segment-button value="amigos">
+      Amigos
+    </ion-segment-button>
+    <ion-segment-button value="grupos">
+      Grupos
+    </ion-segment-button>
+  </ion-segment>
+
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <ng-container *ngIf="segmentModel === 'amigos'">
+    <ion-item button (click)="addFriend()">
+      <ion-icon slot="start" name="add-circle" color="secondary"></ion-icon>
+      <ion-label>Añadir amigo</ion-label>
+    </ion-item>
+  
+    <ion-item button (click)="requestFriend()">
+      <ion-icon slot="start" name="people" color="primary"></ion-icon>
+      <ion-label>Solicitudes de amistad</ion-label>
+      <ion-badge color="secondary">{{ numberNotification }}</ion-badge>
+    </ion-item>
+  
+    <ion-item-divider>
+      <ion-label>
+        Amigos agregados
+      </ion-label>
+    </ion-item-divider>
+  
+    <ion-searchbar placeholder="Buscar amigo"
+                   (ionChange)="onSearchChange($event)"
+                   inputmode="text"
+                   animated
+                   ></ion-searchbar>
+    <ng-container *ngIf="friends.length != 0">
+      <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button
+        >
+        <ion-avatar slot="start">
+          <img [src]="user.data.photoURL" />
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ user.data.displayName }}</h2>
+        </ion-label>
+        <!-- <ion-badge color="secondary">{{ user.numero.numberC }}</ion-badge>
+        <ion-badge color="primary">{{ user.numero.numberS }}</ion-badge> -->
+      </ion-item>
+    </ng-container>
+  </ng-container>
+
+  <ng-container *ngIf="segmentModel === 'grupos'">
+    <ion-item button (click)="addFriend()">
+      <ion-icon slot="start" name="add-circle" color="secondary"></ion-icon>
+      <ion-label>Crear grupo</ion-label>
+    </ion-item>
+  
+    <ion-item-divider>
+      <ion-label>
+        Grupos
+      </ion-label>
+    </ion-item-divider>
+  
+    <ion-searchbar placeholder="Buscar grupo"
+                   (ionChange)="onSearchChange($event)"
+                   inputmode="text"
+                   animated
+                   ></ion-searchbar>
+    <ng-container *ngIf="friends.length != 0">
+      <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button
+        >
+        <ion-avatar slot="start">
+          <img [src]="user.data.photoURL" />
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ user.data.displayName }}</h2>
+        </ion-label>
+        <!-- <ion-badge color="secondary">{{ user.numero.numberC }}</ion-badge>
+        <ion-badge color="primary">{{ user.numero.numberS }}</ion-badge> -->
+      </ion-item>
+    </ng-container>
+  </ng-container>
 
 </ion-content>

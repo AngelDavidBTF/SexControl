@@ -21,6 +21,14 @@ const routes: Routes = [
   {
     path: 'verify-email',
     loadChildren: () => import('./pages/verify-email/verify-email.module').then(m => m.VerifyEmailPageModule)
+  },
+  {
+    path: 'add-friend',
+    loadChildren: () => import('./pages/add-friend/add-friend.module').then( m => m.AddFriendPageModule)
+  },
+  {
+    path: 'request-friends',
+    loadChildren: () => import('./pages/request-friends/request-friends.module').then( m => m.RequestFriendsPageModule)
   }
 ];
 @NgModule({

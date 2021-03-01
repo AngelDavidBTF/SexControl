@@ -13,7 +13,7 @@ export class FapService {
     return this.angularFirestore.collection(coleccion).snapshotChanges();
   }
 
-  public getNumeroCompania(uid) {
+  public getNumeroFap(uid) {
     return this.angularFirestore.collection('fap', ref =>  ref.where('uid', '==', uid))
     .snapshotChanges();
   }

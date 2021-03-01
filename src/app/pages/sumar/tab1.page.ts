@@ -10,7 +10,7 @@ import * as moment from 'moment';
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss']
 })
-export class Tab1Page implements OnInit {
+export class Tab1Page {
 
   user: User = {
     uid: '',
@@ -30,24 +30,22 @@ export class Tab1Page implements OnInit {
   numberS: number;
 
   constructor(private authService: AuthService,
-              private fapService: FapService) {}
+              private fapService: FapService)
+              {
+                this.authService.user$.subscribe(user => {
+                  this.user = {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    email: user.email
+                  };
 
-  ngOnInit(): void {
-    this.authService.getUserAuth().subscribe(user => {
-      if (user) {
-        this.user = {
-          uid: user.uid,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          email: user.email
-        };
-        this.obtenerFap();
-      }
-    });
-  }
+                  this.obtenerFap();
+                });
+        }
 
   obtenerFap() {
-    this.fapService.getNumeroCompania(this.user.uid).subscribe((result) => {
+    this.fapService.getNumeroFap(this.user.uid).subscribe((result) => {
       // todos los datos
       this.arrayColeccionFaps = [];
       result.forEach((datosFap: any) => {

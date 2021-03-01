@@ -1,0 +1,27 @@
+<app-header titulo="Añadir amigo"></app-header>
+
+<ion-content>
+  <ion-searchbar placeholder="Buscar usuario"
+                 (ionChange)="onSearchChange($event)"
+                 inputmode="text"
+                 animated
+                 ></ion-searchbar>
+  
+  <ng-container *ngIf="textoBuscar != ''; else elseTemplate">
+    <ion-item *ngFor="let user of users | filtro:textoBuscar:'data.email'" button (click)="enviarPeticon(user.data.uid)">
+      <ion-avatar slot="start">
+        <img [src]=user.data.photoURL>
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.data.displayName }}</h2>
+        <p text-wrap>{{ user.data.email }}</p>
+      </ion-label>
+      <ion-icon name="person-add" slot="end"></ion-icon>
+    </ion-item>
+  </ng-container>
+  <ng-template #elseTemplate>
+    <h5 class="textSearch">Introduce un nombre de usuario o un email, para poder enviar una solicitud de amistad.</h5>
+  </ng-template>
+  
+  
+</ion-content>
