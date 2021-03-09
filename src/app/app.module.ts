@@ -13,6 +13,8 @@ import { AngularFirestoreModule } from "@angular/fire/firestore"; //Modulo Fires
 import { AngularFireAuthModule } from "@angular/fire/auth";  //Modulo de authenticacion
 import { AngularFireModule } from "@angular/fire";            //Modulo para inicializar y que todo funcione bien vergas
 import { firebaseConfig} from "../environments/environment";  // aqui se encuentra una variable de configuracion para inicializar firebase
+import { ImagePicker } from '@ionic-native/image-picker/ngx';
+import { FileTransfer } from '@ionic-native/file-transfer/ngx';
 
 @NgModule({
   declarations: [AppComponent],
@@ -25,6 +27,8 @@ import { firebaseConfig} from "../environments/environment";  // aqui se encuent
   providers: [
     StatusBar,
     SplashScreen,
+    ImagePicker,
+    FileTransfer,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
   ],
   bootstrap: [AppComponent]

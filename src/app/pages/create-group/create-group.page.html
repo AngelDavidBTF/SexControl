@@ -1,0 +1,52 @@
+<app-header titulo="Crear grupo"></app-header>
+
+<ion-content>
+  <ion-item class="ion-padding-horizontal">
+    <ion-label>Icono de grupo</ion-label>
+    <ion-button (click)="getImages()">Elegir imagen de grupo</ion-button>
+    <!-- <ion-input type="file" (change)="handleImage($event)" required></ion-input> -->
+  </ion-item>
+
+  <div class="images">
+    <div class="one-image" *ngFor="let img of imageResponse">
+      <img src="{{img}}" alt="" srcset="">
+    </div>
+  </div>
+
+  <ion-item class="ion-padding-horizontal">
+    <ion-label position="floating">Nombre del grupo <ion-text color="danger">*</ion-text></ion-label>
+    <ion-input [(ngModel)]="nameGroup" required></ion-input>
+  </ion-item>
+
+  <div class="ion-padding-horizontal">
+    <ion-chip *ngFor="let user of selectedUsers">
+      <ion-avatar>
+        <img [src]=user.photoURL>
+      </ion-avatar>
+      <ion-label class="avatar-group">{{ user.displayName }}</ion-label>
+    </ion-chip>
+  </div>
+  
+  <ion-searchbar placeholder="Buscar amigo"
+                 (ionChange)="onSearchChange($event)"
+                 inputmode="text"
+                 animated
+                 ></ion-searchbar>
+  
+    <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" (click)="addAList(user.data)">
+      <ion-avatar slot="start">
+        <img [src]=user.data.photoURL>
+          <!-- <ion-icon  name="checkmark-circle" id="notifications-badge" color="primary"></ion-icon> -->
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.data.displayName }}</h2>
+        <p text-wrap>{{ user.data.email }}</p>
+      </ion-label>
+    </ion-item>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" (click)="createGroup()" *ngIf="nameGroup !== '' && image !== '' && selectedUsers.length !== 0">
+      <ion-fab-button color="secondary">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+</ion-content>

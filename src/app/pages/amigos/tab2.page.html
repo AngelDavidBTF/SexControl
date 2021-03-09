@@ -52,14 +52,14 @@
         <ion-label>
           <h2>{{ user.data.displayName }}</h2>
         </ion-label>
-        <!-- <ion-badge color="secondary">{{ user.numero.numberC }}</ion-badge>
-        <ion-badge color="primary">{{ user.numero.numberS }}</ion-badge> -->
+        <!-- <ion-badge *ngIf="user.numero" color="secondary">{{ user.numero.numberC }}</ion-badge>
+        <ion-badge *ngIf="user.numero" color="primary">{{ user.numero.numberS }}</ion-badge> -->
       </ion-item>
     </ng-container>
   </ng-container>
 
   <ng-container *ngIf="segmentModel === 'grupos'">
-    <ion-item button (click)="addFriend()">
+    <ion-item button (click)="createGroup()">
       <ion-icon slot="start" name="add-circle" color="secondary"></ion-icon>
       <ion-label>Crear grupo</ion-label>
     </ion-item>
@@ -75,14 +75,14 @@
                    inputmode="text"
                    animated
                    ></ion-searchbar>
-    <ng-container *ngIf="friends.length != 0">
-      <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button
+    <ng-container *ngIf="groups.length != 0">
+      <ion-item *ngFor="let group of groups | filtro:textoBuscar" button (click)="editGroup(group)"
         >
         <ion-avatar slot="start">
-          <img [src]="user.data.photoURL" />
+          <img [src]="group.data.groupImage" />
         </ion-avatar>
         <ion-label>
-          <h2>{{ user.data.displayName }}</h2>
+          <h2>{{ group.data.name }}</h2>
         </ion-label>
         <!-- <ion-badge color="secondary">{{ user.numero.numberC }}</ion-badge>
         <ion-badge color="primary">{{ user.numero.numberS }}</ion-badge> -->

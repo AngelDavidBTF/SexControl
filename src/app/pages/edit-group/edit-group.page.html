@@ -1,0 +1,60 @@
+<app-header titulo="{{group.data.name}}"></app-header>
+
+<ion-content>
+  <ion-button size="small" color="primary" (click)="showAlert()" class="ion-float-right ion-margin">Editar grupo</ion-button>
+  <br>
+  <div class="contenedorNumeros contenedorTotal">
+    <p class="letrasTotal">Total Grupo</p>
+    <p class="letrasTotal">Media Grupo</p>
+  </div>
+  <div class="contenedorNumeros contenedorTotal">
+    <ion-text>
+      <h1 class="numeroTotal">1</h1>
+    </ion-text>
+    <ion-text>
+      <h1 class="numeroTotal">2</h1>
+    </ion-text>
+  </div>
+  <div class="contenedorNumeros">
+    <ion-text color="secondary">
+      <p class="letras">Total Compañia</p>
+      <h1 class="numero">1</h1>
+    </ion-text>
+    <ion-text color="primary">
+      <p class="letras">Total Solitario</p>
+      <h1 class="numero">2</h1>
+    </ion-text>
+    <ion-text color="secondary">
+      <p class="letras">Media Compañia</p>
+      <h1 class="numero">1</h1>
+    </ion-text>
+    <ion-text color="primary">
+      <p class="letras">Media Solitario</p>
+      <h1 class="numero">2</h1>
+    </ion-text>
+  </div>
+  <ion-searchbar placeholder="Buscar amigo"
+                   (ionChange)="onSearchChange($event)"
+                   inputmode="text"
+                   animated
+                   ></ion-searchbar>
+  <ion-item-sliding *ngFor="let user of users | filtro:textoBuscar:'data.email'">
+    <ion-item  button>
+      <ion-avatar slot="start">
+        <img [src]="user.data.photoURL" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.data.displayName }}</h2>
+      </ion-label>
+      <!-- <ion-badge *ngIf="user.numero" color="secondary">{{ user.numero.numberC }}</ion-badge>
+      <ion-badge *ngIf="user.numero" color="primary">{{ user.numero.numberS }}</ion-badge> -->
+    </ion-item>
+
+    <ion-item-options side="end">
+      <ion-item-option (click)="deleteFriendGroup(user.id)" color="danger">
+        <ion-icon slot="icon-only" name="trash"></ion-icon>
+      </ion-item-option>
+    </ion-item-options>
+
+  </ion-item-sliding>
+</ion-content>

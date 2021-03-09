@@ -1,13 +1,27 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/firestore';
+import { Router } from '@angular/router';
 import { RequestFriend } from '../shared/request.interface';
+import firebase from 'firebase/app';
+import { Observable } from 'rxjs';
+import { AngularFireStorage } from "@angular/fire/storage";
+import { finalize } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FriendsService {
 
-  constructor(private angularFirestore: AngularFirestore) { }
+  constructor(
+    private angularFirestore: AngularFirestore,
+    private storage: AngularFireStorage,
+    private router: Router) { }
+
+  actualGroup: any;
+  actualUidUser: any;
+
+  private filePath: any;
+  private downloadUrl: Observable<string>;
 
   public getUsers(uid: any) {
     return this.angularFirestore.collection('users', ref =>  ref.where('uid', '!=', uid)).snapshotChanges();
@@ -31,22 +45,23 @@ export class FriendsService {
   }
 
   public getFriends(uid: any) {
+    this.actualUidUser = uid;
     return this.angularFirestore.collection('users').doc(uid).collection('friends', ref =>  ref.where('aceptado', '==', true)).snapshotChanges();
   }
 
   public proccessRequestFriend(requestFriend: RequestFriend, usuarioPeticion: RequestFriend) {
 
-    this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('requestFriend')
-    .doc(requestFriend.uidRemitente).update({
-      aceptado: requestFriend.aceptado
-    });
-
-    this.angularFirestore.collection('users').doc(usuarioPeticion.uidDestinatario).collection('requestFriend')
-    .doc(usuarioPeticion.uidRemitente).update({
-      aceptado: requestFriend.aceptado
-    });
-
     if (requestFriend.aceptado === true) {
+      this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('requestFriend')
+      .doc(requestFriend.uidRemitente).update({
+        aceptado: requestFriend.aceptado
+      });
+  
+      this.angularFirestore.collection('users').doc(usuarioPeticion.uidDestinatario).collection('requestFriend')
+      .doc(usuarioPeticion.uidRemitente).update({
+        aceptado: requestFriend.aceptado
+      });
+      
       this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('friends')
       .doc(requestFriend.uidRemitente).set({
         uidFriend: requestFriend.uidRemitente,
@@ -68,5 +83,77 @@ export class FriendsService {
       this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('requestFriend')
       .doc(requestFriend.uidRemitente).delete();
     }
+  }
+
+  public createGroup(group: any) {
+    const groupObj = {
+      name: group.name,
+      groupImage: this.downloadUrl,
+      users: group.users,
+      creationDate: group.creationDate,
+      fileRef: this.filePath
+    };
+
+    return this.angularFirestore.collection('groups').add(groupObj);
+  }
+
+  public getGroups(user: any) {
+    return this.angularFirestore.collection('groups', ref =>  ref.where('users', 'array-contains', user)).snapshotChanges();
+  }
+
+  public chargeEditGroup(group: any) {
+    this.actualGroup = group;
+    this.router.navigate(["edit-group"]);
+  }
+
+  public getFriendsByGroup() {
+    return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'in', this.actualGroup.data.users).where('uid', '!=', this.actualUidUser)).snapshotChanges();
+  }
+
+  public getFriendsNotInGroup() {
+    return this.angularFirestore.collection('users').doc(this.actualUidUser).collection('friends', ref =>  ref.where('uidFriend', 'not-in', this.actualGroup.data.users)).snapshotChanges();
+  }
+
+  public addFriendToGroup(listUid: any) {
+    let that = this;
+    listUid.map(function (uid: any){
+      that.angularFirestore.collection('groups').doc(that.actualGroup.id).update({
+        users: firebase.firestore.FieldValue.arrayUnion(uid)
+      });
+    });
+    this.router.navigate(["/tabs/amigos"]);
+  }
+
+  public deleteFriendInGroup(uid: any) {
+    return this.angularFirestore.collection('groups').doc(this.actualGroup.id).update({
+      users: firebase.firestore.FieldValue.arrayRemove(uid)
+    }).then(() => {
+      for (let i = 0; i < this.actualGroup.data.users.length; i++) {
+        if (this.actualGroup.data.users[i] === uid) {
+          this.actualGroup.data.users.splice(i, 1);
+        }
+      }
+    });
+  }
+
+  public preSaveGroup(image: any, group: any) {
+    this.uploadImageGroup(image, group);
+  }
+
+  private uploadImageGroup(image: any, group: any) {
+
+    var aleatorio = Math.random();
+    this.filePath = `images/${aleatorio + image.name}`;
+    const fileRef = this.storage.ref(this.filePath);
+    const task = this.storage.upload(this.filePath, image);
+    task.snapshotChanges()
+      .pipe(
+        finalize(() => {
+          fileRef.getDownloadURL().subscribe(urlImage => {
+            this.downloadUrl = urlImage;
+            this.createGroup(group);
+          });
+        })
+      ).subscribe();
   }
 }

@@ -1,0 +1,45 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-icon slot="start" name="close" class="ion-padding-horizontal" (click)="closeModal()"></ion-icon>
+    <ion-title>Añadir amigo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="ion-padding-horizontal">
+    <ion-chip *ngFor="let user of selectedUsers">
+      <ion-avatar>
+        <img [src]=user.photoURL>
+      </ion-avatar>
+      <ion-label class="avatar-group">{{ user.displayName }}</ion-label>
+    </ion-chip>
+  </div>
+
+  <ion-searchbar placeholder="Buscar amigo"
+                   (ionChange)="onSearchChange($event)"
+                   inputmode="text"
+                   animated
+                   ></ion-searchbar>
+
+    <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button (click)="addFriendToList(user.data)">
+      <ion-avatar slot="start">
+        <img [src]="user.data.photoURL" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.data.displayName }}</h2>
+      </ion-label>
+    </ion-item>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" (click)="addFriendsToGroup()" *ngIf="selectedUsers && selectedUsers.length !== 0">
+      <ion-fab-button color="secondary">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+
+    <div class="ion-padding textFriend" *ngIf="friends && friends.length == 0">
+      No hay amigos/as para añadir al grupo, comprueba que el usuario/a no está en el grupo, de lo contrario, es posible que no seáis amigos/as mutuamente.
+      ¿A qué esperas? ¡Mandale una petición!
+    </div>
+
+</ion-content>

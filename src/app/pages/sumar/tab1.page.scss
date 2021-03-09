@@ -7,13 +7,30 @@
     font-weight: bold;
   }
 
+  .total {
+    padding: 10px;
+    margin: 10px;
+    margin-top: 1px;
+    font-size: 40px;
+    font-weight: bold;
+  }
+
   .contenedorNumeros {
     display: flex;
     justify-content: center;
     flex-direction:row;
     align-items: flex-end;
     text-align: center;
-    margin-bottom: 70px;
+  }
+
+  .contenedorTotal {
+    display: flex;
+    justify-content: center;
+    flex-direction:row;
+    align-items: flex-end;
+    text-align: center;
+    margin-top: -30px;
+    margin-bottom: -10px;
   }
 
   .contenedorBoton {

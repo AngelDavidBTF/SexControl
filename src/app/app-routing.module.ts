@@ -29,6 +29,14 @@ const routes: Routes = [
   {
     path: 'request-friends',
     loadChildren: () => import('./pages/request-friends/request-friends.module').then( m => m.RequestFriendsPageModule)
+  },
+  {
+    path: 'create-group',
+    loadChildren: () => import('./pages/create-group/create-group.module').then( m => m.CreateGroupPageModule)
+  },
+  {
+    path: 'edit-group',
+    loadChildren: () => import('./pages/edit-group/edit-group.module').then( m => m.EditGroupPageModule)
   }
 ];
 @NgModule({
