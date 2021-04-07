@@ -37,6 +37,30 @@ const routes: Routes = [
   {
     path: 'edit-group',
     loadChildren: () => import('./pages/edit-group/edit-group.module').then( m => m.EditGroupPageModule)
+  },
+  {
+    path: 'general',
+    loadChildren: () => import('./pages/statistics/general/general.module').then( m => m.GeneralPageModule)
+  },
+  {
+    path: 'day',
+    loadChildren: () => import('./pages/statistics/day/day.module').then( m => m.DayPageModule)
+  },
+  {
+    path: 'week',
+    loadChildren: () => import('./pages/statistics/week/week.module').then( m => m.WeekPageModule)
+  },
+  {
+    path: 'month',
+    loadChildren: () => import('./pages/statistics/month/month.module').then( m => m.MonthPageModule)
+  },
+  {
+    path: 'year',
+    loadChildren: () => import('./pages/statistics/year/year.module').then( m => m.YearPageModule)
+  },
+  {
+    path: 'select-time',
+    loadChildren: () => import('./pages/statistics/select-time/select-time.module').then( m => m.SelectTimePageModule)
   }
 ];
 @NgModule({

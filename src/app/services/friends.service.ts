@@ -107,7 +107,7 @@ export class FriendsService {
   }
 
   public getFriendsByGroup() {
-    return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'in', this.actualGroup.data.users).where('uid', '!=', this.actualUidUser)).snapshotChanges();
+    return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'in', this.actualGroup.data.users)).snapshotChanges();
   }
 
   public getFriendsNotInGroup() {
@@ -136,6 +136,11 @@ export class FriendsService {
     });
   }
 
+  public deleteGroup(id: any) {
+    this.angularFirestore.collection('groups').doc(id).delete();
+    this.router.navigate(["/tabs/amigos"]);
+  }
+
   public preSaveGroup(image: any, group: any) {
     this.uploadImageGroup(image, group);
   }
@@ -155,5 +160,15 @@ export class FriendsService {
           });
         })
       ).subscribe();
+  }
+
+  public getNumeroFapByGroup() {
+    return this.angularFirestore.collection('fap', ref =>  ref.where('uid', 'in', this.actualGroup.data.users))
+    .snapshotChanges();
+  }
+
+  public getNumeroFapByFriends(friends: any) {
+    return this.angularFirestore.collection('fap', ref =>  ref.where('uid', 'in', friends))
+    .snapshotChanges();
   }
 }

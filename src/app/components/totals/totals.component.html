@@ -1,0 +1,24 @@
+<div class="contenedorNumeros">
+  <ion-text color="warning">
+    <p class="letras">Total</p>
+    <h1 class="numero">{{ total }}</h1>
+  </ion-text>
+</div>
+<div class="contenedorNumeros">
+  <ion-text color="secondary">
+    <p class="letras">Total Compañia</p>
+    <h1 class="numero">{{ totalCompania }}</h1>
+  </ion-text>
+  <ion-text color="primary">
+    <p class="letras">Total Solitario</p>
+    <h1 class="numero">{{ totalSolitario }}</h1>
+  </ion-text>
+  <ion-text color="secondary">
+    <p class="letras">Compañia</p>
+    <h1 class="numero">{{ mediaCompania | number : '1.0-0' }}%</h1>
+  </ion-text>
+  <ion-text color="primary">
+    <p class="letras">Solitario</p>
+    <h1 class="numero">{{ mediaSolitario | number : '1.0-0' }}%</h1>
+  </ion-text>
+</div>

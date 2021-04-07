@@ -1,0 +1,34 @@
+<app-header titulo="Resumen semanal"></app-header>
+
+<ion-content>
+  <h3 class="ion-padding-horizontal">Este es el resumen de la semana actual</h3>
+  <app-totals
+    [total]="faps.length"
+    [totalCompania]="arrayCompania.length"
+    [totalSolitario]="arraySolitario.length"
+    [mediaCompania]="mediaCompania"
+    [mediaSolitario]="mediaSolitario"
+  ></app-totals>
+  <ion-item-divider>
+    <ion-label>
+      Listado
+    </ion-label>
+  </ion-item-divider>
+  <ion-item *ngFor="let fap of faps">
+    <ion-icon
+      *ngIf="fap.data.solitario"
+      name="person"
+      slot="start"
+      color="primary"
+    ></ion-icon>
+    <ion-icon
+      *ngIf="!fap.data.solitario"
+      slot="start"
+      color="secondary"
+      name="people"
+    ></ion-icon>
+    <ion-label>
+      <h2>{{ fap.data.fecha }}</h2>
+    </ion-label>
+  </ion-item>
+</ion-content>

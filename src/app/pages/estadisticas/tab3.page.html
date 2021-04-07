@@ -3,13 +3,52 @@
     <ion-buttons slot="start">
       <ion-menu-button menu="first"></ion-menu-button>
     </ion-buttons>
-    <ion-title>
-      Estadísticas
-    </ion-title>
+    <ion-title> Estadísticas </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
- 
-
+  <h3 class="ion-padding">Listado de estadísticas personales</h3>
+  <ion-item button (click)="chargeView('general')">
+    <ion-icon slot="start" name="list" color="secondary"></ion-icon>
+    <ion-label>
+      <h2>Historial completo</h2>
+    </ion-label>
+  </ion-item>
+  <ion-item button (click)="chargeView('day')">
+    <ion-icon slot="start" name="today" color="primary"></ion-icon>
+    <ion-label>
+      <h2>Resumen diario</h2>
+    </ion-label>
+  </ion-item>
+  <ion-item button (click)="chargeView('week')">
+    <ion-icon slot="start" name="calendar" color="secondary"></ion-icon>
+    <ion-label>
+      <h2>Resumen semanal</h2>
+    </ion-label>
+  </ion-item>
+  <ion-item button (click)="chargeView('month')">
+    <ion-icon slot="start" name="podium" color="primary"></ion-icon>
+    <ion-label>
+      <h2>Resumen mensual</h2>
+    </ion-label>
+  </ion-item>
+  <ion-item button (click)="chargeView('year')">
+    <ion-icon slot="start" name="earth-sharp" color="secondary"></ion-icon>
+    <ion-label>
+      <h2>Resumen anual</h2>
+    </ion-label>
+  </ion-item>
+  <ion-item button (click)="chargeView('select')">
+    <ion-icon slot="start" name="code" color="primary"></ion-icon>
+    <ion-label>
+      <h2>Seleccionar rango de fechas</h2>
+    </ion-label>
+  </ion-item>
+  <ion-item button (click)="chargeView('ranking')">
+    <ion-icon slot="start" name="ribbon" color="secondary"></ion-icon>
+    <ion-label>
+      <h2>Rankings personal</h2>
+    </ion-label>
+  </ion-item>
 </ion-content>

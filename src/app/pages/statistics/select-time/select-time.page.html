@@ -1,0 +1,62 @@
+<app-header titulo="Seleccionar fecha"></app-header>
+
+<ion-content>
+
+    <ion-list>
+        <ion-list-header>
+            <ion-label>Selecciona la fecha de inicio y fin</ion-label>
+        </ion-list-header>
+        <ion-item>
+            <ion-label>Desde</ion-label>
+            <ion-datetime cancelText="Cancelar" doneText="Aceptar"  [(ngModel)]="fechaInicio"
+            [max]="fechaActual" 
+            monthShortNames="Enero, Febrero, Marzo, Abril, Mayo, Junio, Julio, Agosto, Septiembre, Octubre, Noviembre, Diciembre" 
+            displayFormat="DD MMM YYYY" placeholder="Seleccionar fecha"></ion-datetime>
+        </ion-item> 
+        <ion-item>
+            <ion-label>Hasta</ion-label>
+            <ion-datetime cancelText="Cancelar" doneText="Aceptar"  [(ngModel)]="fechaFin"
+            [min]="fechaInicio"
+            [max]="fechaActual" 
+            monthShortNames="Enero, Febrero, Marzo, Abril, Mayo, Junio, Julio, Agosto, Septiembre, Octubre, Noviembre, Diciembre" 
+            displayFormat="DD MMM YYYY" placeholder="Seleccionar fecha"></ion-datetime>
+        </ion-item>   
+    </ion-list>
+    <ion-button (click)="filtrar()" expand="block" *ngIf="fechaInicio && fechaFin">
+        <ion-icon slot="start" name="search"></ion-icon>
+        Buscar
+    </ion-button>
+
+    <app-totals *ngIf="fapsFiltered.length !== 0"
+    [total]="fapsFiltered.length"
+    [totalCompania]="arrayCompania.length"
+    [totalSolitario]="arraySolitario.length"
+    [mediaCompania]="mediaCompania"
+    [mediaSolitario]="mediaSolitario"
+  ></app-totals>
+
+    <ion-item-divider *ngIf="fapsFiltered.length !== 0">
+        <ion-label>
+          Resultado
+        </ion-label>
+    </ion-item-divider>
+
+    <ion-item *ngFor="let fap of fapsFiltered">
+        <ion-icon
+          *ngIf="fap.data.solitario"
+          name="person"
+          slot="start"
+          color="primary"
+        ></ion-icon>
+        <ion-icon
+          *ngIf="!fap.data.solitario"
+          slot="start"
+          color="secondary"
+          name="people"
+        ></ion-icon>
+        <ion-label>
+          <h2>{{ fap.data.fecha }}</h2>
+        </ion-label>
+      </ion-item>
+
+</ion-content>

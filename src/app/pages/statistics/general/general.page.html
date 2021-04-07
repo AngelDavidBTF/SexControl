@@ -1,0 +1,29 @@
+<app-header titulo="Historial"></app-header>
+
+<ion-content>
+  <h1 class="ion-padding-horizontal">Historial personal completo</h1>
+  <p class="ion-padding-horizontal">(Ordenado desde la más actual hasta la más antigua).
+    (Se listan desde que se registró en la aplicación).
+  </p>
+  <app-totals
+    [total]="faps.length"
+    [totalCompania]="arrayCompania.length"
+    [totalSolitario]="arraySolitario.length"
+    [mediaCompania]="mediaCompania"
+    [mediaSolitario]="mediaSolitario"
+  ></app-totals>
+  <ion-item-divider>
+    <ion-label>
+      Listado
+    </ion-label>
+  </ion-item-divider>
+  <ion-item
+    *ngFor="let fap of faps"
+  >
+    <ion-icon *ngIf="fap.data.solitario" name="person" slot="start" color="primary"></ion-icon>
+    <ion-icon *ngIf="!fap.data.solitario" slot="start" color="secondary" name="people"></ion-icon>
+    <ion-label>
+      <h2>{{ fap.data.fecha }}</h2>
+    </ion-label>
+  </ion-item>
+</ion-content>

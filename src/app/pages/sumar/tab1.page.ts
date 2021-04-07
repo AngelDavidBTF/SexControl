@@ -28,8 +28,6 @@ export class Tab1Page {
 
   fap: Fap;
 
-  currentUser: User;
-
   numeroFapSubscription: Subscription;
 
   numberC: number;
@@ -40,9 +38,18 @@ export class Tab1Page {
     private authService: AuthService,
     private fapService: FapService
   ) {
-    this.currentUser = this.authService.actualUser;
+    this.authService.user$.subscribe((user) => {
+      if (user) {
+        this.user = {
+          uid: user.uid,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          email: user.email,
+        };
 
-    this.obtenerFap();
+        this.obtenerFap();
+      }
+    });
   }
 
   obtenerFap() {

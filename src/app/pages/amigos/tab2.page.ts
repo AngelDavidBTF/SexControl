@@ -2,8 +2,8 @@ import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { Subscription } from "rxjs";
 import { AuthService } from "src/app/services/auth.service";
-import { FapService } from "src/app/services/fap.service";
 import { FriendsService } from "src/app/services/friends.service";
+import { Fap } from "src/app/shared/fap.interface";
 import { User } from "src/app/shared/user.interface";
 
 @Component({
@@ -35,23 +35,32 @@ export class Tab2Page {
     },
   ];
 
+  arrayColeccionFaps: any = [
+    {
+      id: "",
+      data: {} as Fap,
+    },
+  ];
+
   friendsSubscription: Subscription;
 
   groups: any;
 
   segmentModel = "amigos";
 
-  friendsFiltrados: any = [];
+  friendsUid: any = [];
 
   numberNotification: number;
 
   textoBuscar = "";
 
+  arraySolitario = [];
+  arrayCompania = [];
+
   constructor(
     private router: Router,
     private authService: AuthService,
-    private friendService: FriendsService,
-    private fapService: FapService
+    private friendService: FriendsService
   ) {
     this.currentUser = this.authService.actualUser;
         this.getNumeroSolicitudes(this.currentUser.uid);
@@ -73,54 +82,85 @@ export class Tab2Page {
         });
       });
 
-      this.numberNotification = 0;
-      if (this.requestUsers.length !== 0) {
-        for (const user of this.requestUsers) {
-          this.numberNotification++;
-        }
-      }
+      this.numberNotification = this.requestUsers.length;
     });
   }
 
   getFriends(userUid: any) {
     this.friendsSubscription = this.friendService.getFriends(userUid).subscribe((result) => {
       this.friends = [];
+      this.friendsUid = [];
       result.forEach((datosUser: any) => {
         this.friends.push({
           id: datosUser.payload.doc.id,
           data: datosUser.payload.doc.data()
         });
-        /*let fapUser = [];
-        this.fapService
-          .getNumeroFap(datosUser.payload.doc.id)
-          .subscribe((result) => {
-            result.forEach((datosFap: any) => {
-              fapUser.push(datosFap.payload.doc.data());
-            });
-            this.friends.push({
-              id: datosUser.payload.doc.id,
-              data: datosUser.payload.doc.data(),
-              faps: fapUser,
-              numero: {},
-            });
+        this.friendsUid.push(
+          datosUser.payload.doc.id
+        );
+      });
+      this.getFapFriends();
+    });
+  }
 
-            let numeroC = 0;
-            let numeroS = 0;
-            let index = -1;
-            this.friends.forEach((element1) => {
-              numeroC = 0;
-              numeroS = 0;
-              index++;
-              element1.faps.forEach((element: any) => {
-                if (element.solitario === false) {
-                  numeroC++;
-                } else {
-                  numeroS++;
-                }
-              });
+  getFapFriends() {
+    this.friendService.getNumeroFapByFriends(this.friendsUid).subscribe((result) => {
+      // todos los datos
+      this.arrayColeccionFaps = [];
+      result.forEach((datosFap: any) => {
+        this.arrayColeccionFaps.push({
+          id: datosFap.payload.doc.id,
+          data: datosFap.payload.doc.data(),
+        });
+      });
+
+      this.arraySolitario = [];
+      this.arrayCompania = [];
+      this.arrayColeccionFaps.forEach((element: any ) => {
+          if (element.data.solitario === true) {
+            this.arraySolitario.push({
+              user: element.data.uid,
+              fap: element
+            }); 
+          } else {
+            this.arrayCompania.push({
+              user: element.data.uid,
+              faps: element
             });
-            this.friends[index].numero = { numberC: numeroC, numberS: numeroS };
-          }); */
+          }
+      });
+
+      this.friends.forEach((element: any, i: number ) => {
+        var reducedS = this.arrayColeccionFaps.reduce(function(filtered, option) {
+          if (option.data.uid === element.data.uidFriend) {
+            if(option.data.solitario === true) {
+              var someNewValue = { fap: option.data, uid: option.data.uid }
+              filtered.push(someNewValue);
+            }
+          }
+          return filtered;
+        }, []);
+        var reducedC = this.arrayColeccionFaps.reduce(function(filtered, option) {
+          if (option.data.uid === element.data.uidFriend) {
+            if(option.data.solitario === false) {
+              var someNewValue = { fap: option.data, uid: option.data.uid }
+              filtered.push(someNewValue);
+            }
+          }
+          return filtered;
+        }, []);
+        this.friends[i].solitario =  reducedS;
+        this.friends[i].compania =  reducedC;
+      });
+
+      this.friends = this.friends.sort((a: any, b: any) => {
+        const totalS1 = a.solitario.length;
+        const totalS2 = b.solitario.length;
+        const totalC1 = a.compania.length;
+        const totalC2 = b.compania.length;
+        const total1 = totalS1 + totalC1;
+        const total2 = totalS2 + totalC2;
+        return total2 - total1;
       });
     });
   }

@@ -47,13 +47,14 @@
       <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button
         >
         <ion-avatar slot="start">
-          <img [src]="user.data.photoURL" />
+          <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
+          <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
         </ion-avatar>
         <ion-label>
           <h2>{{ user.data.displayName }}</h2>
         </ion-label>
-        <!-- <ion-badge *ngIf="user.numero" color="secondary">{{ user.numero.numberC }}</ion-badge>
-        <ion-badge *ngIf="user.numero" color="primary">{{ user.numero.numberS }}</ion-badge> -->
+        <ion-badge *ngIf="user.solitario" color="secondary">{{ user.solitario.length }}</ion-badge>
+      <ion-badge *ngIf="user.compania" color="primary" class="ion-margin-horizontal">{{ user.compania.length }}</ion-badge>
       </ion-item>
     </ng-container>
   </ng-container>
@@ -79,13 +80,12 @@
       <ion-item *ngFor="let group of groups | filtro:textoBuscar" button (click)="editGroup(group)"
         >
         <ion-avatar slot="start">
-          <img [src]="group.data.groupImage" />
+          <img *ngIf="group.data.groupImage" [src]="group.data.groupImage" />
+          <img *ngIf="!group.data.groupImage" src="../../assets/groups/icon-group.svg" />
         </ion-avatar>
         <ion-label>
           <h2>{{ group.data.name }}</h2>
         </ion-label>
-        <!-- <ion-badge color="secondary">{{ user.numero.numberC }}</ion-badge>
-        <ion-badge color="primary">{{ user.numero.numberS }}</ion-badge> -->
       </ion-item>
     </ng-container>
   </ng-container>

@@ -3,34 +3,35 @@
 <ion-content>
   <ion-button size="small" color="primary" (click)="showAlert()" class="ion-float-right ion-margin">Editar grupo</ion-button>
   <br>
+  <br>
   <div class="contenedorNumeros contenedorTotal">
-    <p class="letrasTotal">Total Grupo</p>
-    <p class="letrasTotal">Media Grupo</p>
+    <ion-text class="letrasTotal" color="warning">Total Grupo</ion-text>
+    <ion-text class="letrasTotal" color="warning">Media Total Grupo</ion-text>
   </div>
   <div class="contenedorNumeros contenedorTotal">
-    <ion-text>
-      <h1 class="numeroTotal">1</h1>
+    <ion-text color="warning">
+      <h1 class="numeroTotal">{{ arrayColeccionFaps.length }}</h1>
     </ion-text>
-    <ion-text>
-      <h1 class="numeroTotal">2</h1>
+    <ion-text color="warning">
+      <h1 class="numeroTotal">{{ mediaGrupo | number : '1.0-0' }}</h1>
     </ion-text>
   </div>
   <div class="contenedorNumeros">
     <ion-text color="secondary">
       <p class="letras">Total Compañia</p>
-      <h1 class="numero">1</h1>
+      <h1 class="numero">{{ arrayCompania.length }}</h1>
     </ion-text>
     <ion-text color="primary">
       <p class="letras">Total Solitario</p>
-      <h1 class="numero">2</h1>
+      <h1 class="numero">{{ arraySolitario.length }}</h1>
     </ion-text>
     <ion-text color="secondary">
       <p class="letras">Media Compañia</p>
-      <h1 class="numero">1</h1>
+      <h1 class="numero">{{ mediaCompania | number : '1.0-0' }}</h1>
     </ion-text>
     <ion-text color="primary">
       <p class="letras">Media Solitario</p>
-      <h1 class="numero">2</h1>
+      <h1 class="numero">{{ mediaSolitario | number : '1.0-0' }}</h1>
     </ion-text>
   </div>
   <ion-searchbar placeholder="Buscar amigo"
@@ -38,16 +39,19 @@
                    inputmode="text"
                    animated
                    ></ion-searchbar>
-  <ion-item-sliding *ngFor="let user of users | filtro:textoBuscar:'data.email'">
+  <ion-item-sliding *ngFor="let user of users | filtro:textoBuscar:'data.email'; let i = index" [attr.data-index]="i">
     <ion-item  button>
       <ion-avatar slot="start">
         <img [src]="user.data.photoURL" />
       </ion-avatar>
+      <ion-img *ngIf="i === 0" class="podium" src="../../assets/groups/1.svg"></ion-img>
+      <ion-img *ngIf="i === 1" class="podium" src="../../assets/groups/2.svg"></ion-img>
+      <ion-img *ngIf="i === 2" class="podium" src="../../assets/groups/3.svg"></ion-img>
       <ion-label>
         <h2>{{ user.data.displayName }}</h2>
       </ion-label>
-      <!-- <ion-badge *ngIf="user.numero" color="secondary">{{ user.numero.numberC }}</ion-badge>
-      <ion-badge *ngIf="user.numero" color="primary">{{ user.numero.numberS }}</ion-badge> -->
+      <ion-badge *ngIf="user.compania" color="secondary">{{ user.compania.length }}</ion-badge>
+      <ion-badge *ngIf="user.solitario" color="primary" class="ion-margin-horizontal">{{ user.solitario.length }}</ion-badge>
     </ion-item>
 
     <ion-item-options side="end">
