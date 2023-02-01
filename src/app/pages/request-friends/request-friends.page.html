@@ -1,14 +1,18 @@
 <app-header titulo="Solicitudes de amistad"></app-header>
 
 <ion-content>
-  <ion-searchbar placeholder="Buscar petición"
-                 (ionChange)="onSearchChange($event)"
-                 inputmode="text"
-                 animated></ion-searchbar>
+  <ion-searchbar
+    placeholder="Buscar petición"
+    (ionChange)="onSearchChange($event)"
+    inputmode="text"
+    animated
+  ></ion-searchbar>
 
   <ion-item
-    *ngFor="let user of requestUsers | filtro:textoBuscar:'data.email'" button
-    (click)="showAlert(user)">
+    *ngFor="let user of requestUsers | filtro:textoBuscar:'data.email'"
+    button
+    (click)="showAlert(user)"
+  >
     <ion-avatar slot="start">
       <img [src]="user.data.photoURL" />
     </ion-avatar>
@@ -18,4 +22,7 @@
     </ion-label>
     <ion-icon name="person-add" slot="end"></ion-icon>
   </ion-item>
+  <div *ngIf="requestUsers.length === 0">
+    <h5 class="ion-text-center">No hay ninguna solicitud de amistad</h5>
+  </div>
 </ion-content>

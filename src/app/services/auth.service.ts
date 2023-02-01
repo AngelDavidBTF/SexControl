@@ -4,9 +4,10 @@ import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/firest
 import 'firebase/auth';
 import 'firebase/firestore';
 import { Observable, of  } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { User } from '../shared/user.interface';
 import firebase from 'firebase/app';
+import { UiServiceService } from './ui-service.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,17 +16,32 @@ export class AuthService {
 
   public user$: Observable<User>;
   public actualUser: User;
+  public user: any;
 
-  constructor(public afAuth: AngularFireAuth, private afs: AngularFirestore) {
+  constructor(public afAuth: AngularFireAuth, private afs: AngularFirestore,
+    private uiServiceService: UiServiceService) {
+
     this.user$ = this.afAuth.authState.pipe(
       switchMap((user) => {
         if (user) {
           this.actualUser = user;
+          this.user = this.afs.collection("users", (ref) => ref.where("uid", "==", this.actualUser.uid)).snapshotChanges().pipe(
+            map(actions => actions.map(a => {
+              const data = a.payload.doc.data();
+              const id = a.payload.doc.id;
+              return { id, data };
+            }))
+          );
+          
           return this.afs.doc<User>(`users/${user.uid}`).valueChanges();
         }
         return of(null);
       })
     );
+  }
+
+  public getActualUser() {
+    return this.user;
   }
 
   async resetPassword(email: string): Promise<void> {
@@ -46,9 +62,14 @@ export class AuthService {
     }
   }
 
-  async register(email: string, password: string): Promise<User> {
+  async register(email: string, password: string, userF: any): Promise<User> {
     try {
-      const { user } = await this.afAuth.createUserWithEmailAndPassword(email, password);
+      const { user } = await this.afAuth.createUserWithEmailAndPassword(email, password).then(function(user) {
+        user.user.updateProfile({
+            displayName: userF
+        });
+        return user;       
+    });
       await this.sendVerifcationEmail();
       return user;
     } catch (error) {
@@ -62,7 +83,13 @@ export class AuthService {
       this.updateUserData(user);
       return user;
     } catch (error) {
-      console.log('Error->', error);
+      if (error.code == 'auth/invalid-email') {
+        error = 'El email tiene un formato incorrecto'
+      }
+      if (error.code == 'auth/wrong-password' || error.code == 'auth/user-not-found') {
+        error = 'El email o la contraseña no son correctos'
+      }
+      this.uiServiceService.alertaInformativa(error);
     }
   }
 

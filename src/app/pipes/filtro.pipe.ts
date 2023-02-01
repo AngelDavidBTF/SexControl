@@ -5,7 +5,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class FiltroPipe implements PipeTransform {
 
-  transform(array: any[], texto: string = ''): any [] {
+  transform(array: any[], texto: string = '', email: string = ''): any [] {
       if( texto === '' ) {
         return array;
       }
@@ -15,14 +15,15 @@ export class FiltroPipe implements PipeTransform {
       }
 
       texto = texto.toLowerCase();
+
       return array.filter(
         item => {
-          if ( item.data && item.data.email && item.data.email.toLowerCase().includes( texto ) ) {
-            return item.data.email.toLowerCase().includes( texto )           
-          } else if (item.data && item.data.displayName && item.data.displayName.toLowerCase().includes( texto )) {
-            return item.data.displayName.toLowerCase().includes( texto )
-          } else if ( item.data && item.data.name && item.data.name.toLowerCase().includes( texto ) ) {
-            return item.data.name.toLowerCase().includes( texto )
+          if ( item.data && item.data.email && item.data.email.toLowerCase().startsWith( texto ) ) {
+            return item.data.email.toLowerCase().startsWith( texto )           
+          } else if (item.data && item.data.displayName && item.data.displayName.toLowerCase().startsWith( texto )) {
+            return item.data.displayName.toLowerCase().startsWith( texto )
+          } else if ( item.data && item.data.name && item.data.name.toLowerCase().startsWith( texto ) ) {
+            return item.data.name.toLowerCase().startsWith( texto )
           }
         }
       );

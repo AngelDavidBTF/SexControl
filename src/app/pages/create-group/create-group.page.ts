@@ -35,6 +35,8 @@ export class CreateGroupPage {
   imageResponse: any;
   options: any;
 
+  actualUser: any;
+
   constructor(
     private router: Router,
     private authService: AuthService,
@@ -42,7 +44,10 @@ export class CreateGroupPage {
     private imagePicker: ImagePicker
   ) {
     this.currentUser = this.authService.actualUser;
-    this.getFriends(this.currentUser.uid);
+    this.authService.getActualUser().subscribe((result) => {
+      this.actualUser = result;
+      this.getFriends(this.currentUser.uid);
+    });
   }
 
   onSearchChange(event: any) {
@@ -74,7 +79,6 @@ export class CreateGroupPage {
   }
 
   createGroup() {
-    this.selectedUsers.push(this.currentUser);
     this.sendUsers.push(this.currentUser.uid);
     this.group = {
       name: this.nameGroup,
@@ -82,7 +86,11 @@ export class CreateGroupPage {
       users: this.sendUsers,
       creationDate: moment().format("DD/MM/YYYY HH:mm:ss")
     };
-    this.friendService.preSaveGroup(this.imageResponse[0], this.group);
+    if(this.imageResponse) {
+      this.friendService.preSaveGroup(this.imageResponse[0], this.group);
+    } else {
+      this.friendService.createGroup(this.group);
+    }
     this.router.navigate(["tabs/amigos"]);
   }
 

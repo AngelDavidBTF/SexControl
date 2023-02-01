@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
 
@@ -18,14 +18,23 @@ export class RegisterPage implements OnInit {
 
   ngOnInit() {
     this.registerForm = this.formBuilder.group({
-      usuario: ['', Validators.required],
-      password: ['', Validators.required],
-    });
+      name: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      pass: ['', [Validators.required, Validators.minLength(6)]],
+      repeatPass: ['']
+    },{ validator: this.checkPasswords });
   }
 
-  async onRegister(email, password) {
+  checkPasswords(group: FormGroup) { // here we have the 'passwords' group
+    let pass = group.controls.pass.value;
+    let confirmPass = group.controls.repeatPass.value;
+
+    return pass === confirmPass ? null : { notSame: true }
+  }
+
+  async onRegister() {
     try {
-      const user = await this.authSvc.register(email.value, password.value);
+      const user = await this.authSvc.register(this.registerForm.controls.email.value, this.registerForm.controls.pass.value, this.registerForm.controls.name.value );
       if (user) {
         const isVerified = this.authSvc.isEmailVerified(user);
         this.redirectUser(isVerified);

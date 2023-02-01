@@ -53,8 +53,8 @@
         <ion-label>
           <h2>{{ user.data.displayName }}</h2>
         </ion-label>
-        <ion-badge *ngIf="user.solitario" color="secondary">{{ user.solitario.length }}</ion-badge>
-      <ion-badge *ngIf="user.compania" color="primary" class="ion-margin-horizontal">{{ user.compania.length }}</ion-badge>
+        <ion-badge *ngIf="user.compania" color="secondary" class="ion-margin-horizontal">{{ user.compania.length }}</ion-badge>
+        <ion-badge *ngIf="user.solitario" color="primary">{{ user.solitario.length }}</ion-badge>
       </ion-item>
     </ng-container>
   </ng-container>

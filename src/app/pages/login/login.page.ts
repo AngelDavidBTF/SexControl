@@ -10,8 +10,7 @@ import { UiServiceService } from 'src/app/services/ui-service.service';
 })
 export class LoginPage implements OnInit {
   constructor(private authSvc: AuthService,
-              private router: Router,
-              private uiServiceService: UiServiceService) {}
+              private router: Router) {}
 
   ngOnInit(): void {}
 
@@ -23,8 +22,7 @@ export class LoginPage implements OnInit {
         this.redirectUser(isVerified);
       }
     } catch (error) {
-      this.uiServiceService.alertaInformativa(error);
-      //console.log('Error->', error);
+
     }
   }
 

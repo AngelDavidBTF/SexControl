@@ -70,7 +70,7 @@ export class EditGroupPage implements OnInit {
     });
   }
 
-  getFapFriends() {
+  /*getFapFriends() {
     this.friendService.getNumeroFapByGroup().subscribe((result) => {
       // todos los datos
       this.arrayColeccionFaps = [];
@@ -137,6 +137,47 @@ export class EditGroupPage implements OnInit {
       this.mediaSolitario = this.arraySolitario.length / totalUsers;
       this.mediaCompania = this.arrayCompania.length / totalUsers;
       
+    });
+  } */
+
+  getFapFriends() {
+    this.friendService.getNumeroFapByGroup().subscribe((result) => {
+      // Transformamos la respuesta en un arreglo de objetos
+      this.arrayColeccionFaps = result.map(datosFap => ({
+        id: datosFap.payload.doc.id,
+        data: datosFap.payload.doc.data()
+      }));
+  
+      // Filtrar y mapear los elementos solitarios y de compañía
+      this.arraySolitario = this.arrayColeccionFaps
+        .filter(element => element.data.solitario === true)
+        .map(element => ({ user: element.data.uid, fap: element }));
+  
+      this.arrayCompania = this.arrayColeccionFaps
+        .filter(element => element.data.solitario === false)
+        .map(element => ({ user: element.data.uid, faps: element }));
+  
+      // Procesamos los datos de cada usuario
+      this.users = this.users.map(user => {
+        const reducedS = this.arrayColeccionFaps
+          .filter(element => element.data.uid === user.data.uid && element.data.solitario === true)
+          .map(element => ({ fap: element.data, uid: element.data.uid }));
+  
+        const reducedC = this.arrayColeccionFaps
+          .filter(element => element.data.uid === user.data.uid && element.data.solitario === false)
+          .map(element => ({ fap: element.data, uid: element.data.uid }));
+  
+        return { ...user, solitario: reducedS, compania: reducedC };
+      });
+  
+      // Ordenamos los usuarios según el número total de faps
+      this.users.sort((a, b) => (a.solitario.length + a.compania.length) < (b.solitario.length + b.compania.length) ? 1 : -1);
+  
+      // Calculamos las medias
+      const totalUsers = this.users.length;
+      this.mediaGrupo = this.arrayColeccionFaps.length / totalUsers;
+      this.mediaSolitario = this.arraySolitario.length / totalUsers;
+      this.mediaCompania = this.arrayCompania.length / totalUsers;
     });
   }
 

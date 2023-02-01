@@ -21,7 +21,8 @@
   <div class="ion-padding-horizontal">
     <ion-chip *ngFor="let user of selectedUsers">
       <ion-avatar>
-        <img [src]=user.photoURL>
+        <img *ngIf="user.photoURL !== null" [src]="user.photoURL" />
+        <img *ngIf="user.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-label class="avatar-group">{{ user.displayName }}</ion-label>
     </ion-chip>
@@ -35,8 +36,8 @@
   
     <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" (click)="addAList(user.data)">
       <ion-avatar slot="start">
-        <img [src]=user.data.photoURL>
-          <!-- <ion-icon  name="checkmark-circle" id="notifications-badge" color="primary"></ion-icon> -->
+        <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
+        <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-label>
         <h2>{{ user.data.displayName }}</h2>

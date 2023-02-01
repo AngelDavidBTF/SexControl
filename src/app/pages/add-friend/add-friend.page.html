@@ -10,7 +10,8 @@
   <ng-container *ngIf="textoBuscar != ''; else elseTemplate">
     <ion-item *ngFor="let user of users | filtro:textoBuscar:'data.email'" button (click)="enviarPeticon(user.data.uid)">
       <ion-avatar slot="start">
-        <img [src]=user.data.photoURL>
+        <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
+        <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-label>
         <h2>{{ user.data.displayName }}</h2>
@@ -20,7 +21,8 @@
     </ion-item>
   </ng-container>
   <ng-template #elseTemplate>
-    <h5 class="textSearch">Introduce un nombre de usuario o un email, para poder enviar una solicitud de amistad.</h5>
+    <h5 class="textSearch">Introduce un nombre de usuario o un email, para poder enviar una solicitud de amistad. <br>
+      (Por motivos de privacidad no se muestran resultados hasta introducir texto).</h5>
   </ng-template>
   
   

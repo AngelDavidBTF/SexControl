@@ -52,7 +52,7 @@ export class Tab1Page {
     });
   }
 
-  obtenerFap() {
+  /* obtenerFap() {
     this.numeroFapSubscription = this.fapService
       .getNumeroFap(this.user.uid)
       .subscribe((result) => {
@@ -107,6 +107,49 @@ export class Tab1Page {
       .id;
     this.fapService.borrarFap(lastId).then(() => {
       // Actualizar la lista completa
+      this.obtenerFap();
+    });
+  } */
+
+  obtenerFap() {
+    this.numeroFapSubscription = this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
+      this.arrayColeccionFaps = result.map(datosFap => ({
+        id: datosFap.payload.doc.id,
+        data: datosFap.payload.doc.data()
+      }));
+      this.countFaps();
+    });
+  }
+  
+  countFaps() {
+    this.numberC = this.arrayColeccionFaps.filter(fap => !fap.data.solitario).length;
+    this.numberS = this.arrayColeccionFaps.filter(fap => fap.data.solitario).length;
+    this.numberTotal = this.arrayColeccionFaps.length;
+  }
+  
+  sumar(tipo: boolean) {
+    this.fap = {
+      uid: this.user.uid,
+      numero: 1,
+      fecha: moment().format("DD/MM/YYYY HH:mm:ss"),
+      solitario: tipo
+    };
+  
+    this.fapService.insertarFap(this.fap).then(() => {
+      this.fap = {} as Fap;
+    }, error => {
+      console.error(error);
+    });
+  }
+  
+  borrar() {
+    this.arrayColeccionFaps.sort((a, b) => {
+      const date1 = moment(a.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
+      const date2 = moment(b.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
+      return moment(date1).diff(date2);
+    });
+    const lastId = this.arrayColeccionFaps[this.arrayColeccionFaps.length - 1].id;
+    this.fapService.borrarFap(lastId).then(() => {
       this.obtenerFap();
     });
   }

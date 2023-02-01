@@ -13,3 +13,17 @@ ion-img {
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
+//-- Validation failed
+ion-item.ion-invalid.ion-touched{
+    border-bottom: 2px solid var(--ion-color-danger) !important;
+}
+
+//-- Validation passed
+ion-item.ion-valid.ion-touched{
+ border-bottom: 2px solid var(--ion-color-success) !important;
+}
+
+.validator-error {
+    color: red;
+}

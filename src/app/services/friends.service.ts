@@ -19,12 +19,19 @@ export class FriendsService {
 
   actualGroup: any;
   actualUidUser: any;
+  uidFriends: any;
 
   private filePath: any;
   private downloadUrl: Observable<string>;
 
   public getUsers(uid: any) {
+    
     return this.angularFirestore.collection('users', ref =>  ref.where('uid', '!=', uid)).snapshotChanges();
+    
+    /*uidFriends = uidFriends && uidFriends.length !== 0 ? uidFriends : [''];
+    uidFriends.push(uid);
+    return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'not-in', uidFriends))
+    .snapshotChanges(); */
   }
 
   public sendRequestFriend(requestFriend: RequestFriend) {
@@ -38,20 +45,45 @@ export class FriendsService {
       email: requestFriend.email,
       aceptado: false
     });
+    
+    this.angularFirestore.collection('users').doc(requestFriend.uidRemitente).update({
+      sendRequestUsers: firebase.firestore.FieldValue.arrayUnion(requestFriend.uidDestinatario)
+    });
+
+    /* this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).update({
+      requestFriend: firebase.firestore.FieldValue.arrayUnion(requestFriend.uidRemitente)
+    }); */
+
   }
 
   public getRequestFriends(uid: any) {
-    return this.angularFirestore.collection('users').doc(uid).collection('requestFriend', ref =>  ref.where('aceptado', '==', false)).snapshotChanges();
+    /*uidRequests = uidRequests && uidRequests.length !== 0 ? uidRequests : [''];
+    uidRequests = [''];
+      return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'in', uidRequests))
+      .snapshotChanges(); */
+    return this.angularFirestore.doc(`users/${uid}`).collection('requestFriend', ref =>  ref.where('aceptado', '==', false)).snapshotChanges();
   }
 
   public getFriends(uid: any) {
     this.actualUidUser = uid;
-    return this.angularFirestore.collection('users').doc(uid).collection('friends', ref =>  ref.where('aceptado', '==', true)).snapshotChanges();
+    return this.angularFirestore.doc(`users/${uid}`).collection('friends', ref =>  ref.where('aceptado', '==', true)).snapshotChanges();
   }
 
   public proccessRequestFriend(requestFriend: RequestFriend, usuarioPeticion: RequestFriend) {
 
     if (requestFriend.aceptado === true) {
+      /* this.angularFirestore.collection('users').doc(requestFriend.uidRemitente).update({
+        friends: firebase.firestore.FieldValue.arrayUnion(requestFriend.uidDestinatario)
+      });
+
+      this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).update({
+        friends: firebase.firestore.FieldValue.arrayUnion(requestFriend.uidRemitente)
+      });
+
+      this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).update({
+        requestFriend: firebase.firestore.FieldValue.arrayRemove(requestFriend.uidRemitente)
+      }); */
+
       this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('requestFriend')
       .doc(requestFriend.uidRemitente).update({
         aceptado: requestFriend.aceptado
@@ -88,10 +120,10 @@ export class FriendsService {
   public createGroup(group: any) {
     const groupObj = {
       name: group.name,
-      groupImage: this.downloadUrl,
+      groupImage: this.downloadUrl ? this.downloadUrl : '',
       users: group.users,
       creationDate: group.creationDate,
-      fileRef: this.filePath
+      fileRef: this.filePath ? this.filePath : ''
     };
 
     return this.angularFirestore.collection('groups').add(groupObj);
@@ -111,6 +143,7 @@ export class FriendsService {
   }
 
   public getFriendsNotInGroup() {
+    // return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'not-in', this.actualGroup.data.users).where('uid', 'in', this.uidFriends)).snapshotChanges();
     return this.angularFirestore.collection('users').doc(this.actualUidUser).collection('friends', ref =>  ref.where('uidFriend', 'not-in', this.actualGroup.data.users)).snapshotChanges();
   }
 
@@ -147,19 +180,24 @@ export class FriendsService {
 
   private uploadImageGroup(image: any, group: any) {
 
-    var aleatorio = Math.random();
-    this.filePath = `images/${aleatorio + image.name}`;
-    const fileRef = this.storage.ref(this.filePath);
-    const task = this.storage.upload(this.filePath, image);
-    task.snapshotChanges()
-      .pipe(
-        finalize(() => {
-          fileRef.getDownloadURL().subscribe(urlImage => {
-            this.downloadUrl = urlImage;
-            this.createGroup(group);
-          });
-        })
-      ).subscribe();
+    if (image) {
+      var aleatorio = Math.random();
+      this.filePath = `images/${aleatorio + image.name}`;
+      const fileRef = this.storage.ref(this.filePath);
+      const task = this.storage.upload(this.filePath, image);
+      task.snapshotChanges()
+        .pipe(
+          finalize(() => {
+            fileRef.getDownloadURL().subscribe(urlImage => {
+              this.downloadUrl = urlImage;
+              this.createGroup(group);
+            });
+          })
+        ).subscribe();
+    } else {
+      this.createGroup(group);
+    }
+
   }
 
   public getNumeroFapByGroup() {

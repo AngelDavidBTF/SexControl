@@ -42,7 +42,8 @@
   <ion-item-sliding *ngFor="let user of users | filtro:textoBuscar:'data.email'; let i = index" [attr.data-index]="i">
     <ion-item  button>
       <ion-avatar slot="start">
-        <img [src]="user.data.photoURL" />
+        <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
+        <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-img *ngIf="i === 0" class="podium" src="../../assets/groups/1.svg"></ion-img>
       <ion-img *ngIf="i === 1" class="podium" src="../../assets/groups/2.svg"></ion-img>

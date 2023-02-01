@@ -12,9 +12,11 @@ import { AppComponent } from './app.component';
 import { AngularFirestoreModule } from "@angular/fire/firestore"; //Modulo Firestore (BD)
 import { AngularFireAuthModule } from "@angular/fire/auth";  //Modulo de authenticacion
 import { AngularFireModule } from "@angular/fire";            //Modulo para inicializar y que todo funcione bien vergas
-import { firebaseConfig} from "../environments/environment";  // aqui se encuentra una variable de configuracion para inicializar firebase
+import { firebaseConfig, environment} from "../environments/environment";  // aqui se encuentra una variable de configuracion para inicializar firebase
 import { ImagePicker } from '@ionic-native/image-picker/ngx';
 import { FileTransfer } from '@ionic-native/file-transfer/ngx';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { FirebaseAnalytics } from '@ionic-native/firebase-analytics/ngx';
 
 @NgModule({
   declarations: [AppComponent],
@@ -22,7 +24,8 @@ import { FileTransfer } from '@ionic-native/file-transfer/ngx';
   imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule,
     AngularFireModule.initializeApp(firebaseConfig),
     AngularFirestoreModule,
-    AngularFireAuthModule
+    AngularFireAuthModule,
+    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
   providers: [
     StatusBar,

@@ -35,13 +35,17 @@ export class RequestFriendsPage {
 
   textoBuscar = "";
 
+  actualUser: any;
+
   constructor(
     private authService: AuthService,
     private friendService: FriendsService,
     public actionSheetController: ActionSheetController
   ) {
     this.currentUser = this.authService.actualUser;
-    this.friendService
+    this.authService.getActualUser().subscribe((result) => {
+      this.actualUser = result;
+      this.friendService
       .getRequestFriends(this.currentUser.uid)
       .subscribe((result) => {
         this.requestUsers = [];
@@ -52,6 +56,7 @@ export class RequestFriendsPage {
           });
         });
       });
+    });
   }
 
   onSearchChange(event: any) {
