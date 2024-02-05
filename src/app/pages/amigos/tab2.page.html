@@ -44,18 +44,19 @@
                    animated
                    ></ion-searchbar>
     <ng-container *ngIf="friends.length != 0">
-      <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button
-        >
-        <ion-avatar slot="start">
-          <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
-          <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
-        </ion-avatar>
-        <ion-label>
-          <h2>{{ user.data.displayName }}</h2>
-        </ion-label>
-        <ion-badge *ngIf="user.compania" color="secondary" class="ion-margin-horizontal">{{ user.compania.length }}</ion-badge>
-        <ion-badge *ngIf="user.solitario" color="primary">{{ user.solitario.length }}</ion-badge>
-      </ion-item>
+      <ion-list>
+          <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'">
+          <ion-avatar slot="start">
+            <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
+            <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ user.data.displayName }}</h2>
+          </ion-label>
+          <ion-badge *ngIf="user.compania" color="secondary" class="ion-margin-horizontal">{{ user.compania.length }}</ion-badge>
+          <ion-badge *ngIf="user.solitario" color="primary">{{ user.solitario.length }}</ion-badge>
+        </ion-item>
+      </ion-list>
     </ng-container>
   </ng-container>
 

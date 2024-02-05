@@ -8,6 +8,8 @@ import { map, switchMap } from 'rxjs/operators';
 import { User } from '../shared/user.interface';
 import firebase from 'firebase/app';
 import { UiServiceService } from './ui-service.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -18,8 +20,10 @@ export class AuthService {
   public actualUser: User;
   public user: any;
 
-  constructor(public afAuth: AngularFireAuth, private afs: AngularFirestore,
-    private uiServiceService: UiServiceService) {
+  constructor(public afAuth: AngularFireAuth, 
+    private afs: AngularFirestore,
+    private uiServiceService: UiServiceService,
+    private http: HttpClient) {
 
     this.user$ = this.afAuth.authState.pipe(
       switchMap((user) => {
@@ -124,7 +128,9 @@ export class AuthService {
       displayName: user.displayName,
     };
 
-    return userRef.set(data, { merge: true });
+    //return userRef.set(data, { merge: true });
+    const url = `${environment.apiURL}/users/${user.uid}`; 
+    return this.http.post(url, user);
   }
 
   public getUserAuth() {

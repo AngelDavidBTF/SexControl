@@ -58,7 +58,7 @@ export class EditGroupPage implements OnInit {
     this.textoBuscar = event.detail.value;
   }
 
-  getFriends() {
+  getFriends(startAfterDoc?: any) {
     this.friendService.getFriendsByGroup().subscribe((result) => {
       this.users = [];
       result.forEach((datosUser: any) => {
@@ -69,6 +69,22 @@ export class EditGroupPage implements OnInit {
       });
     });
   }
+/*
+  // Función para obtener la siguiente página de amigos
+  obtenerSiguientePagina(event) {
+    this.getFriends().subscribe((nuevaPagina) => {
+      // Agrega los nuevos amigos a la lista existente
+      this.users = this.users.concat(nuevaPagina);
+
+      // Completa el evento de paginación
+      event.target.complete();
+
+      // Verifica si hay más resultados
+      if (nuevaPagina.length === 0) {
+        event.target.disabled = true;
+      }
+    });
+  } */
 
   /*getFapFriends() {
     this.friendService.getNumeroFapByGroup().subscribe((result) => {

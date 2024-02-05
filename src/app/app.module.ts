@@ -17,6 +17,7 @@ import { ImagePicker } from '@ionic-native/image-picker/ngx';
 import { FileTransfer } from '@ionic-native/file-transfer/ngx';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { FirebaseAnalytics } from '@ionic-native/firebase-analytics/ngx';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [AppComponent],
@@ -25,6 +26,7 @@ import { FirebaseAnalytics } from '@ionic-native/firebase-analytics/ngx';
     AngularFireModule.initializeApp(firebaseConfig),
     AngularFirestoreModule,
     AngularFireAuthModule,
+    HttpClientModule,
     ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
   providers: [
