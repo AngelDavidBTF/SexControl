@@ -27,6 +27,8 @@ export class RequestFriendsPage {
 
   requestUserFiltrados: any = [];
 
+  requestFriends:any = [];
+
   currentUser: User;
 
   peticion: RequestFriend;
@@ -43,20 +45,7 @@ export class RequestFriendsPage {
     public actionSheetController: ActionSheetController
   ) {
     this.currentUser = this.authService.actualUser;
-    this.authService.getActualUser().subscribe((result) => {
-      this.actualUser = result;
-      this.friendService
-      .getRequestFriends(this.currentUser.uid)
-      .subscribe((result) => {
-        this.requestUsers = [];
-        result.forEach((datosUser: any) => {
-          this.requestUsers.push({
-            id: datosUser.payload.doc.id,
-            data: datosUser.payload.doc.data(),
-          });
-        });
-      });
-    });
+    this.requestFriends = this.friendService.requestFriend;
   }
 
   onSearchChange(event: any) {
@@ -67,54 +56,12 @@ export class RequestFriendsPage {
     this.presentActionSheet(user);
   }
 
-  aceptarPeticon(user: any) {
-    this.peticion = {
-      uidRemitente: user.id,
-      uidDestinatario: this.currentUser.uid,
-      email: user.data.email,
-      displayName: user.data.displayName,
-      photoURL: user.data.photoURL,
-      aceptado: true,
-    };
-
-    this.usuarioPeticion = {
-      uidRemitente: this.currentUser.uid,
-      uidDestinatario: user.id,
-      email: this.currentUser.email,
-      displayName: this.currentUser.displayName,
-      photoURL: this.currentUser.photoURL,
-      aceptado: true,
-    };
-
-    this.friendService.proccessRequestFriend(
-      this.peticion,
-      this.usuarioPeticion
-    );
+  aceptarPeticon(user: any, aceptado: boolean) {
+    this.friendService.proccessRequestFriend(user, aceptado);
   }
 
   denegarPeticon(user: any) {
-    this.peticion = {
-      uidRemitente: user.id,
-      uidDestinatario: this.currentUser.uid,
-      email: user.data.email,
-      displayName: user.data.displayName,
-      photoURL: user.data.photoURL,
-      aceptado: false,
-    };
-
-    this.usuarioPeticion = {
-      uidRemitente: this.currentUser.uid,
-      uidDestinatario: user.id,
-      email: this.currentUser.email,
-      displayName: this.currentUser.displayName,
-      photoURL: this.currentUser.photoURL,
-      aceptado: false,
-    };
-
-    this.friendService.proccessRequestFriend(
-      this.peticion,
-      this.usuarioPeticion
-    );
+    this.friendService.proccessRequestFriend(user, false);
   }
 
   async presentActionSheet(user: any) {
@@ -125,7 +72,7 @@ export class RequestFriendsPage {
           text: "Aceptar",
           icon: "checkmark-outline",
           handler: () => {
-            this.aceptarPeticon(user);
+            this.aceptarPeticon(user, true);
           },
         },
         {

@@ -25,23 +25,15 @@ export class AuthService {
     private uiServiceService: UiServiceService,
     private http: HttpClient) {
 
-    this.user$ = this.afAuth.authState.pipe(
-      switchMap((user) => {
-        if (user) {
-          this.actualUser = user;
-          this.user = this.afs.collection("users", (ref) => ref.where("uid", "==", this.actualUser.uid)).snapshotChanges().pipe(
-            map(actions => actions.map(a => {
-              const data = a.payload.doc.data();
-              const id = a.payload.doc.id;
-              return { id, data };
-            }))
-          );
-          
-          return this.afs.doc<User>(`users/${user.uid}`).valueChanges();
-        }
-        return of(null);
-      })
-    );
+      this.user$ = this.afAuth.authState.pipe(
+        switchMap((user) => {
+          if (user) {
+            this.actualUser = user;
+            return of(user);
+          }
+          return of(null);
+        })
+      );
   }
 
   public getActualUser() {
@@ -68,16 +60,31 @@ export class AuthService {
 
   async register(email: string, password: string, userF: any): Promise<User> {
     try {
-      const { user } = await this.afAuth.createUserWithEmailAndPassword(email, password).then(function(user) {
-        user.user.updateProfile({
-            displayName: userF
-        });
-        return user;       
-    });
+      const { user } = await this.afAuth.createUserWithEmailAndPassword(email, password);
+      await user.updateProfile({
+        displayName: userF
+      });
       await this.sendVerifcationEmail();
+      await this.sendUserData(user);
       return user;
     } catch (error) {
       console.log('Error->', error);
+    }
+  }
+
+  private async sendUserData(user: firebase.User): Promise<void> {
+    const url = `${environment.apiURL}/users`; // Endpoint en Laravel para guardar usuario
+    const userData: User = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      emailVerified: user.emailVerified
+    };
+    try {
+      await this.http.post(url, userData).toPromise();
+    } catch (error) {
+      console.log('Error sending user data to Laravel:', error);
     }
   }
 
@@ -117,7 +124,7 @@ export class AuthService {
     }
   }
 
-  private updateUserData(user: User) {
+  /*private updateUserData(user: User) {
     const userRef: AngularFirestoreDocument<User> = this.afs.doc(`users/${user.uid}`);
 
     const data: User = {
@@ -131,6 +138,15 @@ export class AuthService {
     //return userRef.set(data, { merge: true });
     const url = `${environment.apiURL}/users/${user.uid}`; 
     return this.http.post(url, user);
+  }*/
+
+  async updateUserData(user: User): Promise<void> {
+    const url = `${environment.apiURL}/users/${user.uid}`; 
+    try {
+      await this.http.put(url, user).toPromise();
+    } catch (error) {
+      console.log('Error updating user data:', error);
+    }
   }
 
   public getUserAuth() {

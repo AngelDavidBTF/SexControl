@@ -8,14 +8,14 @@
                  ></ion-searchbar>
   
   <ng-container *ngIf="textoBuscar != ''; else elseTemplate">
-    <ion-item *ngFor="let user of users | filtro:textoBuscar:'data.email'" button (click)="enviarPeticon(user.data.uid)">
+    <ion-item *ngFor="let user of users.data | filtro:textoBuscar:'email'" button (click)="enviarPeticon(user.id)">
       <ion-avatar slot="start">
-        <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
-        <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
+        <img *ngIf="user.photoURL !== null" [src]="user.photoURL" />
+        <img *ngIf="user.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-label>
-        <h2>{{ user.data.displayName }}</h2>
-        <p text-wrap>{{ user.data.email }}</p>
+        <h2>{{ user.displayName }}</h2>
+        <p text-wrap>{{ user.email }}</p>
       </ion-label>
       <ion-icon name="person-add" slot="end"></ion-icon>
     </ion-item>

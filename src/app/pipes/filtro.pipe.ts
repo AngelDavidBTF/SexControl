@@ -18,12 +18,12 @@ export class FiltroPipe implements PipeTransform {
 
       return array.filter(
         item => {
-          if ( item.data && item.data.email && item.data.email.toLowerCase().startsWith( texto ) ) {
-            return item.data.email.toLowerCase().startsWith( texto )           
-          } else if (item.data && item.data.displayName && item.data.displayName.toLowerCase().startsWith( texto )) {
-            return item.data.displayName.toLowerCase().startsWith( texto )
-          } else if ( item.data && item.data.name && item.data.name.toLowerCase().startsWith( texto ) ) {
-            return item.data.name.toLowerCase().startsWith( texto )
+          if ( item && item.email && item.email.toLowerCase().startsWith( texto ) ) {
+            return item.email.toLowerCase().startsWith( texto )           
+          } else if (item && item.displayName && item.displayName.toLowerCase().startsWith( texto )) {
+            return item.displayName.toLowerCase().startsWith( texto )
+          } else if ( item && item.name && item.name.toLowerCase().startsWith( texto ) ) {
+            return item.name.toLowerCase().startsWith( texto )
           }
         }
       );

@@ -60,7 +60,8 @@ export class Tab2Page {
     private friendService: FriendsService
   ) {
     this.currentUser = this.authService.actualUser;
-    this.chargeActualUser();
+    this.getFriends();
+    this.getNumeroSolicitudes();
   }
 
   /* chargeActualUser() {
@@ -106,100 +107,94 @@ export class Tab2Page {
         this.getFapFriends();
       });
   } */
-    /* getFapFriends() {
-    this.friendService.getNumeroFapByFriends(this.friendsUid).subscribe((result) => {
-      // todos los datos
-      this.arrayColeccionFaps = [];
-      result.forEach((datosFap: any) => {
-        this.arrayColeccionFaps.push({
-          id: datosFap.payload.doc.id,
-          data: datosFap.payload.doc.data(),
-        });
+  /* getFapFriends() {
+  this.friendService.getNumeroFapByFriends(this.friendsUid).subscribe((result) => {
+    // todos los datos
+    this.arrayColeccionFaps = [];
+    result.forEach((datosFap: any) => {
+      this.arrayColeccionFaps.push({
+        id: datosFap.payload.doc.id,
+        data: datosFap.payload.doc.data(),
       });
+    });
 
-      this.arraySolitario = [];
-      this.arrayCompania = [];
-      this.arrayColeccionFaps.forEach((element: any ) => {
-          if (element.data.solitario === true) {
-            this.arraySolitario.push({
-              user: element.data.uid,
-              fap: element
-            }); 
-          } else {
-            this.arrayCompania.push({
-              user: element.data.uid,
-              faps: element
-            });
+    this.arraySolitario = [];
+    this.arrayCompania = [];
+    this.arrayColeccionFaps.forEach((element: any ) => {
+        if (element.data.solitario === true) {
+          this.arraySolitario.push({
+            user: element.data.uid,
+            fap: element
+          }); 
+        } else {
+          this.arrayCompania.push({
+            user: element.data.uid,
+            faps: element
+          });
+        }
+    });
+
+      this.friends.forEach((element: any, i: number ) => {
+        var reducedS = this.arrayColeccionFaps.reduce(function(filtered, option) {
+          if (option.data.uid === element.data.uidFriend) {
+            if(option.data.solitario === true) {
+              var someNewValue = { fap: option.data, uid: option.data.uid }
+              filtered.push(someNewValue);
+            }
           }
+          return filtered;
+        }, []);
+        var reducedC = this.arrayColeccionFaps.reduce(function(filtered, option) {
+          if (option.data.uid === element.data.uidFriend) {
+            if(option.data.solitario === false) {
+              var someNewValue = { fap: option.data, uid: option.data.uid }
+              filtered.push(someNewValue);
+            }
+          }
+          return filtered;
+        }, []);
+        this.friends[i].solitario =  reducedS;
+        this.friends[i].compania =  reducedC;
       });
 
-        this.friends.forEach((element: any, i: number ) => {
-          var reducedS = this.arrayColeccionFaps.reduce(function(filtered, option) {
-            if (option.data.uid === element.data.uidFriend) {
-              if(option.data.solitario === true) {
-                var someNewValue = { fap: option.data, uid: option.data.uid }
-                filtered.push(someNewValue);
-              }
-            }
-            return filtered;
-          }, []);
-          var reducedC = this.arrayColeccionFaps.reduce(function(filtered, option) {
-            if (option.data.uid === element.data.uidFriend) {
-              if(option.data.solitario === false) {
-                var someNewValue = { fap: option.data, uid: option.data.uid }
-                filtered.push(someNewValue);
-              }
-            }
-            return filtered;
-          }, []);
-          this.friends[i].solitario =  reducedS;
-          this.friends[i].compania =  reducedC;
-        });
+      this.friends = this.friends.sort((a: any, b: any) => {
+        const totalS1 = a.solitario.length;
+        const totalS2 = b.solitario.length;
+        const totalC1 = a.compania.length;
+        const totalC2 = b.compania.length;
+        const total1 = totalS1 + totalC1;
+        const total2 = totalS2 + totalC2;
+        return total2 - total1;
+      });
+  });
+} */
 
-        this.friends = this.friends.sort((a: any, b: any) => {
-          const totalS1 = a.solitario.length;
-          const totalS2 = b.solitario.length;
-          const totalC1 = a.compania.length;
-          const totalC2 = b.compania.length;
-          const total1 = totalS1 + totalC1;
-          const total2 = totalS2 + totalC2;
-          return total2 - total1;
-        });
-    });
-  } */
-
-  chargeActualUser() {
-    this.authService.getActualUser().subscribe(result => {
-      this.actualUser = result;
-      this.getNumeroSolicitudes();
-      this.getFriends();
-      this.getGroups();
-    });
-  }
-  
   onSearchChange(event: any) {
     this.textoBuscar = event.detail.value;
   }
-  
+
   getNumeroSolicitudes() {
-    this.friendService.getRequestFriends(this.currentUser.uid).subscribe(result => {
-      this.requestUsers = result.map(datosUser => ({
-        id: datosUser.payload.doc.id,
-        data: datosUser.payload.doc.data(),
-      }));
+    this.friendService.getRequestFriends(this.currentUser.uid).subscribe((response) => {
+      this.requestUsers = response.requestFriends;
+      this.friendService.requestFriend = this.requestUsers;
       this.numberNotification = this.requestUsers.length;
-    });
+    },
+      (error) => {
+        console.error('Error al enviar la solicitud:', error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
   }
-  
+
   getFriends() {
-    this.friendsSubscription = this.friendService.getFriends(this.currentUser.uid).subscribe(result => {
-      this.friends = result.map(datosUser => ({
-        id: datosUser.payload.doc.id,
-        data: datosUser.payload.doc.data(),
-      }));
-      this.friendsUid = this.friends.map(friend => friend.id);
-      this.getFapFriends();
-    });
+    this.friendService.getFriends(this.currentUser.uid).subscribe((response) => {
+      this.friends = response.friends;
+    },
+      (error) => {
+        console.error('Error al enviar la solicitud:', error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
   }
 
   getFapFriends() {
@@ -279,7 +274,7 @@ export class Tab2Page {
       }));
     });
   }
-  
+
 
   editGroup(group: any) {
     this.friendService.chargeEditGroup(group);

@@ -9,20 +9,20 @@
   ></ion-searchbar>
 
   <ion-item
-    *ngFor="let user of requestUsers | filtro:textoBuscar:'data.email'"
+    *ngFor="let user of requestFriends | filtro:textoBuscar:'email'"
     button
     (click)="showAlert(user)"
   >
     <ion-avatar slot="start">
-      <img [src]="user.data.photoURL" />
+      <img [src]="user.photoURL" />
     </ion-avatar>
     <ion-label>
-      <h2>{{ user.data.displayName }}</h2>
-      <p text-wrap>{{ user.data.email }}</p>
+      <h2>{{ user.displayName }}</h2>
+      <p text-wrap>{{ user.email }}</p>
     </ion-label>
     <ion-icon name="person-add" slot="end"></ion-icon>
   </ion-item>
-  <div *ngIf="requestUsers.length === 0">
+  <div *ngIf="requestFriends.length === 0">
     <h5 class="ion-text-center">No hay ninguna solicitud de amistad</h5>
   </div>
 </ion-content>

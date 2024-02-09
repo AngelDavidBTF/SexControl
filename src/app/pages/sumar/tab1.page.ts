@@ -52,81 +52,25 @@ export class Tab1Page {
     });
   }
 
-  /* obtenerFap() {
-    this.numeroFapSubscription = this.fapService
-      .getNumeroFap(this.user.uid)
-      .subscribe((result) => {
-        // todos los datos
-        this.arrayColeccionFaps = [];
-        result.forEach((datosFap: any) => {
-          this.arrayColeccionFaps.push({
-            id: datosFap.payload.doc.id,
-            data: datosFap.payload.doc.data(),
-          });
-        });
-
+  obtenerFap() {
+    this.numeroFapSubscription = this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
+      this.arrayColeccionFaps = result.data;
+      if (this.arrayColeccionFaps.length !== 0) {
+        this.countFaps();
+      } else {
         this.numberC = 0;
         this.numberS = 0;
         this.numberTotal = 0;
-        for (const fap of this.arrayColeccionFaps) {
-          if (fap.data.solitario === true) {
-            this.numberS++;
-          } else {
-            this.numberC++;
-          }
-          this.numberTotal++;
-        }
-      });
-  }
-
-  sumar(tipo: boolean) {
-    this.fap = {
-      uid: this.user.uid,
-      numero: 1,
-      fecha: moment().format("DD/MM/YYYY HH:mm:ss"),
-      solitario: tipo,
-    };
-
-    this.fapService.insertarFap(this.fap).then(
-      () => {
-        this.fap = {} as Fap;
-      },
-      (error) => {
-        console.error(error);
       }
-    );
-  }
-
-  borrar() {
-    this.arrayColeccionFaps = this.arrayColeccionFaps.sort((a: any, b: any) => {
-      const date1 = moment(a.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
-      const date2 = moment(b.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
-      return moment(date1).diff(date2);
-    });
-    const lastId = this.arrayColeccionFaps[this.arrayColeccionFaps.length - 1]
-      .id;
-    this.fapService.borrarFap(lastId).then(() => {
-      // Actualizar la lista completa
-      this.obtenerFap();
-    });
-  } */
-
-  obtenerFap() {
-    this.numeroFapSubscription = this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
-      this.arrayColeccionFaps = result.map(datosFap => ({
-        id: datosFap.payload.doc.id,
-        data: datosFap.payload.doc.data()
-      }));
-      this.countFaps();
     });
   }
-  
+
   countFaps() {
-    this.numberC = this.arrayColeccionFaps.filter(fap => !fap.data.solitario).length;
-    this.numberS = this.arrayColeccionFaps.filter(fap => fap.data.solitario).length;
+    this.numberC = this.arrayColeccionFaps.filter(fap => !fap.solitario).length;
+    this.numberS = this.arrayColeccionFaps.filter(fap => fap.solitario).length;
     this.numberTotal = this.arrayColeccionFaps.length;
   }
-  
+
   sumar(tipo: boolean) {
     this.fap = {
       uid: this.user.uid,
@@ -134,23 +78,37 @@ export class Tab1Page {
       fecha: moment().format("DD/MM/YYYY HH:mm:ss"),
       solitario: tipo
     };
-  
-    this.fapService.insertarFap(this.fap).then(() => {
-      this.fap = {} as Fap;
-    }, error => {
-      console.error(error);
-    });
+
+    this.numberC = !tipo ? this.numberC + 1 : this.numberC;
+    this.numberS = tipo ? this.numberS + 1 : this.numberS;
+    this.numberTotal = this.numberTotal + 1;
+
+    this.fapService.insertarFap(this.fap).subscribe((response) => {
+      this.arrayColeccionFaps.push(response.fap);
+    },
+      (error) => {
+        console.error('Error al enviar la solicitud:', error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
   }
-  
+
   borrar() {
     this.arrayColeccionFaps.sort((a, b) => {
-      const date1 = moment(a.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
-      const date2 = moment(b.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
+      const date1 = moment(a.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
+      const date2 = moment(b.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
       return moment(date1).diff(date2);
     });
+
     const lastId = this.arrayColeccionFaps[this.arrayColeccionFaps.length - 1].id;
-    this.fapService.borrarFap(lastId).then(() => {
-      this.obtenerFap();
+
+    this.arrayColeccionFaps.pop();
+    this.countFaps();
+
+    this.fapService.borrarFap(lastId).subscribe(() => {
+
+    }, error => {
+      console.error(error);
     });
   }
 

@@ -11,16 +11,11 @@ import { ToastController } from "@ionic/angular";
   styleUrls: ["./add-friend.page.scss"],
 })
 export class AddFriendPage {
-  users: any = [
-    {
-      id: "",
-      data: {} as User,
-    },
-  ];
+  users: any = [];
 
   currentUser: User;
 
-  peticion: RequestFriend;
+  peticion: any;
 
   textoBuscar = "";
 
@@ -32,39 +27,36 @@ export class AddFriendPage {
     public toastController: ToastController
   ) {
     this.currentUser = this.authService.actualUser;
-    this.chargeActualUser();
-    }
+    this.loadAllUsers();
+  }
 
-    chargeActualUser() {
-      this.authService.getActualUser().subscribe((result) => {
-        this.actualUser = result;
-        this.friendService.getUsers(this.currentUser.uid).subscribe((result) => {
-          // todos los usuarios
-          this.users = [];
-          result.forEach((datosUser: any) => {
-            this.users.push({
-              id: datosUser.payload.doc.id,
-              data: datosUser.payload.doc.data(),
-            });
-          });
-        });
-      });
-    }
+  loadAllUsers() {
+    this.friendService.getAllUsers().subscribe((response) => {
+      this.users = response;
+    },
+      (error) => {
+        console.error('Error al enviar la solicitud:', error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
+  }
 
   onSearchChange(event: any) {
     this.textoBuscar = event.detail.value;
   }
 
-  enviarPeticon(uidDestinatario: any) {
+  enviarPeticon(idDestinatario: any) {
     this.peticion = {
-      uidRemitente: this.currentUser.uid,
-      uidDestinatario,
-      photoURL: this.currentUser.photoURL,
-      displayName: this.currentUser.displayName,
-      email: this.currentUser.email,
-      aceptado: false,
-    };
-    this.friendService.sendRequestFriend(this.peticion);
+      "usuario_receptor_id" : idDestinatario
+    }
+    this.friendService.sendRequestFriend(this.peticion).subscribe((response) => {
+      
+    },
+      (error) => {
+        console.error('Error al enviar la solicitud:', error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
     this.presentToast();
   }
 

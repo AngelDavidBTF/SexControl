@@ -6,6 +6,8 @@ import firebase from "firebase/app";
 import { Observable } from "rxjs";
 import { AngularFireStorage } from "@angular/fire/storage";
 import { finalize } from "rxjs/operators";
+import { environment } from "src/environments/environment";
+import { HttpClient } from "@angular/common/http";
 
 @Injectable({
   providedIn: "root",
@@ -14,178 +16,61 @@ export class FriendsService {
   constructor(
     private angularFirestore: AngularFirestore,
     private storage: AngularFireStorage,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   actualGroup: any;
   actualUidUser: any;
   uidFriends: any;
+  requestFriend: any;
 
   private filePath: any;
   private downloadUrl: Observable<string>;
-  private pageSize = 10; // Define el número de elementos por página
 
-  public getUsers(uid: any) {
-    return this.angularFirestore
-      .collection("users", (ref) => ref.where("uid", "!=", uid))
-      .snapshotChanges();
-
-    /*uidFriends = uidFriends && uidFriends.length !== 0 ? uidFriends : [''];
-    uidFriends.push(uid);
-    return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'not-in', uidFriends))
-    .snapshotChanges(); */
+  public getAllUsers() {
+    const url = `${environment.apiURL}/users`;
+    return this.http.get<any>(url);
   }
 
-  public sendRequestFriend(requestFriend: RequestFriend) {
-    this.angularFirestore
-      .collection("users")
-      .doc(requestFriend.uidDestinatario)
-      .collection("requestFriend")
-      .doc(requestFriend.uidRemitente)
-      .set({
-        uidDestinatario: requestFriend.uidDestinatario,
-        uidRemitente: requestFriend.uidRemitente,
-        photoURL: requestFriend.photoURL,
-        displayName: requestFriend.displayName,
-        email: requestFriend.email,
-        aceptado: false,
-      });
-
-    this.angularFirestore
-      .collection("users")
-      .doc(requestFriend.uidRemitente)
-      .update({
-        sendRequestUsers: firebase.firestore.FieldValue.arrayUnion(
-          requestFriend.uidDestinatario
-        ),
-      });
-
-    /* this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).update({
-      requestFriend: firebase.firestore.FieldValue.arrayUnion(requestFriend.uidRemitente)
-    }); */
+  public sendRequestFriend(peticion: any): Observable<any>{
+    const url = `${environment.apiURL}/friendRequest`;
+    return this.http.post<any>(url, peticion);
   }
 
-  public getRequestFriends(uid: any) {
-    /*uidRequests = uidRequests && uidRequests.length !== 0 ? uidRequests : [''];
-    uidRequests = [''];
-      return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'in', uidRequests))
-      .snapshotChanges(); */
-    return this.angularFirestore
-      .doc(`users/${uid}`)
-      .collection("requestFriend", (ref) => ref.where("aceptado", "==", false))
-      .snapshotChanges();
+  public getRequestFriends(uid: string) {
+    const url = `${environment.apiURL}/requestFriendsByUid`;
+    const user = {
+      "uid" : uid
+    }
+    return this.http.post<any>(url, user);
   }
 
-  public getFriends(uid: any) {
-    this.actualUidUser = uid;
-    return this.angularFirestore
-      .doc(`users/${uid}`)
-      .collection("friends", (ref) => ref.where("aceptado", "==", true))
-      .snapshotChanges();
+  public getFriends(uid: string) {
+    const url = `${environment.apiURL}/friendsByUid`;
+    const user = {
+      "uid" : uid
+    }
+    return this.http.post<any>(url, user);
   }
 
-  public async proccessRequestFriend(
-    requestFriend: RequestFriend,
-    usuarioPeticion: RequestFriend
-  ) {
-    /* if (requestFriend.aceptado === true) {
-
-     this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('requestFriend')
-      .doc(requestFriend.uidRemitente).update({
-        aceptado: requestFriend.aceptado
-      });
-  
-      this.angularFirestore.collection('users').doc(usuarioPeticion.uidDestinatario).collection('requestFriend')
-      .doc(usuarioPeticion.uidRemitente).update({
-        aceptado: requestFriend.aceptado
-      });
-      
-      this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('friends')
-      .doc(requestFriend.uidRemitente).set({
-        uidFriend: requestFriend.uidRemitente,
-        photoURL: requestFriend.photoURL,
-        displayName: requestFriend.displayName,
-        email: requestFriend.email,
-        aceptado: true
-      });
-
-      this.angularFirestore.collection('users').doc(usuarioPeticion.uidDestinatario).collection('friends')
-      .doc(usuarioPeticion.uidRemitente).set({
-        uidFriend: usuarioPeticion.uidRemitente,
-        photoURL: usuarioPeticion.photoURL,
-        displayName: usuarioPeticion.displayName,
-        email: usuarioPeticion.email,
-        aceptado: true
-      });
+  public async proccessRequestFriend(requestFriend: any, aceptado: boolean) {
+    
+    if (aceptado === true) {
+      requestFriend.accepted = true;
+      const url = `${environment.apiURL}/friendRequest/aceptar/${requestFriend.request_id}`; 
+      try {
+        await this.http.put(url, requestFriend).toPromise();
+      } catch (error) {
+        console.log('Error updating requestFriend data:', error);
+      }
     } else {
-      this.angularFirestore.collection('users').doc(requestFriend.uidDestinatario).collection('requestFriend')
-      .doc(requestFriend.uidRemitente).delete();
-    } */
-
-    // Referencia a la colección "users" en Firestore
-    let usersRef = this.angularFirestore.collection("users");
-
-    if (requestFriend.aceptado === true) {
-      // Referencia a la subcolección "requestFriend" del usuario destinatario de la petición
-      let requestFriendRef = usersRef
-        .doc(requestFriend.uidDestinatario)
-        .collection("requestFriend")
-        .doc(requestFriend.uidRemitente);
-
-      // Actualiza el estado de la petición a "aceptado"
-      await requestFriendRef.update({
-        aceptado: requestFriend.aceptado,
-      });
-
-      // Referencia a la subcolección "friends" del usuario destinatario de la petición
-      let friendsRef = usersRef
-        .doc(requestFriend.uidDestinatario)
-        .collection("friends")
-        .doc(requestFriend.uidRemitente);
-
-      // Agrega al usuario remitente como amigo del usuario destinatario
-      await friendsRef.set({
-        uidFriend: requestFriend.uidRemitente,
-        photoURL: requestFriend.photoURL,
-        displayName: requestFriend.displayName,
-        email: requestFriend.email,
-        aceptado: true,
-      });
-
-      // Referencia a la subcolección "requestFriend" del usuario remitente de la petición
-      requestFriendRef = usersRef
-        .doc(usuarioPeticion.uidDestinatario)
-        .collection("requestFriend")
-        .doc(usuarioPeticion.uidRemitente);
-
-      // Actualiza el estado de la petición a "aceptado"
-      await requestFriendRef.update({
-        aceptado: requestFriend.aceptado,
-      });
-
-      // Referencia a la subcolección "friends" del usuario remitente de la petición
-      friendsRef = usersRef
-        .doc(usuarioPeticion.uidDestinatario)
-        .collection("friends")
-        .doc(usuarioPeticion.uidRemitente);
-
-      // Agrega al usuario destinatario como amigo del usuario remitente
-      await friendsRef.set({
-        uidFriend: usuarioPeticion.uidRemitente,
-        photoURL: usuarioPeticion.photoURL,
-        displayName: usuarioPeticion.displayName,
-        email: usuarioPeticion.email,
-        aceptado: true,
-      });
-    } else {
-      // Referencia a la subcolección "requestFriend" del usuario destinatario de la petición
-      let requestFriendRef = usersRef
-        .doc(requestFriend.uidDestinatario)
-        .collection("requestFriend")
-        .doc(requestFriend.uidRemitente);
-
-      // Elimina la petición de amistad
-      await requestFriendRef.delete();
+      const url = `${environment.apiURL}/friendRequest/${requestFriend.request_id}`; 
+      try {
+        await this.http.delete(url).toPromise();
+      } catch (error) {
+        console.log('Error deleting requestFriend data:', error);
+      }
     }
   }
 
@@ -217,7 +102,7 @@ export class FriendsService {
     let query: AngularFirestoreCollection<any>;
     query = this.angularFirestore
       .collection("users", (ref) =>
-        ref.where("uid", "in", this.actualGroup.data.users).orderBy("uid").limit(this.pageSize)
+        ref.where("uid", "in", this.actualGroup.data.users).orderBy("uid")
       );
       
       /*if (startAfterDoc) {

@@ -45,13 +45,13 @@
                    ></ion-searchbar>
     <ng-container *ngIf="friends.length != 0">
       <ion-list>
-          <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'">
+          <ion-item *ngFor="let user of friends | filtro:textoBuscar:'email'">
           <ion-avatar slot="start">
-            <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
-            <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
+            <img *ngIf="user.photoURL !== null" [src]="user.photoURL" />
+            <img *ngIf="user.photoURL === null" src="../../assets/icon-user.svg" />
           </ion-avatar>
           <ion-label>
-            <h2>{{ user.data.displayName }}</h2>
+            <h2>{{ user.displayName }}</h2>
           </ion-label>
           <ion-badge *ngIf="user.compania" color="secondary" class="ion-margin-horizontal">{{ user.compania.length }}</ion-badge>
           <ion-badge *ngIf="user.solitario" color="primary">{{ user.solitario.length }}</ion-badge>
