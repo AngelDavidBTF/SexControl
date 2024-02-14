@@ -24,6 +24,8 @@ export class FriendsService {
   actualUidUser: any;
   uidFriends: any;
   requestFriend: any;
+  friends: any[];
+  friendsInGroup: any;
 
   private filePath: any;
   private downloadUrl: Observable<string>;
@@ -82,14 +84,14 @@ export class FriendsService {
       creationDate: group.creationDate,
       fileRef: this.filePath ? this.filePath : "",
     };
-
-    return this.angularFirestore.collection("groups").add(groupObj);
+    const url = `${environment.apiURL}/groups/createGroup`;
+    return this.http.post<any>(url, groupObj);
+    
   }
 
-  public getGroups(user: any) {
-    return this.angularFirestore
-      .collection("groups", (ref) => ref.where("users", "array-contains", user))
-      .snapshotChanges();
+  public getGroups(group: any) {
+    const url = `${environment.apiURL}/groups/groupsByUser`;
+    return this.http.post<any>(url, group);
   }
 
   public chargeEditGroup(group: any) {
@@ -98,63 +100,35 @@ export class FriendsService {
   }
 
   
-  public getFriendsByGroup(startAfterDoc?: any) {
-    let query: AngularFirestoreCollection<any>;
-    query = this.angularFirestore
-      .collection("users", (ref) =>
-        ref.where("uid", "in", this.actualGroup.data.users).orderBy("uid")
-      );
-      
-      /*if (startAfterDoc) {
-        query = query.ref.startAfter(startAfterDoc);
-      } */
-  
-      return query.snapshotChanges();
+  public getFriendsByGroup(group?: any) {
+    const url = `${environment.apiURL}/groups/users`;
+    const group_id = {
+      "group_id" : group.id
+    }
+    return this.http.post<any>(url, group_id);
   }
 
-  public getFriendsNotInGroup() {
-    // return this.angularFirestore.collection('users', ref =>  ref.where('uid', 'not-in', this.actualGroup.data.users).where('uid', 'in', this.uidFriends)).snapshotChanges();
-    return this.angularFirestore
-      .collection("users")
-      .doc(this.actualUidUser)
-      .collection("friends", (ref) =>
-        ref.where("uidFriend", "not-in", this.actualGroup.data.users).limit(10)
-      )
-      .snapshotChanges();
+  public addFriendToGroup(listIds: any) {
+    const groupObj = {
+      users: listIds,
+      group: this.actualGroup.id
+    };
+    const url = `${environment.apiURL}/groups/addUserGroup`;
+    return this.http.post<any>(url, groupObj);
   }
 
-  public addFriendToGroup(listUid: any) {
-    let that = this;
-    listUid.map(function (uid: any) {
-      that.angularFirestore
-        .collection("groups")
-        .doc(that.actualGroup.id)
-        .update({
-          users: firebase.firestore.FieldValue.arrayUnion(uid),
-        });
-    });
-    this.router.navigate(["/tabs/amigos"]);
-  }
-
-  public deleteFriendInGroup(uid: any) {
-    return this.angularFirestore
-      .collection("groups")
-      .doc(this.actualGroup.id)
-      .update({
-        users: firebase.firestore.FieldValue.arrayRemove(uid),
-      })
-      .then(() => {
-        for (let i = 0; i < this.actualGroup.data.users.length; i++) {
-          if (this.actualGroup.data.users[i] === uid) {
-            this.actualGroup.data.users.splice(i, 1);
-          }
-        }
-      });
+  public deleteFriendInGroup(id: any) {
+    const groupObj = {
+      user_id: id,
+      group_id: this.actualGroup.id
+    };
+    const url = `${environment.apiURL}/users/group/detach`;
+    return this.http.post<any>(url, groupObj);
   }
 
   public deleteGroup(id: any) {
-    this.angularFirestore.collection("groups").doc(id).delete();
-    this.router.navigate(["/tabs/amigos"]);
+    const url = `${environment.apiURL}/groups/${id}`;
+    return this.http.delete<any>(url);
   }
 
   public preSaveGroup(image: any, group: any) {
@@ -184,18 +158,12 @@ export class FriendsService {
   }
 
   public getNumeroFapByGroup() {
-    return this.angularFirestore
-      .collection("fap", (ref) =>
-        ref.where("uid", "in", this.actualGroup.data.users)
-      )
-      .snapshotChanges();
+    const url = `${environment.apiURL}/groups/${this.actualGroup.id}/faps`;
+    return this.http.get<any>(url);
   }
 
-  public getNumeroFapByFriends(friends: any) {
-    return this.angularFirestore
-      .collection("fap", (ref) => ref.where("uid", "in", friends))
-      .snapshotChanges();
-      // Para obtener la siguiente página
-      //const nextQuery = query.startAfter(lastVisibleDocument);
+  public getFapByFriends() {
+    const url = `${environment.apiURL}/faps/friends`;
+    return this.http.get<any>(url);
   }
 }

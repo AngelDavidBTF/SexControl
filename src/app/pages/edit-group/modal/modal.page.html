@@ -10,7 +10,6 @@
   <div class="ion-padding-horizontal">
     <ion-chip *ngFor="let user of selectedUsers">
       <ion-avatar>
-        <img [src]=user.photoURL>
         <img *ngIf="user.photoURL !== null" [src]="user.photoURL" />
         <img *ngIf="user.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
@@ -24,13 +23,13 @@
                    animated
                    ></ion-searchbar>
 
-    <ion-item *ngFor="let user of friends | filtro:textoBuscar:'data.email'" button (click)="addFriendToList(user.data)">
+    <ion-item *ngFor="let user of usersNotInGroup | filtro:textoBuscar:'email'" button (click)="addFriendToList(user)">
       <ion-avatar slot="start">
-        <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
-        <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
+        <img *ngIf="user.photoURL !== null" [src]="user.photoURL" />
+        <img *ngIf="user.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-label>
-        <h2>{{ user.data.displayName }}</h2>
+        <h2>{{ user.displayName }}</h2>
       </ion-label>
     </ion-item>
 
@@ -40,7 +39,7 @@
       </ion-fab-button>
     </ion-fab>
 
-    <div class="ion-padding textFriend" *ngIf="friends && friends.length == 0">
+    <div class="ion-padding textFriend" *ngIf="usersNotInGroup && usersNotInGroup.length == 0">
       No hay amigos/as para añadir al grupo, comprueba que el usuario/a no está en el grupo, de lo contrario, es posible que no seáis amigos/as mutuamente.
       ¿A qué esperas? ¡Mandale una petición!
     </div>

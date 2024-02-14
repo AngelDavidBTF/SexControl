@@ -1,5 +1,5 @@
 import { Component, OnInit } from "@angular/core";
-import { ActivatedRoute } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { ActionSheetController, AlertController, ModalController } from "@ionic/angular";
 import { FriendsService } from "src/app/services/friends.service";
 import { Fap } from "src/app/shared/fap.interface";
@@ -44,157 +44,83 @@ export class EditGroupPage implements OnInit {
     private friendService: FriendsService,
     private actionSheetController: ActionSheetController,
     private modalController: ModalController,
-    public alertController: AlertController
+    public alertController: AlertController,
+    private router: Router
   ) {}
 
   ngOnInit() {
     this.group = this.friendService.actualGroup;
     this.currentUser = this.friendService.actualUidUser;
     this.getFriends();
-    this.getFapFriends();
   }
 
   onSearchChange(event: any) {
     this.textoBuscar = event.detail.value;
   }
 
-  getFriends(startAfterDoc?: any) {
-    this.friendService.getFriendsByGroup().subscribe((result) => {
-      this.users = [];
-      result.forEach((datosUser: any) => {
-        this.users.push({
-          id: datosUser.payload.doc.id,
-          data: datosUser.payload.doc.data(),
-        });
-      });
-    });
-  }
-/*
-  // Función para obtener la siguiente página de amigos
-  obtenerSiguientePagina(event) {
-    this.getFriends().subscribe((nuevaPagina) => {
-      // Agrega los nuevos amigos a la lista existente
-      this.users = this.users.concat(nuevaPagina);
-
-      // Completa el evento de paginación
-      event.target.complete();
-
-      // Verifica si hay más resultados
-      if (nuevaPagina.length === 0) {
-        event.target.disabled = true;
+  getFriends() {
+    this.friendService.getFriendsByGroup(this.group).subscribe(
+      (response) => {
+        this.users = response.data;
+        this.friendService.friendsInGroup = this.users;
+        this.getFapFriends();
+      },
+      (error) => {
+        console.error("Error al enviar la solicitud:", error);
       }
-    });
-  } */
-
-  /*getFapFriends() {
-    this.friendService.getNumeroFapByGroup().subscribe((result) => {
-      // todos los datos
-      this.arrayColeccionFaps = [];
-      result.forEach((datosFap: any) => {
-        this.arrayColeccionFaps.push({
-          id: datosFap.payload.doc.id,
-          data: datosFap.payload.doc.data(),
-        });
-      });
-
-      this.arraySolitario = [];
-      this.arrayCompania = [];
-      this.arrayColeccionFaps.forEach((element: any ) => {
-          if (element.data.solitario === true) {
-            this.arraySolitario.push({
-              user: element.data.uid,
-              fap: element
-            }); 
-          } else {
-            this.arrayCompania.push({
-              user: element.data.uid,
-              faps: element
-            });
-          }
-      });
-
-      
-      this.users.forEach((element: any, i: number ) => {
-        var reducedS = this.arrayColeccionFaps.reduce(function(filtered, option) {
-          if (option.data.uid === element.data.uid) {
-            if(option.data.solitario === true) {
-              var someNewValue = { fap: option.data, uid: option.data.uid }
-              filtered.push(someNewValue);
-            }
-          }
-          return filtered;
-        }, []);
-        var reducedC = this.arrayColeccionFaps.reduce(function(filtered, option) {
-          if (option.data.uid === element.data.uid) {
-            if(option.data.solitario === false) {
-              var someNewValue = { fap: option.data, uid: option.data.uid }
-              filtered.push(someNewValue);
-            }
-          }
-          return filtered;
-        }, []);
-        this.users[i].solitario =  reducedS;
-        this.users[i].compania =  reducedC;
-      });
-
-      this.users = this.users.sort((a: any, b: any) => {
-        const totalS1 = a.solitario.length;
-        const totalS2 = b.solitario.length;
-        const totalC1 = a.compania.length;
-        const totalC2 = b.compania.length;
-        const total1 = totalS1 + totalC1;
-        const total2 = totalS2 + totalC2;
-        return total2 - total1;
-      });
-      
-      let totalUsers = this.users.length;
-      this.mediaGrupo = this.arrayColeccionFaps.length / totalUsers;
-      
-      this.mediaSolitario = this.arraySolitario.length / totalUsers;
-      this.mediaCompania = this.arrayCompania.length / totalUsers;
-      
-    });
-  } */
+    );
+  }
 
   getFapFriends() {
-    this.friendService.getNumeroFapByGroup().subscribe((result) => {
-      // Transformamos la respuesta en un arreglo de objetos
-      this.arrayColeccionFaps = result.map(datosFap => ({
-        id: datosFap.payload.doc.id,
-        data: datosFap.payload.doc.data()
-      }));
-  
-      // Filtrar y mapear los elementos solitarios y de compañía
-      this.arraySolitario = this.arrayColeccionFaps
-        .filter(element => element.data.solitario === true)
-        .map(element => ({ user: element.data.uid, fap: element }));
-  
-      this.arrayCompania = this.arrayColeccionFaps
-        .filter(element => element.data.solitario === false)
-        .map(element => ({ user: element.data.uid, faps: element }));
-  
-      // Procesamos los datos de cada usuario
-      this.users = this.users.map(user => {
-        const reducedS = this.arrayColeccionFaps
-          .filter(element => element.data.uid === user.data.uid && element.data.solitario === true)
-          .map(element => ({ fap: element.data, uid: element.data.uid }));
-  
-        const reducedC = this.arrayColeccionFaps
-          .filter(element => element.data.uid === user.data.uid && element.data.solitario === false)
-          .map(element => ({ fap: element.data, uid: element.data.uid }));
-  
-        return { ...user, solitario: reducedS, compania: reducedC };
-      });
-  
-      // Ordenamos los usuarios según el número total de faps
-      this.users.sort((a, b) => (a.solitario.length + a.compania.length) < (b.solitario.length + b.compania.length) ? 1 : -1);
-  
-      // Calculamos las medias
-      const totalUsers = this.users.length;
-      this.mediaGrupo = this.arrayColeccionFaps.length / totalUsers;
-      this.mediaSolitario = this.arraySolitario.length / totalUsers;
-      this.mediaCompania = this.arrayCompania.length / totalUsers;
+    this.friendService.getNumeroFapByGroup().subscribe(
+      (response) => {
+        this.arrayColeccionFaps = response.data;
+        this.sortFriends();
+
+      },
+      (error) => {
+        console.error("Error al enviar la solicitud:", error);
+      }
+    );
+  }
+
+  sortFriends(){
+
+    this.users = this.users.map(user => {
+        const reducedS = [];
+        const reducedC = [];
+    
+        // Obtener un array de los valores del objeto this.arrayColeccionFaps
+        const fapsArray = Object.values(this.arrayColeccionFaps);
+    
+        // Iterar sobre los valores del objeto this.arrayColeccionFaps
+        fapsArray.forEach(array => {
+            // Filtrar y mapear los elementos solitarios y de compañía
+            const solitarios = (array as any[]).filter(elemento => elemento.solitario && elemento.user_id === user.id);
+            const compania = (array as any[]).filter(elemento => !elemento.solitario && elemento.user_id === user.id);
+    
+            reducedS.push(...solitarios.map(element => ({ fap: element, id: element.user_id })));
+            reducedC.push(...compania.map(element => ({ fap: element, id: element.user_id })));
+    
+            // Agregar las faps en solitario y en compañía a los arrays globales
+            this.arraySolitario.push(...solitarios);
+            this.arrayCompania.push(...compania);
+        });
+    
+        // Agregamos la información de cada usuario
+        user.solitario = reducedS;
+        user.compania = reducedC;
+    
+        return user;
     });
+          // Ordenamos los usuarios según el número total de faps
+          this.users.sort((a, b) => (a.solitario.length + a.compania.length) < (b.solitario.length + b.compania.length) ? 1 : -1);
+
+          // Calculamos las medias
+          const totalUsers = this.users.length;
+          this.mediaGrupo = (this.arraySolitario.length + this.arrayCompania.length) / totalUsers;
+          this.mediaSolitario = this.arraySolitario.length / totalUsers;
+          this.mediaCompania = this.arrayCompania.length / totalUsers;
   }
 
   async addFriendGroup() {
@@ -208,9 +134,19 @@ export class EditGroupPage implements OnInit {
   }
 
   deleteFriendGroup(user: any) {
-      this.friendService.deleteFriendInGroup(user).then(() => {
-        this.getFriends();
-      });
+      this.friendService.deleteFriendInGroup(user).subscribe(
+        (response) => {
+          this.friendService.friendsInGroup = this.friendService.friendsInGroup.filter(friend => friend.id !== user);
+          delete this.arrayColeccionFaps[user];
+          this.arraySolitario = [];
+          this.arrayCompania = [];
+          this.users = this.friendService.friendsInGroup;
+          this.sortFriends();
+        },
+        (error) => {
+          console.error("Error al enviar la solicitud:", error);
+        }
+      );
   }
 
   showAlert() {
@@ -239,7 +175,14 @@ export class EditGroupPage implements OnInit {
   }
 
   deleteGroup() {
-    this.friendService.deleteGroup(this.group.id);
+    this.friendService.deleteGroup(this.group.id).subscribe(
+      (response) => {
+        this.router.navigate(["/tabs/amigos"]);
+      },
+      (error) => {
+        console.error("Error al enviar la solicitud:", error);
+      }
+    );
   }
 
   async presentActionSheet() {

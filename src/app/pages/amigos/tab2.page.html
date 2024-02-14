@@ -77,15 +77,15 @@
                    inputmode="text"
                    animated
                    ></ion-searchbar>
-    <ng-container *ngIf="groups.length != 0">
+    <ng-container *ngIf="groups && groups.length != 0">
       <ion-item *ngFor="let group of groups | filtro:textoBuscar" button (click)="editGroup(group)"
         >
         <ion-avatar slot="start">
-          <img *ngIf="group.data.groupImage" [src]="group.data.groupImage" />
-          <img *ngIf="!group.data.groupImage" src="../../assets/groups/icon-group.svg" />
+          <img *ngIf="group.url_image" [src]="group.url_image" />
+          <img *ngIf="!group.url_image" src="../../assets/groups/icon-group.svg" />
         </ion-avatar>
         <ion-label>
-          <h2>{{ group.data.name }}</h2>
+          <h2>{{ group.nombre }}</h2>
         </ion-label>
       </ion-item>
     </ng-container>

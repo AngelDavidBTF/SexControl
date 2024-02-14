@@ -1,4 +1,4 @@
-<app-header titulo="{{group.data.name}}"></app-header>
+<app-header titulo="{{group.nombre}}"></app-header>
 
 <ion-content>
   <ion-button size="small" color="primary" (click)="showAlert()" class="ion-float-right ion-margin">Editar grupo</ion-button>
@@ -10,7 +10,7 @@
   </div>
   <div class="contenedorNumeros contenedorTotal">
     <ion-text color="warning">
-      <h1 class="numeroTotal">{{ arrayColeccionFaps.length }}</h1>
+      <h1 class="numeroTotal">{{ this.arraySolitario.length + this.arrayCompania.length }}</h1>
     </ion-text>
     <ion-text color="warning">
       <h1 class="numeroTotal">{{ mediaGrupo | number : '1.0-0' }}</h1>
@@ -39,17 +39,17 @@
                    inputmode="text"
                    animated
                    ></ion-searchbar>
-  <ion-item-sliding *ngFor="let user of users | filtro:textoBuscar:'data.email'; let i = index" [attr.data-index]="i">
+  <ion-item-sliding *ngFor="let user of users | filtro:textoBuscar:'email'; let i = index" [attr.data-index]="i">
     <ion-item  button>
       <ion-avatar slot="start">
-        <img *ngIf="user.data.photoURL !== null" [src]="user.data.photoURL" />
-        <img *ngIf="user.data.photoURL === null" src="../../assets/icon-user.svg" />
+        <img *ngIf="user.photoURL !== null" [src]="user.photoURL" />
+        <img *ngIf="user.photoURL === null" src="../../assets/icon-user.svg" />
       </ion-avatar>
       <ion-img *ngIf="i === 0" class="podium" src="../../assets/groups/1.svg"></ion-img>
       <ion-img *ngIf="i === 1" class="podium" src="../../assets/groups/2.svg"></ion-img>
       <ion-img *ngIf="i === 2" class="podium" src="../../assets/groups/3.svg"></ion-img>
       <ion-label>
-        <h2>{{ user.data.displayName }}</h2>
+        <h2>{{ user.displayName }}</h2>
       </ion-label>
       <ion-badge *ngIf="user.compania" color="secondary">{{ user.compania.length }}</ion-badge>
       <ion-badge *ngIf="user.solitario" color="primary" class="ion-margin-horizontal">{{ user.solitario.length }}</ion-badge>

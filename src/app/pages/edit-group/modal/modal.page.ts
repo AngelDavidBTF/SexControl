@@ -2,6 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { FriendsService } from '../../../services/friends.service';
 import { Subscription } from 'rxjs';
+import { AuthService } from 'src/app/services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-modal',
@@ -16,26 +18,33 @@ export class ModalPage implements OnInit {
 
   friends:  any;
 
+  friendsIngroup: any;
+
+  usersNotInGroup: any;
+
   textoBuscar = "";
 
   selectedUsers = [];
-  uidList = [];
+  idList = [];
 
   constructor(
     private modalCtrl: ModalController,
-    private friendService: FriendsService
+    private friendService: FriendsService,
+    private router: Router
   ) { }
 
   ngOnInit() {
-    this.friendsSubscription = this.friendService.getFriendsNotInGroup().subscribe((result) => {
-      this.friends = [];
-      result.forEach((datosUser: any) => {
-        this.friends.push({
-          id: datosUser.payload.doc.id,
-          data: datosUser.payload.doc.data()
-        });
-      });
-    });
+    this.friendsNotInGroup();
+  }
+
+  friendsNotInGroup(){
+    this.friends = this.friendService.friends;
+    this.friendsIngroup = this.friendService.friendsInGroup;
+    // Convertir el primer array en un conjunto de ids
+    const idsFriendsInGroup = new Set(this.friendsIngroup.map(objeto => objeto.id));
+
+    // Filtrar el segundo array para obtener los objetos que no están en el primer array
+     this.usersNotInGroup = this.friends.filter(objeto => !idsFriendsInGroup.has(objeto.id));
   }
 
   onSearchChange(event: any) {
@@ -48,18 +57,25 @@ export class ModalPage implements OnInit {
 
   addFriendToList(user: any) {
     for (let i = 0; i < this.selectedUsers.length; i++) {
-      if (this.selectedUsers[i].uidFriend === user.uidFriend) {
+      if (this.selectedUsers[i].id === user.id) {
         this.selectedUsers.splice(i, 1);
         return;
       }
     }
     this.selectedUsers.push(user);
-    this.uidList.push(user.uidFriend);
+    this.idList.push(user.id);
   }
 
   addFriendsToGroup() {
-    this.friendService.addFriendToGroup(this.uidList);
-    this.closeModal();
+    this.friendService.addFriendToGroup(this.idList).subscribe(
+      (response) => {
+        this.router.navigate(["/tabs/amigos"]);
+        this.closeModal();
+      },
+      (error) => {
+        console.error("Error al enviar la solicitud:", error);
+      }
+    );
   }
 
 }

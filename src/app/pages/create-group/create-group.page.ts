@@ -14,12 +14,7 @@ import * as moment from "moment";
 export class CreateGroupPage {
   currentUser: User;
 
-  friends: any = [
-    {
-      id: "",
-      data: {} as User,
-    },
-  ];
+  friends: any[];
 
   group: any;
 
@@ -44,42 +39,30 @@ export class CreateGroupPage {
     private imagePicker: ImagePicker
   ) {
     this.currentUser = this.authService.actualUser;
-    this.authService.getActualUser().subscribe((result) => {
-      this.actualUser = result;
-      this.getFriends(this.currentUser.uid);
-    });
+    this.getFriends();
   }
 
   onSearchChange(event: any) {
     this.textoBuscar = event.detail.value;
   }
 
-  getFriends(userUid: any) {
-    this.friendService.getFriends(userUid).subscribe((result) => {
-      this.friends = [];
-      result.forEach((datosUser: any) => {
-        this.friends.push({
-          id: datosUser.payload.doc.id,
-          data: datosUser.payload.doc.data(),
-        });
-      });
-    });
+  getFriends() {
+    this.friends = this.friendService.friends;
   }
 
   addAList(user: any){
     for (let i = 0; i < this.selectedUsers.length; i++) {
-      if (this.selectedUsers[i].uidFriend === user.uidFriend) {
+      if (this.selectedUsers[i].id === user.id) {
         this.selectedUsers.splice(i, 1);
         this.sendUsers.splice(i, 1);
         return;
       }
     }
     this.selectedUsers.push(user);
-    this.sendUsers.push(user.uidFriend)
+    this.sendUsers.push(user.id)
   }
 
   createGroup() {
-    this.sendUsers.push(this.currentUser.uid);
     this.group = {
       name: this.nameGroup,
       groupImage: this.image,
@@ -89,7 +72,14 @@ export class CreateGroupPage {
     if(this.imageResponse) {
       this.friendService.preSaveGroup(this.imageResponse[0], this.group);
     } else {
-      this.friendService.createGroup(this.group);
+      this.friendService.createGroup(this.group).subscribe(
+        (response) => {
+          
+        },
+        (error) => {
+          console.error("Error al enviar la solicitud:", error);
+        }
+      );;
     }
     this.router.navigate(["tabs/amigos"]);
   }

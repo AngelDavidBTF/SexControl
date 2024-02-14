@@ -64,177 +64,64 @@ export class Tab2Page {
     this.getNumeroSolicitudes();
   }
 
-  /* chargeActualUser() {
-    this.authService.getActualUser().subscribe((result) => {
-      this.actualUser = result;
-      this.getNumeroSolicitudes(this.currentUser.uid);
-      this.getFriends(this.currentUser.uid);
-      this.getGroups();
-    });
-  }
-
-  onSearchChange(event: any) {
-    this.textoBuscar = event.detail.value;
-  }
-
-  getNumeroSolicitudes(userUid: any) {
-    this.friendService.getRequestFriends(userUid).subscribe((result) => {
-      this.requestUsers = [];
-      result.forEach((datosUser: any) => {
-        this.requestUsers.push({
-          id: datosUser.payload.doc.id,
-          data: datosUser.payload.doc.data(),
-        });
-      });
-
-      this.numberNotification = this.requestUsers.length;
-    });
-  }
-
-  /*getFriends(userUid: any) {
-    this.friendsSubscription = this.friendService
-      .getFriends(userUid)
-      .subscribe((result) => {
-        this.friends = [];
-        this.friendsUid = [];
-        result.forEach((datosUser: any) => {
-          this.friends.push({
-            id: datosUser.payload.doc.id,
-            data: datosUser.payload.doc.data(),
-          });
-          this.friendsUid.push(datosUser.payload.doc.id);
-        });
-        this.getFapFriends();
-      });
-  } */
-  /* getFapFriends() {
-  this.friendService.getNumeroFapByFriends(this.friendsUid).subscribe((result) => {
-    // todos los datos
-    this.arrayColeccionFaps = [];
-    result.forEach((datosFap: any) => {
-      this.arrayColeccionFaps.push({
-        id: datosFap.payload.doc.id,
-        data: datosFap.payload.doc.data(),
-      });
-    });
-
-    this.arraySolitario = [];
-    this.arrayCompania = [];
-    this.arrayColeccionFaps.forEach((element: any ) => {
-        if (element.data.solitario === true) {
-          this.arraySolitario.push({
-            user: element.data.uid,
-            fap: element
-          }); 
-        } else {
-          this.arrayCompania.push({
-            user: element.data.uid,
-            faps: element
-          });
-        }
-    });
-
-      this.friends.forEach((element: any, i: number ) => {
-        var reducedS = this.arrayColeccionFaps.reduce(function(filtered, option) {
-          if (option.data.uid === element.data.uidFriend) {
-            if(option.data.solitario === true) {
-              var someNewValue = { fap: option.data, uid: option.data.uid }
-              filtered.push(someNewValue);
-            }
-          }
-          return filtered;
-        }, []);
-        var reducedC = this.arrayColeccionFaps.reduce(function(filtered, option) {
-          if (option.data.uid === element.data.uidFriend) {
-            if(option.data.solitario === false) {
-              var someNewValue = { fap: option.data, uid: option.data.uid }
-              filtered.push(someNewValue);
-            }
-          }
-          return filtered;
-        }, []);
-        this.friends[i].solitario =  reducedS;
-        this.friends[i].compania =  reducedC;
-      });
-
-      this.friends = this.friends.sort((a: any, b: any) => {
-        const totalS1 = a.solitario.length;
-        const totalS2 = b.solitario.length;
-        const totalC1 = a.compania.length;
-        const totalC2 = b.compania.length;
-        const total1 = totalS1 + totalC1;
-        const total2 = totalS2 + totalC2;
-        return total2 - total1;
-      });
-  });
-} */
-
   onSearchChange(event: any) {
     this.textoBuscar = event.detail.value;
   }
 
   getNumeroSolicitudes() {
-    this.friendService.getRequestFriends(this.currentUser.uid).subscribe((response) => {
-      this.requestUsers = response.requestFriends;
-      this.friendService.requestFriend = this.requestUsers;
-      this.numberNotification = this.requestUsers.length;
-    },
+    this.friendService.getRequestFriends(this.currentUser.uid).subscribe(
+      (response) => {
+        this.requestUsers = response.requestFriends;
+        this.friendService.requestFriend = this.requestUsers;
+        this.numberNotification = this.requestUsers.length;
+      },
       (error) => {
-        console.error('Error al enviar la solicitud:', error);
+        console.error("Error al enviar la solicitud:", error);
         // Aquí puedes manejar cualquier error que ocurra durante la solicitud
       }
     );
   }
 
   getFriends() {
-    this.friendService.getFriends(this.currentUser.uid).subscribe((response) => {
-      this.friends = response.friends;
-    },
+    this.friendService.getFriends(this.currentUser.uid).subscribe(
+      (response) => {
+        this.friends = response.friends;
+        this.friendService.friends = this.friends;
+        this.getFapFriends();
+      },
       (error) => {
-        console.error('Error al enviar la solicitud:', error);
+        console.error("Error al enviar la solicitud:", error);
         // Aquí puedes manejar cualquier error que ocurra durante la solicitud
       }
     );
   }
 
   getFapFriends() {
-    this.friendService
-      .getNumeroFapByFriends(this.friendsUid)
-      .subscribe((result) => {
-        this.arrayColeccionFaps = result.map((datosFap) => ({
-          id: datosFap.payload.doc.id,
-          data: datosFap.payload.doc.data(),
-        }));
+    this.friendService.getFapByFriends().subscribe(
+      (response) => {
+        this.arrayColeccionFaps = response.faps_friends;
 
         this.arraySolitario = this.arrayColeccionFaps
-          .filter((element) => element.data.solitario === true)
+          .filter((element) => element.solitario)
           .map((element) => ({
-            user: element.data.uid,
+            user: element.usuario,
             fap: element,
           }));
 
         this.arrayCompania = this.arrayColeccionFaps
-          .filter((element) => element.data.solitario !== true)
+          .filter((element) => !element.solitario)
           .map((element) => ({
-            user: element.data.uid,
+            user: element.usuario,
             faps: element,
           }));
 
         this.friends = this.friends.map((friend) => {
           friend.solitario = this.arrayColeccionFaps
-            .filter(
-              (fap) =>
-                fap.data.uid === friend.data.uidFriend &&
-                fap.data.solitario === true
-            )
-            .map((fap) => ({ fap: fap.data, uid: fap.data.uid }));
+            .filter((fap) => fap.user_id === friend.id && fap.solitario)
+            .map((fap) => ({ fap: fap, userId: fap.usuario }));
           friend.compania = this.arrayColeccionFaps
-            .filter(
-              (fap) =>
-                fap.data.uid === friend.data.uidFriend &&
-                fap.data.solitario !== true
-            )
-            .map((fap) => ({ fap: fap.data, uid: fap.data.uid }));
+            .filter((fap) => fap.user_id === friend.id && !fap.solitario)
+            .map((fap) => ({ fap: fap, userId: fap.usuario }));
           return friend;
         });
 
@@ -247,11 +134,18 @@ export class Tab2Page {
           const total2 = totalS2 + totalC2;
           return total2 - total1;
         });
-      });
+      },
+      (error) => {
+        console.error("Error al enviar la solicitud:", error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
   }
 
   segmentChanged(event: any) {
-    // console.log(event.detail.value);
+    if(!this.groups) {
+      this.getGroups();
+    }
   }
 
   addFriend() {
@@ -267,14 +161,16 @@ export class Tab2Page {
   }
 
   getGroups() {
-    this.friendService.getGroups(this.currentUser.uid).subscribe(result => {
-      this.groups = result.map(datosUser => ({
-        id: datosUser.payload.doc.id,
-        data: datosUser.payload.doc.data(),
-      }));
-    });
+    this.friendService.getGroups("").subscribe(
+      (response) => {
+        this.groups = response.data;
+      },
+      (error) => {
+        console.error("Error al enviar la solicitud:", error);
+        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+      }
+    );
   }
-
 
   editGroup(group: any) {
     this.friendService.chargeEditGroup(group);
