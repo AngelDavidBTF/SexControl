@@ -22,27 +22,26 @@ export class DayPage {
   }
 
   getFaps() {
-    this.stadisticsService.getFaps().subscribe((result) => {
-      this.faps = result;
+    this.faps = this.stadisticsService.fapsUser;
 
       this.faps = this.faps.filter((fap) => {
         if (
-          moment(fap.data.fecha, "DD/MM/YYYY HH:mm:ss").isSame(this.today, "d")
+          moment(fap.fecha, "YYYY/MM/DD HH:mm:ss").isSame(this.today, "d")
         ) {
           return fap;
         }
       });
 
       this.faps = this.faps.sort((a: any, b: any) => {
-        const date1 = moment(a.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
-        const date2 = moment(b.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
+        const date1 = moment(a.fecha, "YYYY/MM/DD HH:mm:ss").toDate();
+        const date2 = moment(b.fecha, "YYYY/MM/DD HH:mm:ss").toDate();
         return moment(date2).diff(date1);
       });
 
       this.arraySolitario = [];
       this.arrayCompania = [];
       this.faps.forEach((element: any) => {
-        if (element.data.solitario === true) {
+        if (element.solitario === 1) {
           this.arraySolitario.push(element);
         } else {
           this.arrayCompania.push(element);
@@ -52,6 +51,5 @@ export class DayPage {
       this.mediaSolitario =
         (this.arraySolitario.length / this.faps.length) * 100;
       this.mediaCompania = (this.arrayCompania.length / this.faps.length) * 100;
-    });
   }
 }

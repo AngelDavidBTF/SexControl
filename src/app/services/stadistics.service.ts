@@ -4,6 +4,8 @@ import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { AuthService } from "./auth.service";
 import { Fap } from '../shared/fap.interface';
+import { environment } from "src/environments/environment";
+import { HttpClient } from "@angular/common/http";
 
 @Injectable({
   providedIn: "root",
@@ -11,26 +13,17 @@ import { Fap } from '../shared/fap.interface';
 export class StadisticsService {
 
   currentUser = this.authService.actualUser;
-  fapsUser: any;
+  fapsUser: any = [];
   
   constructor(
     private angularFirestore: AngularFirestore,
-    private authService: AuthService
-  ) {
-    this.fapsUser = this.angularFirestore
-      .collection("fap", (ref) => ref.where("uid", "==", this.currentUser.uid))
-      .snapshotChanges()
-      .pipe(
-        map(actions => actions.map(a => {
-          const data = a.payload.doc.data();
-          const id = a.payload.doc.id;
-          return { id, data };
-        }))
-      );
-  }
+    private authService: AuthService,
+    private http: HttpClient
+  ) { }
 
 
-  public getFaps() {
-    return this.fapsUser;
+  public getFaps(id: any) {
+    const url = `${environment.apiURL}/users/${id}/faps`;
+    return this.http.get<any>(url);
   }
 }

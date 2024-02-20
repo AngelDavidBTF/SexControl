@@ -20,10 +20,10 @@
   <ion-item
     *ngFor="let fap of faps"
   >
-    <ion-icon *ngIf="fap.data.solitario" name="person" slot="start" color="primary"></ion-icon>
-    <ion-icon *ngIf="!fap.data.solitario" slot="start" color="secondary" name="people"></ion-icon>
+    <ion-icon *ngIf="fap.solitario" name="person" slot="start" color="primary"></ion-icon>
+    <ion-icon *ngIf="!fap.solitario" slot="start" color="secondary" name="people"></ion-icon>
     <ion-label>
-      <h2>{{ fap.data.fecha }}</h2>
+      <h2>{{ fap.fecha }}</h2>
     </ion-label>
   </ion-item>
 </ion-content>

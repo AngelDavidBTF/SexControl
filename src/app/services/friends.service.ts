@@ -24,7 +24,7 @@ export class FriendsService {
   actualUidUser: any;
   uidFriends: any;
   requestFriend: any;
-  friends: any[];
+  friends: any;
   friendsInGroup: any;
 
   private filePath: any;

@@ -19,6 +19,7 @@ export class AuthService {
   public user$: Observable<User>;
   public actualUser: User;
   public user: any;
+  public tokenLaravel: any;
 
   constructor(public afAuth: AngularFireAuth, 
     private afs: AngularFirestore,
@@ -34,6 +35,21 @@ export class AuthService {
           return of(null);
         })
       );
+  }
+
+  sendFirebaseTokenToLaravel(tokenID: any) {
+    const token = {
+      "token" :   tokenID
+    }
+    const url = `${environment.apiURL}/login`;
+    this.http.post<any>(url, token).subscribe(
+      response => {
+        this.tokenLaravel = response.access_token;
+      },
+      error => {
+        console.error('Error al enviar el token:', error);
+      }
+    );;
   }
 
   public getActualUser() {

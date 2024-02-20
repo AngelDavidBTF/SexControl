@@ -33,6 +33,10 @@ export class AddFriendPage {
   loadAllUsers() {
     this.friendService.getAllUsers().subscribe((response) => {
       this.users = response;
+      this.users.data = this.users.data.filter(user => {
+        // Comprobar si el id del usuario está presente en la lista de amigos
+        return !this.friendService.friends.some(friend => friend.id === user.id);
+    });
     },
       (error) => {
         console.error('Error al enviar la solicitud:', error);
@@ -50,14 +54,14 @@ export class AddFriendPage {
       "usuario_receptor_id" : idDestinatario
     }
     this.friendService.sendRequestFriend(this.peticion).subscribe((response) => {
-      
+      this.users.data = this.users.data.filter(user => user.id !== idDestinatario);
+      this.presentToast();
     },
       (error) => {
         console.error('Error al enviar la solicitud:', error);
         // Aquí puedes manejar cualquier error que ocurra durante la solicitud
       }
     );
-    this.presentToast();
   }
 
   async presentToast() {

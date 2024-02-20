@@ -38,7 +38,7 @@ export class Tab1Page {
     private authService: AuthService,
     private fapService: FapService
   ) {
-    this.authService.user$.subscribe((user) => {
+    this.authService.user$.subscribe(async (user) => {
       if (user) {
         this.user = {
           uid: user.uid,
@@ -47,13 +47,16 @@ export class Tab1Page {
           email: user.email,
         };
 
+        const userToken = await user.getIdToken();
+        this.authService.sendFirebaseTokenToLaravel(userToken);
+
         this.obtenerFap();
       }
     });
   }
 
   obtenerFap() {
-    this.numeroFapSubscription = this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
+  this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
       this.arrayColeccionFaps = result.data;
       if (this.arrayColeccionFaps.length !== 0) {
         this.countFaps();

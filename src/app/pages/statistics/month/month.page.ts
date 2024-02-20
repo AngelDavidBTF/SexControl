@@ -21,30 +21,29 @@ export class MonthPage {
   }
 
   getFaps() {
-    this.stadisticsService.getFaps().subscribe((result) => {
-      this.faps = result;
+    this.faps = this.stadisticsService.fapsUser;
 
       var monthActual = moment().month();
       var yearActual = moment().year();
       
       this.faps = this.faps.filter((fap) => {
-        var monthNumber = moment(fap.data.fecha, "DD/MM/YYYY HH:mm:ss").month();
-        var yearNumber = moment(fap.data.fecha, "DD/MM/YYYY HH:mm:ss").year();
+        var monthNumber = moment(fap.fecha, "YYYY/MM/DD HH:mm:ss").month();
+        var yearNumber = moment(fap.fecha, "YYYY/MM/DD HH:mm:ss").year();
         if ((monthNumber === monthActual) && (yearActual === yearNumber)) {
           return fap;
         }
       });
       
       this.faps = this.faps.sort((a: any, b: any) => {
-        const date1 = moment(a.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
-        const date2 = moment(b.data.fecha, "DD/MM/YYYY HH:mm:ss").toDate();
+        const date1 = moment(a.fecha, "YYYY/MM/DD HH:mm:ss").toDate();
+        const date2 = moment(b.fecha, "YYYY/MM/DD HH:mm:ss").toDate();
         return moment(date2).diff(date1);
       });
 
       this.arraySolitario = [];
       this.arrayCompania = [];
       this.faps.forEach((element: any) => {
-        if (element.data.solitario === true) {
+        if (element.solitario === 1) {
           this.arraySolitario.push(element);
         } else {
           this.arrayCompania.push(element);
@@ -53,7 +52,6 @@ export class MonthPage {
 
       this.mediaSolitario = (this.arraySolitario.length / this.faps.length) * 100;
       this.mediaCompania = (this.arrayCompania.length / this.faps.length) * 100;
-    });
   }
 
 }

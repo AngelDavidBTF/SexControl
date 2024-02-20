@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from 'src/app/services/auth.service';
+import { StadisticsService } from 'src/app/services/stadistics.service';
 
 @Component({
   selector: 'app-tab3',
@@ -8,7 +10,17 @@ import { Router } from '@angular/router';
 })
 export class Tab3Page {
 
-  constructor(private router: Router) {}
+  constructor(private router: Router,
+    private stadisticsService: StadisticsService,
+    private authService: AuthService) {
+    this.chargeFaps()
+  }
+
+  chargeFaps() {
+    this.stadisticsService.getFaps(this.authService.actualUser.uid).subscribe(result => {
+      this.stadisticsService.fapsUser = result.data;
+    });
+  }
 
   chargeView(view: any) {
     if (view === 'general') {
@@ -24,6 +36,16 @@ export class Tab3Page {
     } else if (view === 'select') {
       this.router.navigate(["select-time"]);
     }
+  }
+
+  ionViewDidEnter() {
+    if(this.stadisticsService.fapsUser === "") {
+      this.chargeFaps();
+    }
+  }
+
+  ionViewWillLeave() {
+    this.stadisticsService.fapsUser = "";
   }
 
 }
