@@ -63,3 +63,15 @@
     height: 190px;
     padding-left: 38px;
   }
+
+  ion-spinner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100px;
+    height: 100px;
+    margin-left: 38%;
+    margin-right: 50%;
+    margin-top: 80px;
+  }

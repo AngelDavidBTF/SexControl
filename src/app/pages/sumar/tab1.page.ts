@@ -33,6 +33,7 @@ export class Tab1Page {
   numberC: number;
   numberS: number;
   numberTotal: number;
+  showLoader: boolean;
 
   constructor(
     private authService: AuthService,
@@ -47,15 +48,25 @@ export class Tab1Page {
           email: user.email,
         };
 
-        const userToken = await user.getIdToken();
-        this.authService.sendFirebaseTokenToLaravel(userToken);
-
-        this.obtenerFap();
+        const token = localStorage.getItem('token');
+        if (!token) {
+          try {
+            const userToken = await user.getIdToken();
+            await this.authService.sendFirebaseTokenToLaravel(userToken);
+            this.obtenerFap(); // Llamar a obtenerFap después de que se complete el envío del token a Laravel
+          } catch (error) {
+            console.error('Error al enviar el token a Laravel:', error);
+            return; // Terminar la ejecución si hay un error
+          }
+        } else {
+          this.obtenerFap();
+        }
       }
     });
   }
 
   obtenerFap() {
+  this.showLoader = true;
   this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
       this.arrayColeccionFaps = result.data;
       if (this.arrayColeccionFaps.length !== 0) {
@@ -72,6 +83,7 @@ export class Tab1Page {
     this.numberC = this.arrayColeccionFaps.filter(fap => !fap.solitario).length;
     this.numberS = this.arrayColeccionFaps.filter(fap => fap.solitario).length;
     this.numberTotal = this.arrayColeccionFaps.length;
+    this.showLoader = false;
   }
 
   sumar(tipo: boolean) {

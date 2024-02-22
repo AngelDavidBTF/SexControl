@@ -5,37 +5,34 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { ApiService } from './api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FapService {
 
-  constructor(private angularFirestore: AngularFirestore,
+  constructor(private apiService: ApiService,
     private http: HttpClient) { }
 
-  public consultar(coleccion) {
-    return this.angularFirestore.collection(coleccion).snapshotChanges();
-  }
-
-  public getNumeroFap(uid) {
-    const url = `${environment.apiURL}/users/${uid}/faps`;
-    return this.http.get<any>(url);
-  }
-
-  public insertarFap(fap: Fap): Observable<any> {
-    const url = `${environment.apiURL}/faps/suma`;
-    return this.http.post<any>(url, fap);
-  }
-
-  public borrarFap(lastId: any): Observable<any> {
-    const url = `${environment.apiURL}/faps/${lastId}`;
-    return this.http.delete<any>(url)
-    .pipe(
-      catchError(error => {
-        console.error('Error al eliminar el registro:', error);
-        return throwError(error);
-      })
-    );
-  }
+    public getNumeroFap(uid): Observable<any> {
+      const url = `users/${uid}/faps`; // No es necesario incluir environment.apiURL
+      return this.apiService.get(url);
+    }
+  
+    public insertarFap(fap: Fap): Observable<any> {
+      const url = `faps/suma`; // No es necesario incluir environment.apiURL
+      return this.apiService.post(url, fap);
+    }
+  
+    public borrarFap(lastId: any): Observable<any> {
+      const url = `faps/${lastId}`; // No es necesario incluir environment.apiURL
+      return this.apiService.delete(url)
+        .pipe(
+          catchError(error => {
+            console.error('Error al eliminar el registro:', error);
+            throw error;
+          })
+        );
+    }
 }

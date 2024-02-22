@@ -161,7 +161,7 @@ export class Tab2Page {
   }
 
   getGroups() {
-    this.friendService.getGroups("").subscribe(
+    this.friendService.getGroups().subscribe(
       (response) => {
         this.groups = response.data;
       },

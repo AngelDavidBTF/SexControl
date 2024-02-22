@@ -57,11 +57,11 @@ export class RequestFriendsPage {
   }
 
   aceptarPeticon(user: any, aceptado: boolean) {
-    this.friendService.proccessRequestFriend(user, aceptado);
+    this.friendService.processRequestFriend(user, aceptado);
   }
 
   denegarPeticon(user: any) {
-    this.friendService.proccessRequestFriend(user, false);
+    this.friendService.processRequestFriend(user, false);
   }
 
   async presentActionSheet(user: any) {

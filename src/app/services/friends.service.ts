@@ -8,13 +8,14 @@ import { AngularFireStorage } from "@angular/fire/storage";
 import { finalize } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { HttpClient } from "@angular/common/http";
+import { ApiService } from "./api.service";
 
 @Injectable({
   providedIn: "root",
 })
 export class FriendsService {
   constructor(
-    private angularFirestore: AngularFirestore,
+    private apiService: ApiService,
     private storage: AngularFireStorage,
     private router: Router,
     private http: HttpClient
@@ -30,105 +31,85 @@ export class FriendsService {
   private filePath: any;
   private downloadUrl: Observable<string>;
 
-  public getAllUsers() {
-    const url = `${environment.apiURL}/users`;
-    return this.http.get<any>(url);
+  public getAllUsers(): Observable<any> {
+    return this.apiService.get('users');
   }
 
-  public sendRequestFriend(peticion: any): Observable<any>{
-    const url = `${environment.apiURL}/friendRequest`;
-    return this.http.post<any>(url, peticion);
+  public sendRequestFriend(peticion: any): Observable<any> {
+    return this.apiService.post('friendRequest', peticion);
   }
 
-  public getRequestFriends(uid: string) {
-    const url = `${environment.apiURL}/requestFriendsByUid`;
-    const user = {
-      "uid" : uid
-    }
-    return this.http.post<any>(url, user);
+  public getRequestFriends(uid: string): Observable<any> {
+    return this.apiService.post('requestFriendsByUid', { uid });
   }
 
-  public getFriends(uid: string) {
-    const url = `${environment.apiURL}/friendsByUid`;
-    const user = {
-      "uid" : uid
-    }
-    return this.http.post<any>(url, user);
+  public getFriends(uid: string): Observable<any> {
+    return this.apiService.post('friendsByUid', { uid });
   }
 
-  public async proccessRequestFriend(requestFriend: any, aceptado: boolean) {
-    
-    if (aceptado === true) {
-      requestFriend.accepted = true;
-      const url = `${environment.apiURL}/friendRequest/aceptar/${requestFriend.request_id}`; 
-      try {
-        await this.http.put(url, requestFriend).toPromise();
-      } catch (error) {
-        console.log('Error updating requestFriend data:', error);
+  public async processRequestFriend(requestFriend: any, aceptado: boolean): Promise<void> {
+    const url = aceptado
+      ? `${environment.apiURL}/friendRequest/aceptar/${requestFriend.request_id}`
+      : `${environment.apiURL}/friendRequest/${requestFriend.request_id}`;
+
+    try {
+      if (aceptado) {
+        requestFriend.accepted = true;
+        await this.apiService.put(url, requestFriend).toPromise();
+      } else {
+        await this.apiService.delete(url).toPromise();
       }
-    } else {
-      const url = `${environment.apiURL}/friendRequest/${requestFriend.request_id}`; 
-      try {
-        await this.http.delete(url).toPromise();
-      } catch (error) {
-        console.log('Error deleting requestFriend data:', error);
-      }
+    } catch (error) {
+      console.error('Error processing requestFriend:', error);
+      throw error;
     }
   }
 
-  public createGroup(group: any) {
+  public createGroup(group: any): Observable<any> {
     const groupObj = {
       name: group.name,
-      groupImage: this.downloadUrl ? this.downloadUrl : "",
+      groupImage: this.downloadUrl ? this.downloadUrl : '',
       users: group.users,
       creationDate: group.creationDate,
-      fileRef: this.filePath ? this.filePath : "",
+      fileRef: this.filePath ? this.filePath : ''
     };
-    const url = `${environment.apiURL}/groups/createGroup`;
-    return this.http.post<any>(url, groupObj);
-    
+    return this.apiService.post('groups/createGroup', groupObj);
   }
 
-  public getGroups(group: any) {
-    const url = `${environment.apiURL}/groups/groupsByUser`;
-    return this.http.post<any>(url, group);
+  public getGroups(): Observable<any> {
+    return this.apiService.post('groups/groupsByUser');
   }
 
-  public chargeEditGroup(group: any) {
+  public chargeEditGroup(group: any): void {
+    // No es necesario adaptar este método ya que no hace una llamada HTTP
     this.actualGroup = group;
-    this.router.navigate(["edit-group"]);
+    this.router.navigate(['edit-group']);
   }
 
   
-  public getFriendsByGroup(group?: any) {
-    const url = `${environment.apiURL}/groups/users`;
-    const group_id = {
-      "group_id" : group.id
-    }
-    return this.http.post<any>(url, group_id);
+  public getFriendsByGroup(group?: any): Observable<any> {
+    const group_id = { "group_id": group.id };
+    return this.apiService.post('groups/users', group_id);
   }
 
-  public addFriendToGroup(listIds: any) {
+  public addFriendToGroup(listIds: any): Observable<any> {
     const groupObj = {
       users: listIds,
       group: this.actualGroup.id
     };
-    const url = `${environment.apiURL}/groups/addUserGroup`;
-    return this.http.post<any>(url, groupObj);
+    return this.apiService.post('groups/addUserGroup', groupObj);
   }
 
-  public deleteFriendInGroup(id: any) {
+  public deleteFriendInGroup(id: any): Observable<any> {
     const groupObj = {
       user_id: id,
       group_id: this.actualGroup.id
     };
-    const url = `${environment.apiURL}/users/group/detach`;
-    return this.http.post<any>(url, groupObj);
+    return this.apiService.post('users/group/detach', groupObj);
   }
 
-  public deleteGroup(id: any) {
-    const url = `${environment.apiURL}/groups/${id}`;
-    return this.http.delete<any>(url);
+  public deleteGroup(id: any): Observable<any> {
+    return this.apiService.delete(`groups/${id}`);
   }
 
   public preSaveGroup(image: any, group: any) {
@@ -157,13 +138,13 @@ export class FriendsService {
     }
   }
 
-  public getNumeroFapByGroup() {
-    const url = `${environment.apiURL}/groups/${this.actualGroup.id}/faps`;
-    return this.http.get<any>(url);
+  public getNumeroFapByGroup(): Observable<any> {
+    const url = `groups/${this.actualGroup.id}/faps`;
+    return this.apiService.get(url);
   }
 
-  public getFapByFriends() {
-    const url = `${environment.apiURL}/faps/friends`;
-    return this.http.get<any>(url);
+  public getFapByFriends(): Observable<any> {
+    const url = 'faps/friends';
+    return this.apiService.get(url);
   }
 }

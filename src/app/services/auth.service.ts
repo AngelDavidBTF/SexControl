@@ -37,19 +37,21 @@ export class AuthService {
       );
   }
 
-  sendFirebaseTokenToLaravel(tokenID: any) {
+  async sendFirebaseTokenToLaravel(tokenID: any) {
     const token = {
       "token" :   tokenID
-    }
+    };
     const url = `${environment.apiURL}/login`;
-    this.http.post<any>(url, token).subscribe(
-      response => {
-        this.tokenLaravel = response.access_token;
-      },
-      error => {
-        console.error('Error al enviar el token:', error);
-      }
-    );;
+  
+    try {
+      const response = await this.http.post<any>(url, token).toPromise();
+      this.tokenLaravel = response.access_token;
+      localStorage.setItem('token', this.tokenLaravel);
+      console.log('Token enviado a Laravel:', this.tokenLaravel);
+    } catch (error) {
+      console.error('Error al enviar el token:', error);
+      throw error; // Lanzar el error para manejarlo en el código que llama a esta función
+    }
   }
 
   public getActualUser() {

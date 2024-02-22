@@ -6,6 +6,7 @@ import { AuthService } from "./auth.service";
 import { Fap } from '../shared/fap.interface';
 import { environment } from "src/environments/environment";
 import { HttpClient } from "@angular/common/http";
+import { ApiService } from "./api.service";
 
 @Injectable({
   providedIn: "root",
@@ -16,14 +17,14 @@ export class StadisticsService {
   fapsUser: any = [];
   
   constructor(
-    private angularFirestore: AngularFirestore,
+    private apiService: ApiService,
     private authService: AuthService,
     private http: HttpClient
   ) { }
 
 
   public getFaps(id: any) {
-    const url = `${environment.apiURL}/users/${id}/faps`;
-    return this.http.get<any>(url);
+    const url = `users/${id}/faps`;
+    return this.apiService.get(url);
   }
 }
