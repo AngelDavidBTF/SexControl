@@ -3,7 +3,7 @@ import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/firestore';
 import 'firebase/auth';
 import 'firebase/firestore';
-import { Observable, of  } from 'rxjs';
+import { Observable, Subject, of  } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { User } from '../shared/user.interface';
 import firebase from 'firebase/app';
@@ -20,6 +20,7 @@ export class AuthService {
   public actualUser: User;
   public user: any;
   public tokenLaravel: any;
+  public isLoggedIn = false;
 
   constructor(public afAuth: AngularFireAuth, 
     private afs: AngularFirestore,
@@ -47,7 +48,7 @@ export class AuthService {
       const response = await this.http.post<any>(url, token).toPromise();
       this.tokenLaravel = response.access_token;
       localStorage.setItem('token', this.tokenLaravel);
-      console.log('Token enviado a Laravel:', this.tokenLaravel);
+      this.isLoggedIn = true;
     } catch (error) {
       console.error('Error al enviar el token:', error);
       throw error; // Lanzar el error para manejarlo en el código que llama a esta función
@@ -70,6 +71,8 @@ export class AuthService {
     try {
       const { user } = await this.afAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
       this.updateUserData(user);
+      // Lógica de inicio de sesión
+      this.isLoggedIn = true;
       return user;
     } catch (error) {
       console.log('Error->', error);
@@ -110,6 +113,8 @@ export class AuthService {
     try {
       const { user } = await this.afAuth.signInWithEmailAndPassword(email, password);
       this.updateUserData(user);
+      // Lógica de inicio de sesión
+      this.isLoggedIn = true;
       return user;
     } catch (error) {
       if (error.code == 'auth/invalid-email') {
@@ -135,31 +140,21 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    const url = `${environment.apiURL}/logout`; 
     try {
       await this.afAuth.signOut();
+      await this.http.get(url).toPromise();
+      // Lógica de inicio de sesión
+      this.isLoggedIn = false;
+      this.user = [];
+      localStorage.clear();
     } catch (error) {
       console.log('Error->', error);
     }
   }
 
-  /*private updateUserData(user: User) {
-    const userRef: AngularFirestoreDocument<User> = this.afs.doc(`users/${user.uid}`);
-
-    const data: User = {
-      uid: user.uid,
-      email: user.email,
-      photoURL: user.photoURL,
-      emailVerified: user.emailVerified,
-      displayName: user.displayName,
-    };
-
-    //return userRef.set(data, { merge: true });
-    const url = `${environment.apiURL}/users/${user.uid}`; 
-    return this.http.post(url, user);
-  }*/
-
   async updateUserData(user: User): Promise<void> {
-    const url = `${environment.apiURL}/users/${user.uid}`; 
+    const url = `${environment.apiURL}/updateByUid/${user.uid}`; 
     try {
       await this.http.put(url, user).toPromise();
     } catch (error) {

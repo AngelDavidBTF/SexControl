@@ -3,8 +3,8 @@ import { Router } from "@angular/router";
 import { AuthService } from "src/app/services/auth.service";
 import { FriendsService } from "src/app/services/friends.service";
 import { User } from "src/app/shared/user.interface";
-import { ImagePicker, OutputType } from '@ionic-native/image-picker/ngx';
 import * as moment from "moment";
+import { Camera, CameraResultType } from '@capacitor/camera';
 
 @Component({
   selector: "app-create-group",
@@ -35,8 +35,7 @@ export class CreateGroupPage {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private friendService: FriendsService,
-    private imagePicker: ImagePicker
+    private friendService: FriendsService
   ) {
     this.currentUser = this.authService.actualUser;
     this.getFriends();
@@ -88,22 +87,19 @@ export class CreateGroupPage {
     this.image = event.target.files[0];
   }
 
-  getImages() {
-    this.options = {
-      maximumImagesCount: 1,
-      width: 200,
-      //height: 200,
-      quality: 25,
-      outputType: OutputType.FILE_URL
-    };
-    this.imageResponse = [];
-    this.imagePicker.getPictures(this.options).then((results) => {
-      for (var i = 0; i < results.length; i++) {
-        this.imageResponse.push(results[i]);
+  async getImages() {
+    try {
+      const takePicture = async () => {
+        const image = await Camera.getPhoto({
+          quality: 90,
+          allowEditing: true,
+          resultType: CameraResultType.Uri
+        });
+
+      this.imageResponse.push(image.webPath);
       }
-    }, (err) => {
-      alert(err);
-    });
+    } catch (error) {
+      console.error('Error al obtener imagen:', error);
+    }
   }
-  
 }

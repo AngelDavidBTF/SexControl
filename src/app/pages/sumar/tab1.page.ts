@@ -47,7 +47,7 @@ export class Tab1Page {
           photoURL: user.photoURL,
           email: user.email,
         };
-
+        
         const token = localStorage.getItem('token');
         if (!token) {
           try {
@@ -75,6 +75,7 @@ export class Tab1Page {
         this.numberC = 0;
         this.numberS = 0;
         this.numberTotal = 0;
+        this.showLoader = false;
       }
     });
   }

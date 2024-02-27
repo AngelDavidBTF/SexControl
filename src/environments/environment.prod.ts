@@ -1,5 +1,6 @@
 export const environment = {
-  production: true
+  production: true,
+  apiURL: 'https://api.sexcontrol.online/api'
 };
 
 export const firebaseConfig = {

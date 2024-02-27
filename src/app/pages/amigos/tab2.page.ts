@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { Subscription } from "rxjs";
+import { take } from "rxjs/operators";
 import { AuthService } from "src/app/services/auth.service";
 import { FriendsService } from "src/app/services/friends.service";
 import { Fap } from "src/app/shared/fap.interface";
@@ -53,15 +54,26 @@ export class Tab2Page {
   arrayCompania = [];
 
   actualUser: any;
+  friendsLoaded: boolean = false;
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private friendService: FriendsService
-  ) {
-    this.currentUser = this.authService.actualUser;
-    this.getFriends();
-    this.getNumeroSolicitudes();
+  ) {}
+
+  ngOnInit(): void {
+    if (this.authService.isLoggedIn == true) {
+      this.getFriends();
+      this.getNumeroSolicitudes();
+      this.friendsSubscription = this.friendService.friendsObs$.subscribe(
+        (data) => {
+          if (this.friendsLoaded) {
+            this.getFriends(); // Llamamos a getFriends solo cuando se emite un nuevo valor en el Observable
+          }
+        }
+      );
+    }
   }
 
   onSearchChange(event: any) {
@@ -69,21 +81,22 @@ export class Tab2Page {
   }
 
   getNumeroSolicitudes() {
-    this.friendService.getRequestFriends(this.currentUser.uid).subscribe(
-      (response) => {
-        this.requestUsers = response.requestFriends;
-        this.friendService.requestFriend = this.requestUsers;
-        this.numberNotification = this.requestUsers.length;
-      },
-      (error) => {
-        console.error("Error al enviar la solicitud:", error);
-        // Aquí puedes manejar cualquier error que ocurra durante la solicitud
-      }
-    );
+    this.friendService
+      .getRequestFriends(this.authService.actualUser.uid)
+      .subscribe(
+        (response) => {
+          this.requestUsers = response.requestFriends;
+          this.friendService.requestFriend = this.requestUsers;
+        },
+        (error) => {
+          console.error("Error al enviar la solicitud:", error);
+          // Aquí puedes manejar cualquier error que ocurra durante la solicitud
+        }
+      );
   }
 
-  getFriends() {
-    this.friendService.getFriends(this.currentUser.uid).subscribe(
+  public getFriends() {
+    this.friendService.getFriends(this.authService.actualUser.uid).subscribe(
       (response) => {
         this.friends = response.friends;
         this.friendService.friends = this.friends;
@@ -134,6 +147,7 @@ export class Tab2Page {
           const total2 = totalS2 + totalC2;
           return total2 - total1;
         });
+        this.friendsLoaded = true;
       },
       (error) => {
         console.error("Error al enviar la solicitud:", error);
@@ -143,7 +157,7 @@ export class Tab2Page {
   }
 
   segmentChanged(event: any) {
-    if(!this.groups) {
+    if (!this.groups) {
       this.getGroups();
     }
   }
@@ -177,6 +191,8 @@ export class Tab2Page {
   }
 
   ngOnDestroy() {
-    this.friendsSubscription.unsubscribe();
+    if (this.friendsSubscription) {
+      this.friendsSubscription.unsubscribe();
+    }
   }
 }

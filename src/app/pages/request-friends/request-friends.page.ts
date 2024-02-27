@@ -45,7 +45,6 @@ export class RequestFriendsPage {
     public actionSheetController: ActionSheetController
   ) {
     this.currentUser = this.authService.actualUser;
-    this.requestFriends = this.friendService.requestFriend;
   }
 
   onSearchChange(event: any) {
@@ -58,10 +57,12 @@ export class RequestFriendsPage {
 
   aceptarPeticon(user: any, aceptado: boolean) {
     this.friendService.processRequestFriend(user, aceptado);
+    this.friendService.setData("actualizar");
   }
 
   denegarPeticon(user: any) {
     this.friendService.processRequestFriend(user, false);
+    this.friendService.setData("actualizar");
   }
 
   async presentActionSheet(user: any) {

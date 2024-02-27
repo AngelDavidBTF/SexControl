@@ -3,7 +3,7 @@ import { AngularFirestore, AngularFirestoreCollection } from "@angular/fire/fire
 import { Router } from "@angular/router";
 import { RequestFriend } from "../shared/request.interface";
 import firebase from "firebase/app";
-import { Observable } from "rxjs";
+import { BehaviorSubject, Observable } from "rxjs";
 import { AngularFireStorage } from "@angular/fire/storage";
 import { finalize } from "rxjs/operators";
 import { environment } from "src/environments/environment";
@@ -27,6 +27,8 @@ export class FriendsService {
   requestFriend: any;
   friends: any;
   friendsInGroup: any;
+  private friendsSubject = new BehaviorSubject<any>(null);
+  friendsObs$ = this.friendsSubject.asObservable();
 
   private filePath: any;
   private downloadUrl: Observable<string>;
@@ -49,8 +51,8 @@ export class FriendsService {
 
   public async processRequestFriend(requestFriend: any, aceptado: boolean): Promise<void> {
     const url = aceptado
-      ? `${environment.apiURL}/friendRequest/aceptar/${requestFriend.request_id}`
-      : `${environment.apiURL}/friendRequest/${requestFriend.request_id}`;
+      ? `friendRequest/aceptar/${requestFriend.request_id}`
+      : `friendRequest/${requestFriend.request_id}`;
 
     try {
       if (aceptado) {
@@ -59,6 +61,7 @@ export class FriendsService {
       } else {
         await this.apiService.delete(url).toPromise();
       }
+      this.requestFriend = this.requestFriend.filter(user => user.id !== requestFriend.id);
     } catch (error) {
       console.error('Error processing requestFriend:', error);
       throw error;
@@ -146,5 +149,9 @@ export class FriendsService {
   public getFapByFriends(): Observable<any> {
     const url = 'faps/friends';
     return this.apiService.get(url);
+  }
+
+  public setData(data: any) {
+    this.friendsSubject.next(data);
   }
 }

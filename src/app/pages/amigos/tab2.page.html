@@ -29,7 +29,7 @@
     <ion-item button (click)="requestFriend()">
       <ion-icon slot="start" name="people" color="primary"></ion-icon>
       <ion-label>Solicitudes de amistad</ion-label>
-      <ion-badge color="secondary">{{ numberNotification }}</ion-badge>
+      <ion-badge *ngIf="friendService.requestFriend" color="secondary">{{ friendService.requestFriend.length }}</ion-badge>
     </ion-item>
   
     <ion-item-divider>
