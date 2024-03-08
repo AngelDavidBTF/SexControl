@@ -41,7 +41,7 @@ export class RequestFriendsPage {
 
   constructor(
     private authService: AuthService,
-    private friendService: FriendsService,
+    public friendService: FriendsService,
     public actionSheetController: ActionSheetController
   ) {
     this.currentUser = this.authService.actualUser;

@@ -55,24 +55,44 @@ export class Tab2Page {
 
   actualUser: any;
   friendsLoaded: boolean = false;
+  isLoggedIn = false;
+  rechargue = false;
+  private authSubscription: Subscription;
 
   constructor(
     private router: Router,
     private authService: AuthService,
-    private friendService: FriendsService
+    public friendService: FriendsService
   ) {}
 
   ngOnInit(): void {
-    if (this.authService.isLoggedIn == true) {
+    this.authSubscription = this.authService.isLoggedIn$.subscribe((isLoggedIn) => {
+      this.isLoggedIn = isLoggedIn;
+      if (!isLoggedIn) {
+        this.requestUsers = [];
+        this.friendService.requestFriend = [];
+        this.friends = [];
+        this.friendService.friends = [];
+        this.rechargue = true;
+      }
+    });
+
+    this.getFriends();
+    this.getNumeroSolicitudes();
+    this.friendsSubscription = this.friendService.friendsObs$.subscribe(
+      (data) => {
+        if (this.friendsLoaded) {
+          this.getFriends(); // Llamamos a getFriends solo cuando se emite un nuevo valor en el Observable
+        }
+      }
+    );
+  }
+
+  ngDoCheck() {
+    // Ejecutar código adicional en cada detección de cambios
+    if (this.isLoggedIn && this.rechargue) {
       this.getFriends();
       this.getNumeroSolicitudes();
-      this.friendsSubscription = this.friendService.friendsObs$.subscribe(
-        (data) => {
-          if (this.friendsLoaded) {
-            this.getFriends(); // Llamamos a getFriends solo cuando se emite un nuevo valor en el Observable
-          }
-        }
-      );
     }
   }
 
@@ -81,6 +101,7 @@ export class Tab2Page {
   }
 
   getNumeroSolicitudes() {
+    this.rechargue = false;
     this.friendService
       .getRequestFriends(this.authService.actualUser.uid)
       .subscribe(
@@ -191,8 +212,6 @@ export class Tab2Page {
   }
 
   ngOnDestroy() {
-    if (this.friendsSubscription) {
-      this.friendsSubscription.unsubscribe();
-    }
+    this.authSubscription.unsubscribe();
   }
 }

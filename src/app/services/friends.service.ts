@@ -1,12 +1,8 @@
 import { Injectable } from "@angular/core";
-import { AngularFirestore, AngularFirestoreCollection } from "@angular/fire/firestore";
 import { Router } from "@angular/router";
-import { RequestFriend } from "../shared/request.interface";
-import firebase from "firebase/app";
 import { BehaviorSubject, Observable } from "rxjs";
 import { AngularFireStorage } from "@angular/fire/storage";
 import { finalize } from "rxjs/operators";
-import { environment } from "src/environments/environment";
 import { HttpClient } from "@angular/common/http";
 import { ApiService } from "./api.service";
 
@@ -24,7 +20,7 @@ export class FriendsService {
   actualGroup: any;
   actualUidUser: any;
   uidFriends: any;
-  requestFriend: any;
+  public requestFriend: any;
   friends: any;
   friendsInGroup: any;
   private friendsSubject = new BehaviorSubject<any>(null);

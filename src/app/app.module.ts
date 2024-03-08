@@ -18,6 +18,7 @@ import { FileTransfer } from '@ionic-native/file-transfer/ngx';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { FirebaseAnalytics } from '@ionic-native/firebase-analytics/ngx';
 import { HttpClientModule } from '@angular/common/http';
+import { FriendsService } from './services/friends.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -30,6 +31,7 @@ import { HttpClientModule } from '@angular/common/http';
     ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
   providers: [
+    FriendsService,
     StatusBar,
     SplashScreen,
     ImagePicker,

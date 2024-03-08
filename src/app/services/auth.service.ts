@@ -21,6 +21,8 @@ export class AuthService {
   public user: any;
   public tokenLaravel: any;
   public isLoggedIn = false;
+  private isLoggedInSubject = new Subject<boolean>();
+  isLoggedIn$ = this.isLoggedInSubject.asObservable();
 
   constructor(public afAuth: AngularFireAuth, 
     private afs: AngularFirestore,
@@ -31,8 +33,10 @@ export class AuthService {
         switchMap((user) => {
           if (user) {
             this.actualUser = user;
+            this.isLoggedInSubject.next(true);
             return of(user);
           }
+          this.isLoggedInSubject.next(false);
           return of(null);
         })
       );
@@ -48,7 +52,7 @@ export class AuthService {
       const response = await this.http.post<any>(url, token).toPromise();
       this.tokenLaravel = response.access_token;
       localStorage.setItem('token', this.tokenLaravel);
-      this.isLoggedIn = true;
+      this.isLoggedInSubject.next(true);
     } catch (error) {
       console.error('Error al enviar el token:', error);
       throw error; // Lanzar el error para manejarlo en el código que llama a esta función
@@ -72,7 +76,7 @@ export class AuthService {
       const { user } = await this.afAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
       this.updateUserData(user);
       // Lógica de inicio de sesión
-      this.isLoggedIn = true;
+      this.isLoggedInSubject.next(true);
       return user;
     } catch (error) {
       console.log('Error->', error);
@@ -114,7 +118,7 @@ export class AuthService {
       const { user } = await this.afAuth.signInWithEmailAndPassword(email, password);
       this.updateUserData(user);
       // Lógica de inicio de sesión
-      this.isLoggedIn = true;
+      this.isLoggedInSubject.next(true);
       return user;
     } catch (error) {
       if (error.code == 'auth/invalid-email') {
@@ -145,12 +149,16 @@ export class AuthService {
       await this.afAuth.signOut();
       await this.http.get(url).toPromise();
       // Lógica de inicio de sesión
-      this.isLoggedIn = false;
+      this.isLoggedInSubject.next(false);
       this.user = [];
       localStorage.clear();
     } catch (error) {
       console.log('Error->', error);
     }
+  }
+
+  emitLoginStatus(isLoggedIn: boolean) {
+    this.isLoggedInSubject.next(isLoggedIn);
   }
 
   async updateUserData(user: User): Promise<void> {

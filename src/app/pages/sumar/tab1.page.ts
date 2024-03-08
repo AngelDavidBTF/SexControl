@@ -34,11 +34,14 @@ export class Tab1Page {
   numberS: number;
   numberTotal: number;
   showLoader: boolean;
+  isLoggedIn = false;
 
   constructor(
     private authService: AuthService,
     private fapService: FapService
-  ) {
+  ) {}
+
+  ngOnInit() {
     this.authService.user$.subscribe(async (user) => {
       if (user) {
         this.user = {
@@ -47,27 +50,40 @@ export class Tab1Page {
           photoURL: user.photoURL,
           email: user.email,
         };
+
+        this.authService.emitLoginStatus(true);
         
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
           try {
             const userToken = await user.getIdToken();
             await this.authService.sendFirebaseTokenToLaravel(userToken);
             this.obtenerFap(); // Llamar a obtenerFap después de que se complete el envío del token a Laravel
           } catch (error) {
-            console.error('Error al enviar el token a Laravel:', error);
+            console.error("Error al enviar el token a Laravel:", error);
             return; // Terminar la ejecución si hay un error
           }
         } else {
           this.obtenerFap();
+          this.authService.isLoggedIn = true;
         }
+
+        this.authService.isLoggedIn$.subscribe(async (isLoggedIn) => {
+          this.isLoggedIn = isLoggedIn;
+          if (!isLoggedIn) {
+            this.showLoader = true;
+            this.numberC = 0;
+            this.numberS = 0;
+            this.numberTotal = 0;
+          }
+        });
       }
     });
   }
 
   obtenerFap() {
-  this.showLoader = true;
-  this.fapService.getNumeroFap(this.user.uid).subscribe(result => {
+    this.showLoader = true;
+    this.fapService.getNumeroFap(this.user.uid).subscribe((result) => {
       this.arrayColeccionFaps = result.data;
       if (this.arrayColeccionFaps.length !== 0) {
         this.countFaps();
@@ -81,8 +97,12 @@ export class Tab1Page {
   }
 
   countFaps() {
-    this.numberC = this.arrayColeccionFaps.filter(fap => !fap.solitario).length;
-    this.numberS = this.arrayColeccionFaps.filter(fap => fap.solitario).length;
+    this.numberC = this.arrayColeccionFaps.filter(
+      (fap) => !fap.solitario
+    ).length;
+    this.numberS = this.arrayColeccionFaps.filter(
+      (fap) => fap.solitario
+    ).length;
     this.numberTotal = this.arrayColeccionFaps.length;
     this.showLoader = false;
   }
@@ -92,18 +112,19 @@ export class Tab1Page {
       uid: this.user.uid,
       numero: 1,
       fecha: moment().format("DD/MM/YYYY HH:mm:ss"),
-      solitario: tipo
+      solitario: tipo,
     };
 
     this.numberC = !tipo ? this.numberC + 1 : this.numberC;
     this.numberS = tipo ? this.numberS + 1 : this.numberS;
     this.numberTotal = this.numberTotal + 1;
 
-    this.fapService.insertarFap(this.fap).subscribe((response) => {
-      this.arrayColeccionFaps.push(response.fap);
-    },
+    this.fapService.insertarFap(this.fap).subscribe(
+      (response) => {
+        this.arrayColeccionFaps.push(response.fap);
+      },
       (error) => {
-        console.error('Error al enviar la solicitud:', error);
+        console.error("Error al enviar la solicitud:", error);
         // Aquí puedes manejar cualquier error que ocurra durante la solicitud
       }
     );
@@ -116,16 +137,18 @@ export class Tab1Page {
       return moment(date1).diff(date2);
     });
 
-    const lastId = this.arrayColeccionFaps[this.arrayColeccionFaps.length - 1].id;
+    const lastId =
+      this.arrayColeccionFaps[this.arrayColeccionFaps.length - 1].id;
 
     this.arrayColeccionFaps.pop();
     this.countFaps();
 
-    this.fapService.borrarFap(lastId).subscribe(() => {
-
-    }, error => {
-      console.error(error);
-    });
+    this.fapService.borrarFap(lastId).subscribe(
+      () => {},
+      (error) => {
+        console.error(error);
+      }
+    );
   }
 
   ngOnDestroy() {
