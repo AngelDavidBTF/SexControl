@@ -1,0 +1,60 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Login</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form>
+    <ion-item lines="full">
+      <ion-img src="../../assets/logo-sexcontrol.svg"></ion-img>
+    </ion-item>
+
+    <ion-item lines="full">
+      <ion-label position="floating">Email</ion-label>
+      <ion-input type="email" #email required></ion-input>
+    </ion-item>
+    
+    <ion-item lines="full">
+      <ion-label position="floating">Contraseña</ion-label>
+      <ion-input type="password" #password required></ion-input>
+    </ion-item>
+
+    <ion-row>
+      <ion-col>
+        <p class="ion-text-end">
+          <small><a routerLink="/forgot-password">¿Has olvidado tu contraseña? </a></small>
+        </p>
+      </ion-col>
+    </ion-row>
+
+    <ion-row>
+      <ion-col>
+        <ion-button type="submit" (click)="onLogin(email, password)" expand="block" color="primary">Entrar<ion-icon name="enter" slot="end"></ion-icon></ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        <ion-button type="submit" color="danger" expand="block" (click)="onLoginGoogle()">
+          <ion-icon name="logo-google" slot="start"></ion-icon>Entrar con Google
+        </ion-button>
+      </ion-col>
+    </ion-row>
+
+    <ion-item-divider class="divider">
+      <ion-label>
+        ¿No tienes una cuenta?
+      </ion-label>
+    </ion-item-divider>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col>
+          <ion-button color="tertiary" expand="block" routerLink="/register">
+            <ion-icon name="document-text" slot="start"></ion-icon> Registrarse
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </form>
+</ion-content>

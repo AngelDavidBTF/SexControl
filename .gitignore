@@ -23,9 +23,14 @@ npm-debug.log*
 /.sourcemaps
 /.versions
 /.vscode
+/.angular
 /coverage
 /dist
 /node_modules
 /platforms
 /plugins
 /www
+
+# Capacitor native projects (Fase 5, generados con `npx cap add`)
+/android
+/ios

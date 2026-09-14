@@ -1,29 +1,26 @@
 ion-img {
-    display: inline-block;
-    position: relative;
-    left: 50%;
-    webkit-transform: translateX(-50%);
-    transform: translateX(-50%);
-    height: 200px;
-    padding: 20px;
-} 
+  display: inline-block;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 200px;
+  padding: 20px;
+}
 
 .divider {
-    text-align: center;
-    margin-top: 10px;
-    margin-bottom: 10px;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
-//-- Validation failed
-ion-item.ion-invalid.ion-touched{
-    border-bottom: 2px solid var(--ion-color-danger) !important;
+ion-item.ion-invalid.ion-touched {
+  border-bottom: 2px solid var(--ion-color-danger) !important;
 }
 
-//-- Validation passed
-ion-item.ion-valid.ion-touched{
- border-bottom: 2px solid var(--ion-color-success) !important;
+ion-item.ion-valid.ion-touched {
+  border-bottom: 2px solid var(--ion-color-success) !important;
 }
 
 .validator-error {
-    color: red;
+  color: red;
 }

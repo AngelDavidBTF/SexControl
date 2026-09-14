@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isFriendOf(uid) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(uid)/friends/$(request.auth.uid));
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid);
+
+      match /friends/{friendUid} {
+        allow read: if isOwner(uid) || isOwner(friendUid);
+        // Los documentos espejo de amistad los crea el propio usuario en ambos lados
+        // al aceptar una solicitud (ver friends.service.ts, fase 2).
+        allow write: if isOwner(uid) || isOwner(friendUid);
+      }
+    }
+
+    match /friendRequests/{requestId} {
+      allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+      allow read, update: if isSignedIn() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow delete: if isSignedIn() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+    }
+
+    match /faps/{fapId} {
+      allow read: if isSignedIn() &&
+        (resource.data.uid == request.auth.uid ||
+         isFriendOf(resource.data.uid) ||
+         (resource.data.groupId != null &&
+          request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.memberUids));
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /groups/{groupId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.memberUids;
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+  }
+}

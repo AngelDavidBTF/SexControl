@@ -1,12 +1,27 @@
-import { enableProdMode } from '@angular/core';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { addIcons } from 'ionicons';
+import {
+  addCircle,
+  arrowBackCircle,
+  documentText,
+  enter,
+  logoGoogle,
+  people,
+  person,
+  statsChart,
+} from 'ionicons/icons';
+import { appConfig } from './app/app.config';
+import { AppComponent } from './app/app.component';
 
-import { AppModule } from './app/app.module';
-import { environment } from './environments/environment';
+addIcons({
+  enter,
+  'logo-google': logoGoogle,
+  'document-text': documentText,
+  'arrow-back-circle': arrowBackCircle,
+  people,
+  person,
+  'add-circle': addCircle,
+  'stats-chart': statsChart,
+});
 
-if (environment.production) {
-  enableProdMode();
-}
-
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.log(err));
+bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

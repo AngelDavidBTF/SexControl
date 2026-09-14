@@ -7,14 +7,14 @@
 <ion-content>
   <form>
     <ion-item lines="full">
-      <ion-img src="../../assets/logo-sexcontrol.svg"></ion-img>
+      <ion-img src="assets/logo-sexcontrol.svg"></ion-img>
     </ion-item>
 
     <ion-item lines="full">
       <ion-label position="floating">Email</ion-label>
       <ion-input type="email" #email required></ion-input>
     </ion-item>
-    
+
     <ion-item lines="full">
       <ion-label position="floating">Contraseña</ion-label>
       <ion-input type="password" #password required></ion-input>
@@ -30,21 +30,21 @@
 
     <ion-row>
       <ion-col>
-        <ion-button type="submit" (click)="onLogin(email, password)" expand="block" color="primary">Entrar<ion-icon name="enter" slot="end"></ion-icon></ion-button>
+        <ion-button type="button" (click)="onLogin(email.value, password.value)" expand="block" color="primary">
+          Entrar<ion-icon name="enter" slot="end"></ion-icon>
+        </ion-button>
       </ion-col>
     </ion-row>
     <ion-row>
       <ion-col>
-        <ion-button type="submit" color="danger" expand="block" (click)="onLoginGoogle()">
+        <ion-button type="button" color="danger" expand="block" (click)="onLoginGoogle()">
           <ion-icon name="logo-google" slot="start"></ion-icon>Entrar con Google
         </ion-button>
       </ion-col>
     </ion-row>
 
     <ion-item-divider class="divider">
-      <ion-label>
-        ¿No tienes una cuenta?
-      </ion-label>
+      <ion-label> ¿No tienes una cuenta? </ion-label>
     </ion-item-divider>
 
     <ion-grid>

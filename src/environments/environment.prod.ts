@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiURL: 'https://api.sexcontrol.online/api'
+  useEmulators: false,
 };
 
 export const firebaseConfig = {
@@ -10,5 +10,5 @@ export const firebaseConfig = {
   projectId: 'sexcontrol-6c000',
   storageBucket: 'sexcontrol-6c000.appspot.com',
   messagingSenderId: '275373132188',
-  appId: "1:275373132188:web:45d08dd98202852df2a059",
+  appId: '1:275373132188:web:45d08dd98202852df2a059',
 };

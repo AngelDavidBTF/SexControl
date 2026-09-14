@@ -1,54 +1,48 @@
-import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from 'src/app/services/auth.service';
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { IonicModule } from '@ionic/angular';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
+import { HeaderComponent } from '../../components/header/header.component';
 
 @Component({
   selector: 'app-register',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, IonicModule, RouterLink, HeaderComponent],
   templateUrl: './register.page.html',
-  styleUrls: ['./register.page.scss'],
+  styleUrl: './register.page.scss',
 })
-export class RegisterPage implements OnInit {
+export class RegisterPage {
+  private authSvc = inject(AuthService);
+  private router = inject(Router);
+  private formBuilder = inject(FormBuilder);
 
-  public registerForm: FormGroup;
-
-  constructor(private authSvc: AuthService,
-              private router: Router,
-              private formBuilder: FormBuilder) {}
-
-  ngOnInit() {
-    this.registerForm = this.formBuilder.group({
+  registerForm: FormGroup = this.formBuilder.group(
+    {
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       pass: ['', [Validators.required, Validators.minLength(6)]],
-      repeatPass: ['']
-    },{ validator: this.checkPasswords });
+      repeatPass: [''],
+    },
+    { validators: this.checkPasswords }
+  );
+
+  private checkPasswords(group: FormGroup): ValidationErrors | null {
+    const pass = group.controls['pass'].value;
+    const confirmPass = group.controls['repeatPass'].value;
+    return pass === confirmPass ? null : { notSame: true };
   }
 
-  checkPasswords(group: FormGroup) { // here we have the 'passwords' group
-    let pass = group.controls.pass.value;
-    let confirmPass = group.controls.repeatPass.value;
-
-    return pass === confirmPass ? null : { notSame: true }
-  }
-
-  async onRegister() {
-    try {
-      const user = await this.authSvc.register(this.registerForm.controls.email.value, this.registerForm.controls.pass.value, this.registerForm.controls.name.value );
-      if (user) {
-        const isVerified = this.authSvc.isEmailVerified(user);
-        this.redirectUser(isVerified);
-      }
-    } catch (error) {
-      console.log('Error', error);
+  async onRegister(): Promise<void> {
+    const { email, pass, name } = this.registerForm.controls;
+    const user = await this.authSvc.register(email.value, pass.value, name.value);
+    if (user) {
+      this.redirectUser(this.authSvc.isEmailVerified(user));
     }
   }
 
   private redirectUser(isVerified: boolean): void {
-    if (isVerified) {
-      this.router.navigate(['/tabs/sumar']);
-    } else {
-      this.router.navigate(['verify-email']);
-    }
+    this.router.navigate([isVerified ? '/tabs/sumar' : '/verify-email']);
   }
 }

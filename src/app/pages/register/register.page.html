@@ -2,46 +2,45 @@
 
 <ion-content>
   <ion-item lines="full">
-    <ion-img src="../../assets/logo-sexcontrol.svg"></ion-img>
+    <ion-img src="assets/logo-sexcontrol.svg"></ion-img>
   </ion-item>
 
   <form [formGroup]="registerForm">
     <ion-item lines="full">
       <ion-label position="floating">Nombre de usuario *</ion-label>
-      <ion-input type="text" #name formControlName="name" required></ion-input>
+      <ion-input type="text" formControlName="name" required></ion-input>
     </ion-item>
-    <div class="validator-error" *ngIf="registerForm.controls.name.dirty && registerForm.controls.name.invalid">
-        El nombre es obligatorio
+    <div class="validator-error" *ngIf="registerForm.controls['name'].dirty && registerForm.controls['name'].invalid">
+      El nombre es obligatorio
     </div>
 
     <ion-item lines="full">
       <ion-label position="floating">Email *</ion-label>
-      <ion-input type="email" #email formControlName="email" required></ion-input>
+      <ion-input type="email" formControlName="email" required></ion-input>
     </ion-item>
-    <div class="validator-error" *ngIf="registerForm.controls.email.dirty && registerForm.controls.email.invalid">
-        Escribe un correo valido
+    <div class="validator-error" *ngIf="registerForm.controls['email'].dirty && registerForm.controls['email'].invalid">
+      Escribe un correo válido
     </div>
 
     <ion-item lines="full">
       <ion-label position="floating">Contraseña *</ion-label>
-      <ion-input type="password" #password formControlName="pass" required></ion-input>
+      <ion-input type="password" formControlName="pass" required></ion-input>
     </ion-item>
-    <div class="validator-error" *ngIf="registerForm.controls.pass.dirty && registerForm.controls.pass.invalid">
+    <div class="validator-error" *ngIf="registerForm.controls['pass'].dirty && registerForm.controls['pass'].invalid">
       La contraseña debe tener al menos 6 caracteres.
     </div>
 
     <ion-item lines="full">
       <ion-label position="floating">Repite la contraseña *</ion-label>
-      <ion-input type="password" #repeatPassword formControlName="repeatPass" required></ion-input>
+      <ion-input type="password" formControlName="repeatPass" required></ion-input>
     </ion-item>
-    <div *ngIf="registerForm.hasError('notSame') && registerForm.controls.repeatPass.dirty"
-        class="validator-error">
+    <div *ngIf="registerForm.hasError('notSame') && registerForm.controls['repeatPass'].dirty" class="validator-error">
       Las contraseñas no coinciden.
     </div>
 
     <ion-row>
       <ion-col>
-        <ion-button type="submit" (click)="onRegister()" color="tertiary" expand="block" [disabled]="!registerForm.valid">
+        <ion-button type="button" (click)="onRegister()" color="tertiary" expand="block" [disabled]="!registerForm.valid">
           <ion-icon name="document-text" slot="start"></ion-icon>Registrarse
         </ion-button>
       </ion-col>
@@ -49,11 +48,9 @@
   </form>
 
   <ion-item-divider class="divider">
-    <ion-label>
-      ¿Ya tienes una cuenta?
-    </ion-label>
+    <ion-label> ¿Ya tienes una cuenta? </ion-label>
   </ion-item-divider>
-  
+
   <ion-row>
     <ion-col>
       <ion-button color="secondary" expand="block" routerLink="/login">

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#B7E4F8;}
+	.st1{fill:#6FC8F1;}
+	.st2{font-family:'MyriadPro-Regular';}
+	.st3{font-size:12px;}
+	.st4{fill:#FD697F;}
+	.st5{fill:#FC445F;}
+</style>
+<g>
+	<circle class="st0" cx="432" cy="152" r="55"/>
+	<path class="st1" d="M432,207V97c30.3,0,55,24.7,55,55S462.3,207,432,207z"/>
+	<path class="st0" d="M512,308.5v108.2c0,16.7-13.7,30.3-30.5,30.3H376.1c-8.3,0-15-6.7-15-15c0-14.6-8.1-88.5-8.1-123.5
+		c0-37.2,30.5-67.5,67.9-67.5h23.2C481.5,241,512,271.3,512,308.5L512,308.5z"/>
+	<path class="st1" d="M512,308.5v108.2c0,16.7-13.7,30.3-30.5,30.3H432V241h12.1C481.5,241,512,271.3,512,308.5L512,308.5z"/>
+	<circle class="st0" cx="80" cy="152" r="55"/>
+	<path class="st1" d="M80,207V97c30.3,0,55,24.7,55,55S110.3,207,80,207z"/>
+	<text transform="matrix(1 0 0 1 91.0537 259.022)" class="st2 st3">6FC8F1</text>
+	<path class="st0" d="M159,308.5c0,36.2-8.1,108.3-8.1,123.5c0,8.3-6.7,15-15,15H29.4C13.2,447,0,433.9,0,417.7V308.5
+		C0,271.3,30.5,241,67.9,241h23.2C128.5,241,159,271.3,159,308.5L159,308.5z"/>
+	<path class="st1" d="M159,308.5c0,36.2-8.1,108.3-8.1,123.5c0,8.3-6.7,15-15,15H80V241h11.1C128.5,241,159,271.3,159,308.5z"/>
+	<circle class="st4" cx="256" cy="120" r="87"/>
+	<path class="st5" d="M256,207V33c48,0,87,39,87,87S304,207,256,207z"/>
+	<path class="st4" d="M391,362v82c0,19.3-15.7,35-35,35H156c-19.3,0-35-15.7-35-35v-82c0-66.7,54.3-121,121-121h28
+		C336.7,241,391,295.3,391,362L391,362z"/>
+	<path class="st5" d="M391,362v82c0,19.3-15.7,35-35,35H256V241h14C336.7,241,391,295.3,391,362L391,362z"/>
+</g>
+</svg>

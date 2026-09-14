@@ -1,24 +1,24 @@
-
-import { Component } from '@angular/core';
-import { Observable } from 'rxjs';
-import { AuthService } from 'src/app/services/auth.service';
-import { User } from 'src/app/shared/user.interface';
+import { Component, OnDestroy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
+import { HeaderComponent } from '../../components/header/header.component';
 
 @Component({
   selector: 'app-verify-email',
+  standalone: true,
+  imports: [CommonModule, IonicModule, RouterLink, HeaderComponent],
   templateUrl: './verify-email.page.html',
-  styleUrls: ['./verify-email.page.scss'],
+  styleUrl: './verify-email.page.scss',
 })
-export class VerifyEmailPage {
-  user$: Observable<User> = this.authSvc.afAuth.user;
-  constructor(private authSvc: AuthService) {}
+export class VerifyEmailPage implements OnDestroy {
+  private authSvc = inject(AuthService);
+
+  readonly user$ = this.authSvc.user$;
 
   async onSendEmail(): Promise<void> {
-    try {
-      await this.authSvc.sendVerifcationEmail();
-    } catch (error) {
-      console.log('Error->', error);
-    }
+    await this.authSvc.sendVerificationEmail();
   }
 
   ngOnDestroy(): void {
