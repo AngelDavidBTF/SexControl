@@ -33,6 +33,15 @@ function enableAppCheckDebugToken(): void {
   (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = token || true;
 }
 
+// Login con Google: Safari (iPhone sobre todo) bloquea el almacenamiento entre sitios, así que si
+// authDomain es otro dominio (firebaseapp.com) la ventana de Google termina pero el resultado nunca
+// llega a la app. Cuando la app se sirve desde Firebase Hosting, ese mismo dominio publica el
+// manejador /__/auth/*, así que se usa como authDomain. En localhost se mantiene el de la config.
+function authDomainForHost(): string {
+  const host = typeof location === 'undefined' ? '' : location.hostname;
+  return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com') ? host : firebaseConfig.authDomain;
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -41,7 +50,7 @@ export const appConfig: ApplicationConfig = {
     // IonicModule.forRoot(): es lo que registra los custom elements. provideIonicAngular() de
     // '@ionic/angular/standalone' no lo hace y la app se quedaba en blanco con la build de producción.
     importProvidersFrom(IonicModule.forRoot()),
-    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideFirebaseApp(() => initializeApp({ ...firebaseConfig, authDomain: authDomainForHost() })),
     // App Check: solo peticiones desde la app real llegan a Firebase (protege de abusos y de
     // costes inesperados). Se activa al poner la clave de reCAPTCHA Enterprise en environment.
     ...(environment.appCheckSiteKey
