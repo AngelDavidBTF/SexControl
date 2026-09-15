@@ -15,6 +15,22 @@ import {
 import { routes } from './app.routes';
 import { environment, firebaseConfig } from '../environments/environment';
 
+// Solo en desarrollo: en localhost (y en las pruebas automáticas) reCAPTCHA no sirve para validar,
+// así que App Check usa un token de depuración registrado en Firebase Console. El token no está en
+// el código: se lee de localStorage ('sexcontrol.appCheckDebugToken'). Si no hay ninguno, el SDK
+// genera uno y lo muestra en la consola del navegador para poder registrarlo.
+const APP_CHECK_DEBUG_TOKEN_KEY = 'sexcontrol.appCheckDebugToken';
+
+function enableAppCheckDebugToken(): void {
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem(APP_CHECK_DEBUG_TOKEN_KEY);
+  } catch {
+    // Sin almacenamiento local se usa un token generado por el SDK.
+  }
+  (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = token || true;
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -25,12 +41,15 @@ export const appConfig: ApplicationConfig = {
     // costes inesperados). Se activa al poner la clave de reCAPTCHA Enterprise en environment.
     ...(environment.appCheckSiteKey
       ? [
-          provideAppCheck(() =>
-            initializeAppCheck(getApp(), {
+          provideAppCheck(() => {
+            if (!environment.production) {
+              enableAppCheckDebugToken();
+            }
+            return initializeAppCheck(getApp(), {
               provider: new ReCaptchaEnterpriseProvider(environment.appCheckSiteKey),
               isTokenAutoRefreshEnabled: true,
-            })
-          ),
+            });
+          }),
         ]
       : []),
     provideAuth(() => {

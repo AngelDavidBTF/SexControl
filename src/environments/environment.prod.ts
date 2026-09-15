@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   useEmulators: false,
   // Clave de sitio de reCAPTCHA Enterprise para Firebase App Check. Vacía = App Check desactivado.
-  appCheckSiteKey: '',
+  appCheckSiteKey: '6Lex9LwtAAAAAEkq1LERFx6gi2HBcWP0lVk05NBG',
 };
 
 export const firebaseConfig = {
