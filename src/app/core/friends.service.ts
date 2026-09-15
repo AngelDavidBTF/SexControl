@@ -1,5 +1,6 @@
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
-import { Auth, User as FirebaseUser, authState } from '@angular/fire/auth';
+import { Auth, authState } from '@angular/fire/auth';
+
 import {
   Firestore,
   collection,
@@ -10,14 +11,16 @@ import {
   limit,
   query,
   serverTimestamp,
+  setDoc,
   where,
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { FapCounts } from '../shared/fap.model';
-import { Friend, Social, SocialDoc, SocialEntry } from '../shared/friend.model';
+import { Friend, PrivacyLevel, Social, SocialDoc, SocialEntry } from '../shared/friend.model';
 import { User } from '../shared/user.model';
 import { PerUserStreams } from './per-user-streams';
+import type { Profile } from './profile.service';
 
 export const SEARCH_MIN_CHARS = 3;
 const SEARCH_LIMIT = 10;
@@ -48,14 +51,25 @@ export class FriendsService {
   social$(uid: string): Observable<Social> {
     return this.streams.get('social', uid, () =>
       (this.inContext(() => docData(doc(this.firestore, 'social', uid))) as Observable<SocialDoc | undefined>).pipe(
-        map((data) => {
+        map((data): Social => {
           const friends = toList(data?.friends);
-          const friendUids = new Set(friends.map((friend) => friend.uid));
+          const byUid = new Map(friends.map((friend) => [friend.uid, friend]));
           return {
             friends,
             // Una solicitud de alguien que ya es amigo (se enviaron mutuamente) no se muestra.
-            requests: toList(data?.requests).filter((request) => !friendUids.has(request.uid)),
+            requests: toList(data?.requests).filter((request) => !byUid.has(request.uid)),
             sent: toList(data?.sent),
+            reactions: Object.entries(data?.reactions ?? {})
+              .filter(([uid]) => byUid.has(uid))
+              .map(([uid, reaction]) => ({
+                ...reaction,
+                uid,
+                displayName: byUid.get(uid)?.displayName ?? null,
+                photoURL: byUid.get(uid)?.photoURL ?? null,
+              }))
+              .sort((a, b) => (b.at?.toMillis() ?? 0) - (a.at?.toMillis() ?? 0)),
+            privacy: data?.privacy ?? {},
+            paused: data?.paused === true,
           };
         })
       )
@@ -100,7 +114,7 @@ export class FriendsService {
     const users = collection(this.firestore, 'users');
     const prefixQuery = async (field: string) => {
       const snapshot = await this.inContext(() =>
-        getDocs(query(users, where(field, '>=', text), where(field, '<=', text + ''), limit(SEARCH_LIMIT)))
+        getDocs(query(users, where(field, '>=', text), where(field, '<=', text + '\uf8ff'), limit(SEARCH_LIMIT)))
       );
       return snapshot.docs.map((d) => ({ ...(d.data() as User), uid: d.id }));
     };
@@ -113,7 +127,7 @@ export class FriendsService {
     };
   }
 
-  async sendRequest(me: FirebaseUser, myCounts: FapCounts, target: User): Promise<void> {
+  async sendRequest(me: Profile, myCounts: FapCounts, target: User): Promise<void> {
     const batch = writeBatch(this.firestore);
     batch.set(
       this.socialRef(target.uid),
@@ -126,7 +140,7 @@ export class FriendsService {
 
   // Los totales del remitente vienen en la propia solicitud; se corrigen solos la próxima vez
   // que sume o borre (fap.service.ts#fanOut).
-  async acceptRequest(me: FirebaseUser, myCounts: FapCounts, from: Friend): Promise<void> {
+  async acceptRequest(me: Profile, myCounts: FapCounts, from: Friend): Promise<void> {
     const batch = writeBatch(this.firestore);
     batch.set(
       this.socialRef(me.uid),
@@ -155,11 +169,66 @@ export class FriendsService {
     await batch.commit();
   }
 
-  async rejectRequest(me: FirebaseUser, from: Friend): Promise<void> {
+  async rejectRequest(me: { uid: string }, from: Friend): Promise<void> {
     const batch = writeBatch(this.firestore);
     batch.set(this.socialRef(me.uid), { requests: { [from.uid]: deleteField() } }, { merge: true });
     batch.set(this.socialRef(from.uid), { sent: { [me.uid]: deleteField() } }, { merge: true });
     await batch.commit();
+  }
+
+  // Rompe la amistad en ambos lados (y retira reacciones y ajustes de privacidad de esa persona).
+  async removeFriend(me: string, friendUid: string): Promise<void> {
+    const batch = writeBatch(this.firestore);
+    batch.set(
+      this.socialRef(me),
+      {
+        friends: { [friendUid]: deleteField() },
+        reactions: { [friendUid]: deleteField() },
+        privacy: { [friendUid]: deleteField() },
+      },
+      { merge: true }
+    );
+    batch.set(
+      this.socialRef(friendUid),
+      { friends: { [me]: deleteField() }, reactions: { [me]: deleteField() } },
+      { merge: true }
+    );
+    await batch.commit();
+  }
+
+  async setPrivacy(me: string, friendUid: string, level: PrivacyLevel): Promise<void> {
+    await setDoc(
+      this.socialRef(me),
+      { privacy: { [friendUid]: level === 'todo' ? deleteField() : level } },
+      { merge: true }
+    );
+  }
+
+  async setPaused(me: string, paused: boolean): Promise<void> {
+    await setDoc(this.socialRef(me), { paused }, { merge: true });
+  }
+
+  async sendReaction(me: string, friendUid: string, emoji: string): Promise<void> {
+    await setDoc(
+      this.socialRef(friendUid),
+      { reactions: { [me]: { emoji, at: serverTimestamp() } } },
+      { merge: true }
+    );
+  }
+
+  async clearReactions(me: string): Promise<void> {
+    await setDoc(this.socialRef(me), { reactions: deleteField() }, { merge: true });
+  }
+
+  // Borrado de cuenta: me quito de las listas de mis amigos y retiro/rechazo solicitudes pendientes.
+  async detachEverywhere(me: string, social: Social): Promise<void> {
+    const writes: [string, Record<string, unknown>][] = [
+      ...social.friends.map((f): [string, Record<string, unknown>] => [f.uid, { friends: { [me]: deleteField() }, reactions: { [me]: deleteField() } }]),
+      ...social.sent.map((s): [string, Record<string, unknown>] => [s.uid, { requests: { [me]: deleteField() } }]),
+      ...social.requests.map((r): [string, Record<string, unknown>] => [r.uid, { sent: { [me]: deleteField() } }]),
+    ];
+    // Uno a uno: si alguien ya no existe o su documento cambió, no bloquea al resto.
+    await Promise.allSettled(writes.map(([uid, data]) => setDoc(this.socialRef(uid), data, { merge: true })));
   }
 
   private socialRef(uid: string) {

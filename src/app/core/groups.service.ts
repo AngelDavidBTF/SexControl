@@ -47,12 +47,21 @@ export class PartialGroupWriteError extends Error {
   }
 }
 
-function memberFrom(user: { displayName: string | null; photoURL: string | null }, counts: Partial<FapCounts>): GroupMember {
+// Entrada inicial de un miembro. Para amigos sale de su entrada en social/{dueño}, que ya incluye
+// los recuentos de semana y mes (y si oculta sus números), así los rankings por periodo son
+// correctos desde el primer momento. Después la mantiene el propio miembro al sumar.
+function memberFrom(
+  user: { displayName: string | null; photoURL: string | null },
+  counts: Partial<Pick<Friend, 'solitario' | 'compania' | 'week' | 'month' | 'hidden'>>
+): GroupMember {
   return {
     displayName: user.displayName,
     photoURL: user.photoURL,
     solitario: counts.solitario ?? 0,
     compania: counts.compania ?? 0,
+    week: counts.week ?? null,
+    month: counts.month ?? null,
+    hidden: counts.hidden === true,
   };
 }
 
@@ -134,6 +143,17 @@ export class GroupsService {
       memberUids: arrayRemove(uid),
       [`members.${uid}`]: deleteField(),
       addedUids: [],
+    });
+  }
+
+  // Un miembro (no el dueño) sale del grupo.
+  async leaveGroup(group: Group, uid: string): Promise<void> {
+    if (!group.id) {
+      return;
+    }
+    await updateDoc(doc(this.firestore, 'groups', group.id), {
+      memberUids: arrayRemove(uid),
+      [`members.${uid}`]: deleteField(),
     });
   }
 

@@ -4,6 +4,7 @@ import { ActionSheetController, IonicModule } from '@ionic/angular';
 import { Observable, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
+import { ProfileService } from '../../core/profile.service';
 import { FriendsService } from '../../core/friends.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -21,6 +22,7 @@ export class RequestFriendsPage {
   private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private ui = inject(UiService);
+  private profiles = inject(ProfileService);
   private actionSheetController = inject(ActionSheetController);
 
   textoBuscar = '';
@@ -69,8 +71,10 @@ export class RequestFriendsPage {
       return;
     }
     try {
-      const myCounts = await firstValueFrom(this.fapService.fapCounts$(me.uid));
-      await this.friendsService.acceptRequest(me, myCounts, request);
+      const [profile, myCounts] = await Promise.all([this.profiles.current(me.uid), firstValueFrom(this.fapService.fapCounts$(me.uid))]);
+      await this.friendsService.acceptRequest(profile, myCounts, request);
+      // Aplica la privacidad y la pausa a la nueva amistad.
+      await this.fapService.publish(me.uid);
       await this.ui.toast('Solicitud aceptada');
     } catch (error) {
       console.error('Error aceptando solicitud', error);

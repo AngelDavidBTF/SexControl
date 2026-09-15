@@ -2,13 +2,15 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActionSheetController, AlertController, IonicModule, ModalController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
 import { FapCounts } from '../../shared/fap.model';
-import { Group } from '../../shared/group.model';
+import { Group, GroupMember } from '../../shared/group.model';
+import { monthKey, weekKey } from '../../shared/stats';
+import { DatoDirective } from '../../shared/dato.directive';
 import { FiltroPipe } from '../../shared/filtro.pipe';
 import { AddMembersModal } from './add-members.modal';
 
@@ -31,14 +33,27 @@ interface GroupView {
   mediaGrupo: number;
 }
 
+export type RankingPeriod = 'total' | 'mes' | 'semana';
+
 function memberTotal(member: MemberView): number {
-  return (member.counts?.compania ?? 0) + (member.counts?.solitario ?? 0);
+  return member.counts ? member.counts.compania + member.counts.solitario : -1;
+}
+
+// Totales del periodo pedido. Si la última publicación del miembro es de otra semana/mes, en el
+// periodo actual lleva 0.
+function countsFor(member: GroupMember, period: RankingPeriod, now: Date): FapCounts {
+  if (period === 'total') {
+    return { solitario: member.solitario ?? 0, compania: member.compania ?? 0 };
+  }
+  const entry = period === 'semana' ? member.week : member.month;
+  const key = period === 'semana' ? weekKey(now) : monthKey(now);
+  return entry?.key === key ? { solitario: entry.s, compania: entry.c } : { solitario: 0, compania: 0 };
 }
 
 @Component({
   selector: 'app-group',
   standalone: true,
-  imports: [CommonModule, IonicModule, HeaderComponent, FiltroPipe],
+  imports: [CommonModule, IonicModule, HeaderComponent, FiltroPipe, DatoDirective],
   templateUrl: './group.page.html',
   styleUrl: './group.page.scss',
 })
@@ -53,23 +68,33 @@ export class GroupPage {
   private modalController = inject(ModalController);
 
   textoBuscar = '';
+  private readonly period$ = new BehaviorSubject<RankingPeriod>('total');
+
+  get period(): RankingPeriod {
+    return this.period$.value;
+  }
 
   // Todo sale del documento del grupo, que ya está en la lista de grupos del usuario: abrir
   // un grupo no cuesta lecturas extra. null: el grupo no existe o ya no perteneces a él.
-  readonly vm$: Observable<GroupView | null> = combineLatest([this.route.paramMap, this.authService.user$]).pipe(
-    switchMap(([params, user]) => {
+  readonly vm$: Observable<GroupView | null> = combineLatest([this.route.paramMap, this.authService.user$, this.period$]).pipe(
+    switchMap(([params, user, period]) => {
       const groupId = params.get('id');
       if (!groupId || !user) {
         return of(null);
       }
       return this.groupsService.group$(user.uid, groupId).pipe(
         catchError(() => of(null)),
-        map((group) => (group ? this.buildView(group, user.uid) : null))
+        map((group) => (group ? this.buildView(group, user.uid, period) : null))
       );
     })
   );
 
-  private buildView(group: Group, myUid: string): GroupView {
+  onPeriodChange(event: CustomEvent): void {
+    this.period$.next(event.detail.value as RankingPeriod);
+  }
+
+  private buildView(group: Group, myUid: string, period: RankingPeriod): GroupView {
+    const now = new Date();
     const members = group.memberUids.map((uid): MemberView => {
       const member = group.members?.[uid];
       return {
@@ -77,13 +102,15 @@ export class GroupPage {
         displayName: member?.displayName ?? null,
         email: null,
         photoURL: member?.photoURL ?? null,
-        counts: member ? { solitario: member.solitario ?? 0, compania: member.compania ?? 0 } : null,
+        counts: !member || member.hidden ? null : countsFor(member, period, now),
       };
     });
+    // Quien no comparte sus números queda al final y fuera de las medias.
+    const sharing = members.filter((m) => m.counts);
     const sorted = [...members].sort((a, b) => memberTotal(b) - memberTotal(a));
-    const totalCompania = members.reduce((sum, m) => sum + (m.counts?.compania ?? 0), 0);
-    const totalSolitario = members.reduce((sum, m) => sum + (m.counts?.solitario ?? 0), 0);
-    const count = members.length || 1;
+    const totalCompania = sharing.reduce((sum, m) => sum + (m.counts?.compania ?? 0), 0);
+    const totalSolitario = sharing.reduce((sum, m) => sum + (m.counts?.solitario ?? 0), 0);
+    const count = sharing.length || 1;
     return {
       group,
       isOwner: group.ownerUid === myUid,
@@ -94,6 +121,31 @@ export class GroupPage {
       mediaSolitario: totalSolitario / count,
       mediaGrupo: (totalCompania + totalSolitario) / count,
     };
+  }
+
+  async confirmLeave(group: Group): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Salir del grupo',
+      message: `Dejarás de ver "${group.name}" y sus miembros dejarán de ver tus números. Solo el creador puede volver a añadirte.`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Salir', role: 'destructive' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    const uid = this.authService.currentUid();
+    if (role !== 'destructive' || !uid) {
+      return;
+    }
+    try {
+      await this.groupsService.leaveGroup(group, uid);
+      await this.router.navigate(['/tabs/amigos'], { replaceUrl: true });
+      await this.ui.toast(`Has salido de "${group.name}"`);
+    } catch (error) {
+      console.error('Error saliendo del grupo', error);
+      await this.ui.toast('No se pudo salir del grupo');
+    }
   }
 
   // Las actualizaciones en vivo crean objetos nuevos: sin trackBy se recrearían las filas

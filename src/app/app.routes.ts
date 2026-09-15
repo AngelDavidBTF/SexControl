@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './shared/auth.guard';
+import { authGuard, signedInGuard } from './shared/auth.guard';
 
 export const routes: Routes = [
   {
@@ -66,5 +66,11 @@ export const routes: Routes = [
   {
     path: 'verify-email',
     loadComponent: () => import('./pages/verify-email/verify-email.page').then((m) => m.VerifyEmailPage),
+    canActivate: [signedInGuard],
+  },
+  {
+    path: 'ajustes',
+    loadComponent: () => import('./pages/ajustes/ajustes.page').then((m) => m.AjustesPage),
+    canActivate: [authGuard],
   },
 ];

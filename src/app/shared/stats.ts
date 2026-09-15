@@ -373,3 +373,34 @@ export function heatMap(days: DayBuckets, today: Date, weekCount = 26): HeatMap 
   }
   return { weeks, monthLabels };
 }
+
+// ---------------------------------------------------------------- periodos actuales
+
+// Clave de la semana: el lunes en 'yyyy-MM-dd'. Clave del mes: 'yyyy-MM'.
+export function weekKey(date: Date): string {
+  return dayKey(startOfWeek(date, WEEK));
+}
+
+export function monthKey(date: Date): string {
+  return format(date, 'yyyy-MM');
+}
+
+export function currentWeekTotals(days: DayBuckets, today: Date): Totals {
+  const start = startOfWeek(today, WEEK);
+  return sumRange(days, { start, end: addWeeks(start, 1) });
+}
+
+export function currentMonthTotals(days: DayBuckets, today: Date): Totals {
+  const start = startOfMonth(today);
+  return sumRange(days, { start, end: addMonths(start, 1) });
+}
+
+// ¿Alguna semana (lunes-domingo) llegó a `goal`?
+export function anyWeekReached(days: DayBuckets, goal: number): boolean {
+  const weeks = new Map<string, number>();
+  for (const [key, bucket] of Object.entries(days)) {
+    const week = weekKey(parseISO(key));
+    weeks.set(week, (weeks.get(week) ?? 0) + bucketTotal(bucket));
+  }
+  return [...weeks.values()].some((total) => total >= goal);
+}

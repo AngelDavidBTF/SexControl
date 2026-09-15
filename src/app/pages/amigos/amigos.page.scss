@@ -1,0 +1,41 @@
+.reacciones {
+  margin: 12px 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ion-color-step-50, #f4f5f8);
+}
+
+.reacciones-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reaccion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.reaccion-emoji {
+  font-size: 24px;
+}
+
+.reaccion-texto {
+  flex: 1;
+}
+
+.muted {
+  color: var(--ion-color-medium);
+  font-size: 12px;
+}
+
+.ve-de-ti {
+  font-size: 12px;
+}
+
+.oculto {
+  font-size: 20px;
+}

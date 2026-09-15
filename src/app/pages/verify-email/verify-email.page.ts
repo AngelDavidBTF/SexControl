@@ -1,27 +1,51 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { HeaderComponent } from '../../components/header/header.component';
+import { UiService } from '../../core/ui.service';
 
+// La app exige email verificado (authGuard). Aquí se espera a que el usuario pulse el enlace.
 @Component({
   selector: 'app-verify-email',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink, HeaderComponent],
+  imports: [CommonModule, IonicModule],
   templateUrl: './verify-email.page.html',
   styleUrl: './verify-email.page.scss',
 })
-export class VerifyEmailPage implements OnDestroy {
+export class VerifyEmailPage {
   private authSvc = inject(AuthService);
+  private router = inject(Router);
+  private ui = inject(UiService);
 
   readonly user$ = this.authSvc.user$;
+  checking = false;
 
   async onSendEmail(): Promise<void> {
-    await this.authSvc.sendVerificationEmail();
+    try {
+      await this.authSvc.sendVerificationEmail();
+      await this.ui.toast('Te hemos enviado otro email de verificación');
+    } catch (error) {
+      await this.ui.toast(this.authSvc.errorMessage(error));
+    }
   }
 
-  ngOnDestroy(): void {
-    this.authSvc.logout();
+  async onCheck(): Promise<void> {
+    this.checking = true;
+    try {
+      const user = await this.authSvc.reloadUser();
+      if (user?.emailVerified) {
+        await this.router.navigate(['/tabs/sumar'], { replaceUrl: true });
+      } else {
+        await this.ui.toast('Todavía no está verificado. Revisa tu correo (y la carpeta de spam)');
+      }
+    } finally {
+      this.checking = false;
+    }
+  }
+
+  async onLogout(): Promise<void> {
+    await this.authSvc.logout();
+    await this.router.navigate(['/login'], { replaceUrl: true });
   }
 }

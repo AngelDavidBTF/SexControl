@@ -4,7 +4,11 @@ import {
   User as FirebaseUser,
   authState,
   createUserWithEmailAndPassword,
+  deleteUser,
+  EmailAuthProvider,
   getAdditionalUserInfo,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   getRedirectResult,
   GoogleAuthProvider,
   sendEmailVerification,
@@ -123,6 +127,51 @@ export class AuthService {
     await signOut(this.auth);
   }
 
+  // Recarga el usuario desde Firebase (p. ej. tras verificar el email en otra pestaña).
+  async reloadUser(): Promise<FirebaseUser | null> {
+    const user = this.auth.currentUser;
+    if (!user) {
+      return null;
+    }
+    await user.reload();
+    // Fuerza un token nuevo para que las reglas vean email_verified actualizado.
+    await user.getIdToken(true);
+    return this.auth.currentUser;
+  }
+
+  isPasswordUser(user: FirebaseUser): boolean {
+    return user.providerData.some((provider) => provider.providerId === 'password');
+  }
+
+  // Firebase exige un inicio de sesión reciente para operaciones sensibles (borrar la cuenta).
+  async reauthenticate(password: string | null): Promise<void> {
+    const user = this.auth.currentUser;
+    if (!user) {
+      throw new Error('Sin sesión');
+    }
+    if (this.isPasswordUser(user)) {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', password ?? ''));
+    } else {
+      await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    }
+  }
+
+  async updateDisplayName(displayName: string): Promise<void> {
+    if (this.auth.currentUser) {
+      await updateProfile(this.auth.currentUser, { displayName });
+    }
+  }
+
+  async deleteCurrentUser(): Promise<void> {
+    if (this.auth.currentUser) {
+      await deleteUser(this.auth.currentUser);
+    }
+  }
+
+  errorMessage(error: unknown): string {
+    return this.mapAuthError(error);
+  }
+
   isEmailVerified(user: { emailVerified: boolean }): boolean {
     return user.emailVerified === true;
   }
@@ -170,6 +219,10 @@ export class AuthService {
         return 'No hay conexión. Comprueba tu red e inténtalo de nuevo';
       case 'auth/too-many-requests':
         return 'Demasiados intentos. Espera un poco e inténtalo de nuevo';
+      case 'auth/requires-recent-login':
+        return 'Por seguridad, vuelve a introducir tu contraseña';
+      case 'auth/missing-password':
+        return 'Introduce tu contraseña';
       default:
         return 'Ha ocurrido un error, inténtalo de nuevo';
     }

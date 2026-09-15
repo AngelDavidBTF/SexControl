@@ -3,6 +3,8 @@ export const environment = {
   // true para conectar contra los emuladores locales de Firebase (firebase emulators:start)
   // en lugar del proyecto real. Útil en desarrollo para no ensuciar datos de producción.
   useEmulators: false,
+  // Clave de sitio de reCAPTCHA Enterprise para Firebase App Check. Vacía = App Check desactivado.
+  appCheckSiteKey: '',
 };
 
 export const firebaseConfig = {

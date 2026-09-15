@@ -33,7 +33,8 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isSignedIn();
       allow create, update: if isOwner(uid);
-      allow delete: if false;
+      // Borrar la cuenta elimina también el perfil.
+      allow delete: if isOwner(uid);
     }
 
     // ---------------------------------------------------------------- social
@@ -90,7 +91,37 @@ service cloud.firestore {
         request.auth.uid in mapField(request.resource.data, 'friends') &&
         request.resource.data.friends[request.auth.uid]
           .diff(resource.data.friends[request.auth.uid]).affectedKeys()
-          .hasOnly(['solitario', 'compania', 'displayName', 'photoURL']);
+          .hasOnly(['solitario', 'compania', 'total', 'hidden', 'week', 'month', 'displayName', 'photoURL']);
+    }
+
+    // 5) eliminar la amistad: quitarse de mi lista de amigos (al borrar la amistad o su cuenta),
+    //    llevándose también su reacción si la había.
+    function isUnfriend() {
+      return resource != null &&
+        request.auth.uid in mapField(resource.data, 'friends') &&
+        topKeysOnly(['friends', 'reactions']) &&
+        onlyMe(mapDiff('friends').removedKeys()) && onlyMe(mapDiff('friends').affectedKeys()) &&
+        mapDiff('reactions').affectedKeys().hasOnly([request.auth.uid]);
+    }
+
+    // 6) retirar la solicitud que me envió.
+    function isCancelOfSentRequest() {
+      return resource != null &&
+        request.auth.uid in mapField(resource.data, 'requests') &&
+        topKeysOnly(['requests']) &&
+        onlyMe(mapDiff('requests').removedKeys()) && onlyMe(mapDiff('requests').affectedKeys());
+    }
+
+    // 7) mandarme una reacción (se guarda la última de cada amigo), siendo mi amigo.
+    function isReaction() {
+      return resource != null &&
+        request.auth.uid in mapField(resource.data, 'friends') &&
+        topKeysOnly(['reactions']) &&
+        onlyMe(mapDiff('reactions').affectedKeys()) &&
+        request.auth.uid in request.resource.data.reactions &&
+        request.resource.data.reactions[request.auth.uid].keys().hasOnly(['emoji', 'at']) &&
+        request.resource.data.reactions[request.auth.uid].emoji is string &&
+        request.resource.data.reactions[request.auth.uid].emoji.size() <= 8;
     }
 
     match /social/{uid} {
@@ -98,8 +129,9 @@ service cloud.firestore {
       allow create: if isOwner(uid) || (isSignedIn() && isIncomingRequest());
       allow update: if isOwner(uid) ||
         (isSignedIn() && (isIncomingRequest() || isAcceptOfMySentRequest() ||
-                          isRejectOfMySentRequest() || isFriendFanOut()));
-      allow delete: if false;
+                          isRejectOfMySentRequest() || isFriendFanOut() || isUnfriend() ||
+                          isCancelOfSentRequest() || isReaction()));
+      allow delete: if isOwner(uid);
     }
 
     // ---------------------------------------------------------------- faps
@@ -112,20 +144,29 @@ service cloud.firestore {
         request.resource.data.fecha is timestamp &&
         request.resource.data.fecha <= request.time + duration.value(5, 'm');
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow update: if false;
+      // Solo los detalles opcionales: nota, valoración (1-5) y etiquetas.
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nota', 'valoracion', 'etiquetas']) &&
+        (request.resource.data.get('nota', null) == null ||
+          (request.resource.data.nota is string && request.resource.data.nota.size() <= 280)) &&
+        (request.resource.data.get('valoracion', null) == null ||
+          (request.resource.data.valoracion is int && request.resource.data.valoracion >= 1 &&
+           request.resource.data.valoracion <= 5)) &&
+        (request.resource.data.get('etiquetas', null) == null ||
+          (request.resource.data.etiquetas is list && request.resource.data.etiquetas.size() <= 10));
     }
 
-    // Totales + recuentos por día (`days`) y hora (`hours`) para las estadísticas; `v` es la
+    // Totales, recuentos por día (`days`), hora (`hours`), etiqueta (`tags`) y valoración (`ratings`), objetivos (`goals`); `v` es la
     // versión del formato (fap.model.ts#STATS_VERSION).
     match /fapStats/{uid} {
       allow read: if isOwner(uid);
       allow create, update: if isOwner(uid) &&
-        request.resource.data.keys().hasOnly(['solitario', 'compania', 'updatedAt', 'days', 'hours', 'v']) &&
+        request.resource.data.keys().hasOnly(['solitario', 'compania', 'updatedAt', 'days', 'hours', 'tags', 'ratings', 'goals', 'v']) &&
         request.resource.data.get('days', {}) is map &&
         request.resource.data.get('hours', {}) is map &&
         request.resource.data.get('solitario', 0) is int && request.resource.data.get('solitario', 0) >= 0 &&
         request.resource.data.get('compania', 0) is int && request.resource.data.get('compania', 0) >= 0;
-      allow delete: if false;
+      allow delete: if isOwner(uid);
     }
 
     // ---------------------------------------------------------------- groups
@@ -176,7 +217,14 @@ service cloud.firestore {
         (request.auth.uid in resource.data.memberUids &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
          request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]) &&
-         request.auth.uid in request.resource.data.members)
+         request.auth.uid in request.resource.data.members) ||
+        // Miembro (no dueño): salir del grupo quitándose de memberUids y de members.
+        (request.auth.uid in resource.data.memberUids &&
+         request.auth.uid != resource.data.ownerUid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids', 'members']) &&
+         request.resource.data.memberUids == resource.data.memberUids.removeAll([request.auth.uid]) &&
+         onlyMe(request.resource.data.members.diff(resource.data.members).removedKeys()) &&
+         onlyMe(request.resource.data.members.diff(resource.data.members).affectedKeys()))
       );
 
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;

@@ -1,6 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>Amigos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes">
+        <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 
   <ion-segment [value]="segment" mode="md" color="secondary" (ionChange)="onSegmentChange($event)">
@@ -22,6 +27,21 @@
       <ion-badge *ngIf="(pendingRequests$ | async) as pending" color="secondary" class="solicitudes-badge">{{ pending }}</ion-badge>
     </ion-item>
 
+    <!-- Reacciones recibidas -->
+    <ng-container *ngIf="reactions$ | async as reactions">
+      <div class="reacciones" *ngIf="reactions.length > 0">
+        <div class="reacciones-cabecera">
+          <strong>Te han reaccionado</strong>
+          <ion-button fill="clear" size="small" color="medium" (click)="clearReactions()" class="limpiar-reacciones">Limpiar</ion-button>
+        </div>
+        <div class="reaccion" *ngFor="let reaction of reactions; trackBy: trackByUid">
+          <span class="reaccion-emoji" aria-hidden="true">{{ reaction.emoji }}</span>
+          <span class="reaccion-texto"><strong>{{ reaction.displayName || 'Un amigo' }}</strong> te ha mandado {{ reaction.emoji }}</span>
+          <span class="muted">{{ timeAgo(reaction.at) }}</span>
+        </div>
+      </div>
+    </ng-container>
+
     <ion-item-divider>
       <ion-label>Amigos agregados</ion-label>
     </ion-item-divider>
@@ -30,15 +50,22 @@
 
     <ng-container *ngIf="friends$ | async as friends; else cargando">
       <ion-list *ngIf="friends.length > 0">
-        <ion-item *ngFor="let friend of friends | filtro: textoBuscar; trackBy: trackByUid" class="amigo">
+        <ion-item *ngFor="let friend of friends | filtro: textoBuscar; trackBy: trackByUid" class="amigo" button (click)="friendActions(friend)">
           <ion-avatar slot="start">
             <img [src]="friend.photoURL || 'assets/icon-user.svg'" alt="" />
           </ion-avatar>
           <ion-label>
             <h2>{{ friend.displayName || friend.email }}</h2>
+            <p *ngIf="privacyFor(friend.uid) !== 'todo'" class="ve-de-ti">Ve de ti: {{ privacyFor(friend.uid) === 'total' ? 'solo el total' : 'nada' }}</p>
           </ion-label>
-          <ion-badge color="secondary" class="ion-margin-horizontal badge-compania">{{ friend.compania ?? 0 }}</ion-badge>
-          <ion-badge color="primary" class="badge-solitario">{{ friend.solitario ?? 0 }}</ion-badge>
+          <ng-container [ngSwitch]="shareMode(friend)">
+            <ion-note *ngSwitchCase="'hidden'" class="oculto" aria-label="No comparte sus números">🙈</ion-note>
+            <ion-badge *ngSwitchCase="'total'" color="tertiary" class="badge-total" dato>{{ friend.total ?? 0 }}</ion-badge>
+            <ng-container *ngSwitchDefault>
+              <ion-badge color="secondary" class="ion-margin-horizontal badge-compania" dato>{{ friend.compania ?? 0 }}</ion-badge>
+              <ion-badge color="primary" class="badge-solitario" dato>{{ friend.solitario ?? 0 }}</ion-badge>
+            </ng-container>
+          </ng-container>
         </ion-item>
       </ion-list>
       <h5 *ngIf="friends.length === 0" class="ion-text-center">No has agregado ningún amigo todavía.</h5>

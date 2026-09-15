@@ -1,29 +1,19 @@
-<app-header titulo="Verificar email"></app-header>
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Verificar email</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-<ion-content *ngIf="user$ | async as user">
-  <ion-row>
-    <ion-col>
-      <h2>¡Gracias por registrarte!</h2>
-      <p>Hemos enviado un email de confirmación a: <strong>{{ user.email }}</strong></p>
-      <p>Por favor comprueba tu email y haz click en el enlace para verificar tu correo. Gracias</p>
-    </ion-col>
-  </ion-row>
+<ion-content class="ion-padding" *ngIf="user$ | async as user">
+  <div class="icono" aria-hidden="true">📬</div>
+  <h2>Confirma tu correo</h2>
+  <p>Te hemos enviado un email a <strong>{{ user.email }}</strong>.</p>
+  <p>Pulsa el enlace del email y después vuelve aquí. Si no lo encuentras, revisa la carpeta de spam.</p>
 
-  <ion-row>
-    <ion-col>
-      <ion-button type="button" color="primary" expand="block" (click)="onSendEmail()"
-        >Reenviar email de verificación</ion-button
-      >
-    </ion-col>
-  </ion-row>
-
-  <ion-item-divider class="divider">
-    <ion-label> ¿Ya has confirmado el correo? </ion-label>
-  </ion-item-divider>
-
-  <ion-row>
-    <ion-col>
-      <ion-button type="button" color="secondary" expand="block" routerLink="/login">Ir al login</ion-button>
-    </ion-col>
-  </ion-row>
+  <ion-button expand="block" color="secondary" (click)="onCheck()" [disabled]="checking" class="ya-verificado">
+    <ion-spinner *ngIf="checking" name="dots" slot="start"></ion-spinner>
+    Ya lo he verificado
+  </ion-button>
+  <ion-button expand="block" fill="outline" color="primary" (click)="onSendEmail()">Reenviar email</ion-button>
+  <ion-button expand="block" fill="clear" color="medium" (click)="onLogout()">Usar otra cuenta</ion-button>
 </ion-content>

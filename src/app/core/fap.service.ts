@@ -1,11 +1,12 @@
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import { Auth, authState } from '@angular/fire/auth';
 import {
-  DocumentSnapshot,
+  DocumentReference,
   Firestore,
   QueryDocumentSnapshot,
   Timestamp,
   collection,
+  deleteDoc,
   doc,
   docData,
   getDocs,
@@ -16,29 +17,47 @@ import {
   serverTimestamp,
   setDoc,
   startAfter,
-  updateDoc,
   where,
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, firstValueFrom, map } from 'rxjs';
-import { DayBuckets, Fap, FapCounts, FapStats, HourBuckets, STATS_VERSION } from '../shared/fap.model';
+import {
+  DayBuckets,
+  Fap,
+  FapCounts,
+  FapDetails,
+  FapStats,
+  Goals,
+  HourBuckets,
+  RatingBuckets,
+  STATS_VERSION,
+  StatsBucket,
+  TagBuckets,
+  normalizeTag,
+} from '../shared/fap.model';
 import { dayKey, hourKey } from '../shared/stats';
-import { FriendsService } from './friends.service';
-import { GroupsService } from './groups.service';
 import { PerUserStreams } from './per-user-streams';
+import { SharingService } from './sharing.service';
 
 interface FapStatsDoc {
   solitario?: number;
   compania?: number;
   days?: DayBuckets;
   hours?: HourBuckets;
+  tags?: TagBuckets;
+  ratings?: RatingBuckets;
+  goals?: Goals;
   v?: number;
 }
 
-export interface FapEntry {
+// Lo mínimo para descontar un fap de las estadísticas al borrarlo o editar sus detalles.
+export interface FapRef extends FapDetails {
   id: string;
   solitario: boolean;
   fecha: Date | null;
+}
+
+export interface FapEntry extends FapRef {
   snapshot: QueryDocumentSnapshot;
 }
 
@@ -48,20 +67,16 @@ export interface FapPage {
   next: QueryDocumentSnapshot | null;
 }
 
-// Máximo de escrituras por batch de Firestore (500), con margen.
-const FAN_OUT_BATCH_SIZE = 450;
-
-// fapStats/{uid} (solo lo lee su dueño) guarda totales y recuentos por día y hora: Sumar y las
-// estadísticas leen ese único documento. Al sumar o borrar, el usuario propaga sus totales a
-// social/{amigo} y a cada grupo suyo: sumar es mucho menos frecuente que abrir pantallas.
+// fapStats/{uid} (solo lo lee su dueño) guarda totales, recuentos por día/hora/etiqueta/
+// valoración y objetivos: Sumar y las estadísticas leen ese único documento. Al sumar o borrar se
+// publican los totales a amigos y grupos (SharingService).
 @Injectable({
   providedIn: 'root',
 })
 export class FapService {
   private firestore = inject(Firestore);
   private injector = inject(Injector);
-  private friendsService = inject(FriendsService);
-  private groupsService = inject(GroupsService);
+  private sharing = inject(SharingService);
   private streams = new PerUserStreams(authState(inject(Auth)));
   private fapsCollection = collection(this.firestore, 'faps');
 
@@ -73,6 +88,9 @@ export class FapService {
           compania: stats?.compania ?? 0,
           days: stats?.days ?? {},
           hours: stats?.hours ?? {},
+          tags: stats?.tags ?? {},
+          ratings: stats?.ratings ?? {},
+          goals: stats?.goals ?? {},
           v: stats?.v ?? null,
         }))
       )
@@ -84,56 +102,87 @@ export class FapService {
   }
 
   // Sin `fecha` se registra ahora (hora del servidor); con ella, un fap olvidado en esa fecha.
-  async addFap(uid: string, solitario: boolean, fecha?: Date): Promise<void> {
-    const current = await firstValueFrom(this.fapCounts$(uid));
+  // Devuelve lo necesario para deshacerlo o añadirle detalles después.
+  async addFap(uid: string, solitario: boolean, fecha?: Date, details: FapDetails = {}): Promise<FapRef> {
+    const ref = doc(this.fapsCollection);
+    const clean = cleanDetails(details);
+    const when = fecha ?? new Date();
 
     const batch = writeBatch(this.firestore);
-    batch.set(doc(this.fapsCollection), {
+    batch.set(ref, {
       uid,
       solitario,
       numero: 1,
       fecha: fecha ? Timestamp.fromDate(fecha) : serverTimestamp(),
+      ...clean,
     });
-    batch.set(this.statsRef(uid), this.statsDelta(solitario, fecha ?? new Date(), 1), { merge: true });
+    batch.set(this.statsRef(uid), this.statsDelta({ solitario, fecha: when, ...clean }, 1), { merge: true });
     await batch.commit();
 
-    await this.fanOut(uid, this.applyDelta(current, solitario, 1));
+    await this.publish(uid);
+    return { id: ref.id, solitario, fecha: when, ...clean };
   }
 
   async removeLastFap(uid: string): Promise<void> {
     const q = query(this.fapsCollection, where('uid', '==', uid), orderBy('fecha', 'desc'), limit(1));
     const snapshot = await this.inContext(() => getDocs(q));
     if (snapshot.docs[0]) {
-      await this.removeFap(uid, snapshot.docs[0]);
+      await this.removeFap(uid, toFapRef(snapshot.docs[0]));
     }
   }
 
-  // Borra un fap concreto (desde el historial o "Borrar último") y descuenta sus recuentos.
-  async removeFap(uid: string, fapDoc: DocumentSnapshot | QueryDocumentSnapshot): Promise<void> {
-    const data = fapDoc.data() as Fap | undefined;
-    if (!data) {
-      return;
-    }
-    const current = await firstValueFrom(this.fapCounts$(uid));
-    const fecha = data.fecha instanceof Timestamp ? data.fecha.toDate() : new Date();
-
+  // Borra un fap concreto (historial, "Borrar último" o "Deshacer") y descuenta sus recuentos.
+  async removeFap(uid: string, fap: FapRef): Promise<void> {
+    const ref = doc(this.firestore, 'faps', fap.id);
     const batch = writeBatch(this.firestore);
-    batch.delete(fapDoc.ref);
-    batch.set(this.statsRef(uid), this.statsDelta(data.solitario, fecha, -1), { merge: true });
+    batch.delete(ref);
+    batch.set(this.statsRef(uid), this.statsDelta({ ...fap, fecha: fap.fecha ?? new Date() }, -1), { merge: true });
     try {
       await batch.commit();
     } catch (error) {
       // Totales desfasados (p. ej. quedarían en negativo y las reglas lo rechazan):
       // se borra el fap igualmente y se reconstruyen las estadísticas.
       console.warn('No se pudo actualizar fapStats al borrar; se reconstruye', error);
-      const retry = writeBatch(this.firestore);
-      retry.delete(fapDoc.ref);
-      await retry.commit();
+      await deleteDoc(ref);
       await this.rebuildStats(uid);
       return;
     }
+    await this.publish(uid);
+  }
 
-    await this.fanOut(uid, this.applyDelta(current, data.solitario, -1));
+  // Cambia nota, valoración y etiquetas de un fap y ajusta los recuentos por etiqueta/valoración.
+  async updateDetails(uid: string, fap: FapRef, details: FapDetails): Promise<FapRef> {
+    const next = cleanDetails(details);
+    const batch = writeBatch(this.firestore);
+    batch.update(doc(this.firestore, 'faps', fap.id), {
+      nota: next.nota ?? null,
+      valoracion: next.valoracion ?? null,
+      etiquetas: next.etiquetas ?? null,
+    });
+    const field = fap.solitario ? 's' : 'c';
+    const tags: Record<string, StatsBucket> = {};
+    for (const tag of fap.etiquetas ?? []) {
+      tags[tag] = { [field]: increment(-1) } as StatsBucket;
+    }
+    for (const tag of next.etiquetas ?? []) {
+      tags[tag] = (fap.etiquetas ?? []).includes(tag) ? ({} as StatsBucket) : ({ [field]: increment(1) } as StatsBucket);
+    }
+    const ratings: Record<string, StatsBucket> = {};
+    if (fap.valoracion !== next.valoracion) {
+      if (fap.valoracion) {
+        ratings[String(fap.valoracion)] = { [field]: increment(-1) } as StatsBucket;
+      }
+      if (next.valoracion) {
+        ratings[String(next.valoracion)] = { [field]: increment(1) } as StatsBucket;
+      }
+    }
+    batch.set(this.statsRef(uid), { tags: dropEmpty(tags), ratings, updatedAt: serverTimestamp() }, { merge: true });
+    await batch.commit();
+    return { ...fap, nota: next.nota ?? null, valoracion: next.valoracion ?? null, etiquetas: next.etiquetas ?? null };
+  }
+
+  async setGoals(uid: string, goals: Goals): Promise<void> {
+    await setDoc(this.statsRef(uid), { goals: { semana: goals.semana ?? null, mes: goals.mes ?? null } }, { merge: true });
   }
 
   // Historial bajo demanda, del más reciente al más antiguo (lecturas solo de la página pedida).
@@ -146,28 +195,35 @@ export class FapService {
     ];
     const snapshot = await this.inContext(() => getDocs(query(this.fapsCollection, ...constraints)));
     return {
-      entries: snapshot.docs.map((d) => {
-        const fap = d.data() as Fap;
-        return {
-          id: d.id,
-          solitario: fap.solitario,
-          fecha: fap.fecha instanceof Timestamp ? fap.fecha.toDate() : null,
-          snapshot: d,
-        };
-      }),
+      entries: snapshot.docs.map((d) => ({ ...toFapRef(d), snapshot: d })),
       next: snapshot.docs.length === pageSize ? snapshot.docs[snapshot.docs.length - 1] : null,
     };
   }
 
-  // Reconstruye fapStats (totales y recuentos por día/hora) leyendo todos los faps del usuario.
-  // Cuesta 1 lectura por fap, pero solo ocurre una vez por usuario: al pasar a esta versión del
-  // formato (AppComponent) o si se detecta un desfase al borrar.
-  async rebuildStats(uid: string): Promise<void> {
+  // Todos los faps del usuario (1 lectura por fap): reconstrucción y borrado de cuenta.
+  async allFapRefs(uid: string): Promise<DocumentReference[]> {
     const snapshot = await this.inContext(() => getDocs(query(this.fapsCollection, where('uid', '==', uid))));
+    return snapshot.docs.map((d) => d.ref);
+  }
+
+  // Reconstruye fapStats leyendo todos los faps del usuario. Cuesta 1 lectura por fap, pero solo
+  // ocurre una vez por usuario: al pasar a esta versión del formato (AppComponent) o si se detecta
+  // un desfase al borrar. Conserva los objetivos.
+  async rebuildStats(uid: string): Promise<void> {
+    const [snapshot, current] = await Promise.all([
+      this.inContext(() => getDocs(query(this.fapsCollection, where('uid', '==', uid)))),
+      firstValueFrom(this.stats$(uid)),
+    ]);
     const days: DayBuckets = {};
     const hours: HourBuckets = {};
+    const tags: TagBuckets = {};
+    const ratings: RatingBuckets = {};
     let solitario = 0;
     let compania = 0;
+    const bump = (buckets: Record<string, StatsBucket>, key: string, field: 's' | 'c') => {
+      const bucket = (buckets[key] ??= {});
+      bucket[field] = (bucket[field] ?? 0) + 1;
+    };
 
     for (const d of snapshot.docs) {
       const fap = d.data() as Fap;
@@ -175,75 +231,49 @@ export class FapService {
       fap.solitario ? solitario++ : compania++;
       if (fap.fecha instanceof Timestamp) {
         const date = fap.fecha.toDate();
-        const day = (days[dayKey(date)] ??= {});
-        day[field] = (day[field] ?? 0) + 1;
-        const hour = (hours[hourKey(date)] ??= {});
-        hour[field] = (hour[field] ?? 0) + 1;
+        bump(days, dayKey(date), field);
+        bump(hours, hourKey(date), field);
+      }
+      (fap.etiquetas ?? []).forEach((tag) => bump(tags, tag, field));
+      if (fap.valoracion) {
+        bump(ratings, String(fap.valoracion), field);
       }
     }
 
-    const counts = { solitario, compania };
-    await setDoc(this.statsRef(uid), { ...counts, days, hours, v: STATS_VERSION, updatedAt: serverTimestamp() });
-    await this.fanOut(uid, counts);
+    await setDoc(this.statsRef(uid), {
+      solitario,
+      compania,
+      days,
+      hours,
+      tags,
+      ratings,
+      goals: current.goals,
+      v: STATS_VERSION,
+      updatedAt: serverTimestamp(),
+    });
+    await this.publish(uid);
   }
 
-  // Escribe valores absolutos (no incrementos): si alguna copia quedó desfasada, se corrige
-  // en la siguiente propagación. Amigos y grupos salen de los listeners ya abiertos en la
-  // sesión, así que normalmente no cuesta lecturas. Nunca lanza: el fap ya está guardado.
-  private async fanOut(uid: string, counts: FapCounts): Promise<void> {
-    try {
-      const [social, groups] = await Promise.all([
-        firstValueFrom(this.friendsService.social$(uid)),
-        firstValueFrom(this.groupsService.groupsForUser$(uid)),
-      ]);
-
-      // Amigos: en batches. Mi entrada en el documento de cada amigo no la puedo leer, así que
-      // se escribe siempre (las reglas aceptan que el valor no cambie).
-      for (let i = 0; i < social.friends.length; i += FAN_OUT_BATCH_SIZE) {
-        const batch = writeBatch(this.firestore);
-        social.friends
-          .slice(i, i + FAN_OUT_BATCH_SIZE)
-          .forEach((friend) =>
-            batch.set(doc(this.firestore, 'social', friend.uid), { friends: { [uid]: counts } }, { merge: true })
-          );
-        await batch.commit();
-      }
-
-      // Grupos: mi entrada sí está en memoria, así que solo se escriben los que cambian. Uno a
-      // uno, para que un grupo del que acaban de sacarme no impida actualizar los demás.
-      const outdated = groups.filter((group) => {
-        const mine = group.members?.[uid];
-        return group.id && (mine?.solitario !== counts.solitario || mine?.compania !== counts.compania);
-      });
-      await Promise.allSettled(
-        outdated.map((group) =>
-          updateDoc(doc(this.firestore, 'groups', group.id!), {
-            [`members.${uid}.solitario`]: counts.solitario,
-            [`members.${uid}.compania`]: counts.compania,
-          })
-        )
-      );
-    } catch (error) {
-      console.warn('No se pudieron propagar los totales', error);
-    }
-  }
-
-  private applyDelta(counts: FapCounts, solitario: boolean, delta: number): FapCounts {
-    const field = solitario ? 'solitario' : 'compania';
-    return { ...counts, [field]: Math.max(0, counts[field] + delta) };
+  // Publica los totales actuales. El listener de fapStats ya refleja la escritura local.
+  async publish(uid: string): Promise<void> {
+    await this.sharing.publish(uid, await firstValueFrom(this.stats$(uid)));
   }
 
   private statsRef(uid: string) {
     return doc(this.firestore, 'fapStats', uid);
   }
 
-  // Incremento (o decremento) de totales y de los recuentos del día y la hora locales de `fecha`.
-  private statsDelta(solitario: boolean, fecha: Date, delta: number) {
-    const bucketField = solitario ? 's' : 'c';
+  // Incremento (o decremento) de totales y de los recuentos del día, la hora, las etiquetas y la
+  // valoración del fap.
+  private statsDelta(fap: FapDetails & { solitario: boolean; fecha: Date }, delta: number) {
+    const field = fap.solitario ? 's' : 'c';
+    const bucket = () => ({ [field]: increment(delta) });
     return {
-      [solitario ? 'solitario' : 'compania']: increment(delta),
-      days: { [dayKey(fecha)]: { [bucketField]: increment(delta) } },
-      hours: { [hourKey(fecha)]: { [bucketField]: increment(delta) } },
+      [fap.solitario ? 'solitario' : 'compania']: increment(delta),
+      days: { [dayKey(fap.fecha)]: bucket() },
+      hours: { [hourKey(fap.fecha)]: bucket() },
+      ...(fap.etiquetas?.length ? { tags: Object.fromEntries(fap.etiquetas.map((tag) => [tag, bucket()])) } : {}),
+      ...(fap.valoracion ? { ratings: { [String(fap.valoracion)]: bucket() } } : {}),
       updatedAt: serverTimestamp(),
     };
   }
@@ -253,4 +283,32 @@ export class FapService {
   private inContext<T>(fn: () => T): T {
     return runInInjectionContext(this.injector, fn);
   }
+}
+
+function toFapRef(snapshot: QueryDocumentSnapshot): FapRef {
+  const fap = snapshot.data() as Fap;
+  return {
+    id: snapshot.id,
+    solitario: fap.solitario,
+    fecha: fap.fecha instanceof Timestamp ? fap.fecha.toDate() : null,
+    nota: fap.nota ?? null,
+    valoracion: fap.valoracion ?? null,
+    etiquetas: fap.etiquetas ?? null,
+  };
+}
+
+// Normaliza los detalles: sin vacíos, etiquetas en minúsculas y sin repetir.
+function cleanDetails(details: FapDetails): FapDetails {
+  const nota = details.nota?.trim().slice(0, 280) || null;
+  const valoracion = details.valoracion && details.valoracion >= 1 && details.valoracion <= 5 ? Math.round(details.valoracion) : null;
+  const etiquetas = [...new Set((details.etiquetas ?? []).map(normalizeTag).filter(Boolean))].slice(0, 10);
+  return {
+    ...(nota ? { nota } : {}),
+    ...(valoracion ? { valoracion } : {}),
+    ...(etiquetas.length ? { etiquetas } : {}),
+  };
+}
+
+function dropEmpty(buckets: Record<string, StatsBucket>): Record<string, StatsBucket> {
+  return Object.fromEntries(Object.entries(buckets).filter(([, bucket]) => Object.keys(bucket).length > 0));
 }

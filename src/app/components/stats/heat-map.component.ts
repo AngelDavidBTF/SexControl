@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HeatCell, HeatMap, WEEKDAY_LABELS } from '../../shared/stats';
 
 // Mapa de actividad por días (columnas = semanas, filas = lunes..domingo). Escala secuencial
-// de un solo tono; en modo oscuro los pasos van al revés (más actividad = más claro).
+// de un solo tono; en modo oscuro (body.dark) los pasos van al revés (más actividad = más claro).
 @Component({
   selector: 'app-heat-map',
   standalone: true,
@@ -57,14 +57,12 @@ import { HeatCell, HeatMap, WEEKDAY_LABELS } from '../../shared/stats';
       --l3: #7a84ff;
       --l4: #4450f0;
     }
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --l0: #3a3a42;
-        --l1: #2b3070;
-        --l2: #3b44b0;
-        --l3: #5f6bff;
-        --l4: #9aa2ff;
-      }
+    :host-context(body.dark) {
+      --l0: #3a3a42;
+      --l1: #2b3070;
+      --l2: #3b44b0;
+      --l3: #5f6bff;
+      --l4: #9aa2ff;
     }
     .detail {
       min-height: 22px;

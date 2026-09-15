@@ -1,6 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>Estadísticas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes">
+        <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
   <ion-toolbar class="periodos">
     <ion-segment [value]="state.period" mode="md" color="secondary" (ionChange)="onPeriodChange($event)">
@@ -56,7 +61,7 @@
       <!-- Resumen del periodo -->
       <section class="tarjeta resumen">
         <div class="hero">
-          <span class="hero-numero total-periodo">{{ vm.totals.total }}</span>
+          <span class="hero-numero total-periodo" dato>{{ vm.totals.total }}</span>
           <div class="hero-texto">
             <span>{{ vm.totals.total === 1 ? 'vez' : 'veces' }}</span>
             <span class="muted">{{ vm.totals.activeDays }} {{ vm.totals.activeDays === 1 ? 'día activo' : 'días activos' }}</span>
@@ -78,8 +83,8 @@
             <div class="solitario" [style.flex-grow]="vm.totals.solitario"></div>
           </div>
           <div class="reparto-leyenda">
-            <span><i class="swatch compania"></i>Compañía <strong class="reparto-compania">{{ vm.totals.compania }}</strong> · {{ vm.pctCompania }} %</span>
-            <span><i class="swatch solitario"></i>Solitario <strong class="reparto-solitario">{{ vm.totals.solitario }}</strong> · {{ 100 - vm.pctCompania }} %</span>
+            <span><i class="swatch compania"></i>Compañía <strong class="reparto-compania" dato>{{ vm.totals.compania }}</strong> · {{ vm.pctCompania }} %</span>
+            <span><i class="swatch solitario"></i>Solitario <strong class="reparto-solitario" dato>{{ vm.totals.solitario }}</strong> · {{ 100 - vm.pctCompania }} %</span>
           </div>
         </div>
       </section>
@@ -120,6 +125,57 @@
         </section>
       </div>
 
+      <!-- Resumen anual compartible -->
+      <section class="tarjeta compartir">
+        <div class="compartir-texto">
+          <strong>Tu {{ vm.shareYear }} en una imagen</strong>
+          <span class="muted">Racha, mejor mes, franja favorita… listo para compartir.</span>
+        </div>
+        <ion-button color="secondary" (click)="shareYear(vm.shareYear)" class="compartir-anio">
+          <ion-icon slot="start" name="share-social-outline"></ion-icon>
+          Crear
+        </ion-button>
+      </section>
+
+      <!-- Logros -->
+      <ng-container *ngIf="achievements$ | async as achievementList">
+        <h3 class="seccion">Logros · {{ unlockedCount(achievementList) }}/{{ achievementList.length }}</h3>
+        <div class="logros">
+          <div class="logro" *ngFor="let a of achievementList" [class.bloqueado]="!a.unlocked" [attr.aria-label]="a.title + (a.unlocked ? ', conseguido' : ', pendiente')">
+            <span class="logro-emoji" aria-hidden="true">{{ a.emoji }}</span>
+            <strong>{{ a.title }}</strong>
+            <span class="muted">{{ a.description }}</span>
+            <div class="logro-progreso" *ngIf="!a.unlocked"><div [style.width.%]="a.progress * 100"></div></div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Etiquetas y valoración -->
+      <section class="tarjeta" *ngIf="vm.tags.length || vm.rating">
+        <ng-container *ngIf="vm.rating as rating">
+          <h3>Valoración media</h3>
+          <div class="valoracion">
+            <span class="valoracion-media" dato>{{ rating.average | number: '1.1-1' }}</span>
+            <span class="valoracion-estrellas" aria-hidden="true">★</span>
+            <span class="muted">{{ rating.count }} {{ rating.count === 1 ? 'valorada' : 'valoradas' }}</span>
+          </div>
+          <div class="fila-barra" *ngFor="let d of rating.distribution">
+            <span class="fila-etiqueta">{{ d.stars }} ★</span>
+            <div class="barra"><div [style.width.%]="d.pct"></div></div>
+            <span class="fila-valor" dato>{{ d.count }}</span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="vm.tags.length">
+          <h3 [class.separado]="vm.rating">Etiquetas</h3>
+          <div class="fila-barra etiqueta-fila" *ngFor="let row of vm.tags.slice(0, 8)">
+            <span class="fila-etiqueta">#{{ row.tag }}</span>
+            <div class="barra"><div [style.width.%]="row.pct"></div></div>
+            <span class="fila-valor" dato>{{ row.total }}</span>
+          </div>
+        </ng-container>
+      </section>
+
       <!-- Actividad -->
       <section class="tarjeta">
         <h3>Actividad de los últimos 6 meses</h3>
@@ -147,11 +203,18 @@
         <ng-template #lista>
           <ion-list lines="full">
             <ion-item-sliding *ngFor="let entry of history; trackBy: trackById" #sliding>
-              <ion-item class="registro">
+              <ion-item class="registro" button (click)="editEntry(entry)">
                 <ion-icon slot="start" [name]="entry.solitario ? 'person' : 'people'" [color]="entry.solitario ? 'primary' : 'secondary'"></ion-icon>
                 <ion-label>
                   <h2>{{ formatEntry(entry) }}</h2>
-                  <p>{{ entry.solitario ? 'En solitario' : 'En compañía' }}</p>
+                  <p>
+                    {{ entry.solitario ? 'En solitario' : 'En compañía' }}
+                    <span class="estrellas-mini" *ngIf="entry.valoracion">· {{ stars(entry.valoracion) }}</span>
+                  </p>
+                  <p class="detalles-registro" *ngIf="entry.etiquetas?.length || entry.nota">
+                    <span class="etiqueta-mini" *ngFor="let tag of entry.etiquetas">#{{ tag }}</span>
+                    <span class="nota-mini" *ngIf="entry.nota">“{{ entry.nota }}”</span>
+                  </p>
                 </ion-label>
               </ion-item>
               <ion-item-options side="end">
@@ -170,6 +233,19 @@
       </section>
     </ng-container>
   </ng-container>
+
+  <!-- Vista previa del resumen anual si el navegador no permite compartir archivos -->
+  <div class="vista-previa" *ngIf="previewYearCard" (click)="closeYearPreview()">
+    <div class="vista-previa-contenido" (click)="$event.stopPropagation()">
+      <img [src]="previewYearCard" alt="Resumen del año" />
+      <div class="vista-previa-botones">
+        <a [href]="previewYearCard" [download]="previewYearName" class="descargar">
+          <ion-button color="secondary">Descargar imagen</ion-button>
+        </a>
+        <ion-button fill="clear" color="light" (click)="closeYearPreview()">Cerrar</ion-button>
+      </div>
+    </div>
+  </div>
 
   <ng-template #cargando>
     <div class="ion-text-center ion-margin">

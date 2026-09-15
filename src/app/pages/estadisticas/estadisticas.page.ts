@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AlertController, IonItemSliding, IonicModule } from '@ionic/angular';
+import { AlertController, IonItemSliding, IonicModule, ModalController } from '@ionic/angular';
 import { RouterLink } from '@angular/router';
-import { BehaviorSubject, Observable, combineLatest, map, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { addDays, format, parseISO, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { QueryDocumentSnapshot } from '@angular/fire/firestore';
@@ -11,7 +11,13 @@ import { FapEntry, FapService } from '../../core/fap.service';
 import { UiService } from '../../core/ui.service';
 import { BarChartComponent } from '../../components/stats/bar-chart.component';
 import { HeatMapComponent } from '../../components/stats/heat-map.component';
-import { FapStats } from '../../shared/fap.model';
+import { FapDetails, FapStats } from '../../shared/fap.model';
+import { Achievement } from '../../shared/achievements';
+import { drawYearCard, yearSummary } from '../../shared/year-card';
+import { DatoDirective } from '../../shared/dato.directive';
+import { FapDetailsModal } from '../../components/fap-details/fap-details.modal';
+import { AchievementsService } from '../../core/achievements.service';
+import { ProfileService } from '../../core/profile.service';
 import {
   Bar,
   DateRange,
@@ -70,6 +76,15 @@ interface StatsView {
   weekdayBars: Bar[];
   timeSlotBars: Bar[];
   heat: HeatMap;
+  tags: TagRow[];
+  rating: { average: number; count: number; distribution: { stars: number; count: number; pct: number }[] } | null;
+  shareYear: number;
+}
+
+interface TagRow {
+  tag: string;
+  total: number;
+  pct: number;
 }
 
 const HISTORY_PAGE = 20;
@@ -77,7 +92,7 @@ const HISTORY_PAGE = 20;
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink, BarChartComponent, HeatMapComponent],
+  imports: [CommonModule, IonicModule, RouterLink, BarChartComponent, HeatMapComponent, DatoDirective],
   templateUrl: './estadisticas.page.html',
   styleUrl: './estadisticas.page.scss',
 })
@@ -86,6 +101,9 @@ export class EstadisticasPage {
   private fapService = inject(FapService);
   private ui = inject(UiService);
   private alertController = inject(AlertController);
+  private modalController = inject(ModalController);
+  private achievements = inject(AchievementsService);
+  private profiles = inject(ProfileService);
 
   readonly periods: { value: Period; label: string }[] = [
     { value: 'semana', label: 'Semana' },
@@ -107,6 +125,21 @@ export class EstadisticasPage {
     this.authService.user$.pipe(switchMap((user) => (user ? this.fapService.stats$(user.uid) : of(null)))),
     this.state$,
   ]).pipe(map(([stats, state]) => (stats ? this.buildView(stats, state) : null)));
+
+  // Logros: salen de fapStats, social y la lista de grupos, ya cargados en la sesión.
+  readonly achievements$: Observable<Achievement[]> = this.authService.user$.pipe(
+    switchMap((user) => {
+      if (!user) {
+        return of([]);
+      }
+      // Registra como vistos los ya conseguidos (y avisa de los nuevos desde la última vez).
+      void this.achievements.announceNew(user.uid);
+      return this.achievements.achievements$(user.uid);
+    })
+  );
+
+  previewYearCard: string | null = null;
+  previewYearName = '';
 
   // Historial: solo se lee cuando el usuario lo abre, de 20 en 20.
   history: FapEntry[] = [];
@@ -197,7 +230,82 @@ export class EstadisticasPage {
         };
       }),
       heat: heatMap(stats.days, now),
+      tags: tagRows(stats),
+      rating: ratingSummary(stats),
+      shareYear: state.period === 'anio' ? state.anchor.getFullYear() : now.getFullYear(),
     };
+  }
+
+  // ---------------------------------------------------------------- resumen anual
+
+  async shareYear(year: number): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid) {
+      return;
+    }
+    const loading = await this.ui.loading('Preparando tu resumen…');
+    try {
+      const [stats, profile] = await Promise.all([firstValueFrom(this.fapService.stats$(uid)), this.profiles.current(uid)]);
+      const blob = await drawYearCard(yearSummary(stats, year), profile.displayName);
+      const file = new File([blob], `resumen-${year}.png`, { type: 'image/png' });
+      await loading.dismiss();
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Mi ${year}` }).catch(() => undefined);
+      } else {
+        this.previewYearCard = URL.createObjectURL(blob);
+        this.previewYearName = file.name;
+      }
+    } catch (error) {
+      await loading.dismiss();
+      console.error('Error generando el resumen anual', error);
+      await this.ui.toast('No se pudo generar el resumen');
+    }
+  }
+
+  closeYearPreview(): void {
+    if (this.previewYearCard) {
+      URL.revokeObjectURL(this.previewYearCard);
+    }
+    this.previewYearCard = null;
+  }
+
+  // ---------------------------------------------------------------- detalles de un registro
+
+  async editEntry(entry: FapEntry): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid) {
+      return;
+    }
+    const stats = await firstValueFrom(this.fapService.stats$(uid));
+    const modal = await this.modalController.create({
+      component: FapDetailsModal,
+      componentProps: {
+        details: entry,
+        knownTags: tagRows(stats).map((row) => row.tag),
+        subtitle: this.formatEntry(entry),
+      },
+    });
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss<FapDetails>();
+    if (role !== 'confirm' || !data) {
+      return;
+    }
+    try {
+      const updated = await this.fapService.updateDetails(uid, entry, data);
+      this.history = this.history.map((item) => (item.id === entry.id ? { ...item, ...updated } : item));
+      await this.ui.toast('Detalles guardados');
+    } catch (error) {
+      console.error('Error guardando detalles', error);
+      await this.ui.toast('No se pudieron guardar los detalles');
+    }
+  }
+
+  unlockedCount(list: Achievement[]): number {
+    return list.filter((a) => a.unlocked).length;
+  }
+
+  stars(value: number | null | undefined): string {
+    return value ? '★'.repeat(value) : '';
   }
 
   private delta(current: number, previous: number, label: string): Delta {
@@ -292,7 +400,7 @@ export class EstadisticasPage {
       return;
     }
     try {
-      await this.fapService.removeFap(uid, entry.snapshot);
+      await this.fapService.removeFap(uid, entry);
       this.history = this.history.filter((item) => item.id !== entry.id);
       await this.ui.toast('Registro borrado');
     } catch (error) {
@@ -308,4 +416,27 @@ export class EstadisticasPage {
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function tagRows(stats: FapStats): TagRow[] {
+  const rows = Object.entries(stats.tags)
+    .map(([tag, bucket]) => ({ tag, total: (bucket.s ?? 0) + (bucket.c ?? 0) }))
+    .filter((row) => row.total > 0)
+    .sort((a, b) => b.total - a.total);
+  const max = Math.max(1, ...rows.map((row) => row.total));
+  return rows.map((row) => ({ ...row, pct: Math.round((row.total / max) * 100) }));
+}
+
+function ratingSummary(stats: FapStats): StatsView['rating'] {
+  const distribution = [5, 4, 3, 2, 1].map((stars) => {
+    const bucket = stats.ratings[String(stars)];
+    return { stars, count: (bucket?.s ?? 0) + (bucket?.c ?? 0) };
+  });
+  const count = distribution.reduce((sum, d) => sum + d.count, 0);
+  if (count === 0) {
+    return null;
+  }
+  const average = distribution.reduce((sum, d) => sum + d.stars * d.count, 0) / count;
+  const max = Math.max(...distribution.map((d) => d.count));
+  return { average, count, distribution: distribution.map((d) => ({ ...d, pct: Math.round((d.count / max) * 100) })) };
 }

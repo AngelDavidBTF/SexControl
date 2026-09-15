@@ -4,6 +4,7 @@ import { IonicModule } from '@ionic/angular';
 import { Subscription, firstValueFrom, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
+import { ProfileService } from '../../core/profile.service';
 import { FriendsService, SEARCH_MIN_CHARS } from '../../core/friends.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -21,6 +22,7 @@ export class AddFriendPage implements OnInit, OnDestroy {
   private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private ui = inject(UiService);
+  private profiles = inject(ProfileService);
 
   readonly minChars = SEARCH_MIN_CHARS;
   textoBuscar = '';
@@ -85,8 +87,8 @@ export class AddFriendPage implements OnInit, OnDestroy {
     }
 
     try {
-      const myCounts = await firstValueFrom(this.fapService.fapCounts$(me.uid));
-      await this.friendsService.sendRequest(me, myCounts, user);
+      const [profile, myCounts] = await Promise.all([this.profiles.current(me.uid), firstValueFrom(this.fapService.fapCounts$(me.uid))]);
+      await this.friendsService.sendRequest(profile, myCounts, user);
       this.users = this.users.filter((u) => u.uid !== user.uid);
       await this.ui.toast('Se ha enviado la petición correctamente');
     } catch (error) {

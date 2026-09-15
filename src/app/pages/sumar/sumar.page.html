@@ -2,7 +2,9 @@
   <ion-toolbar>
     <ion-title>Sumar</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="onLogout()">Salir</ion-button>
+      <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes" class="ir-ajustes">
+        <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -10,7 +12,7 @@
 <ion-content [fullscreen]="true">
   <h5 class="ion-margin">Hola, {{ displayName }}, este es tu resumen general.</h5>
 
-  <ion-img src="assets/logo-sexcontrol.svg"></ion-img>
+  <ion-img *ngIf="!neutral()" src="assets/logo-sexcontrol.svg"></ion-img>
 
   <ng-container *ngIf="showLoader">
     <div class="ion-text-center">
@@ -22,18 +24,28 @@
     <div class="contenedorNumeros">
       <ion-text color="secondary">
         <p class="letras">En compañía</p>
-        <h1 class="numero">{{ numberC }}</h1>
+        <h1 class="numero" dato>{{ numberC }}</h1>
       </ion-text>
       <ion-text color="primary">
         <p class="letras">En solitario</p>
-        <h1 class="numero">{{ numberS }}</h1>
+        <h1 class="numero" dato>{{ numberS }}</h1>
       </ion-text>
     </div>
     <div class="contenedorTotal">
       <ion-text color="tertiary">
         <p class="letras">Total</p>
-        <h1 class="total">{{ numberTotal }}</h1>
+        <h1 class="total" dato>{{ numberTotal }}</h1>
       </ion-text>
+    </div>
+
+    <div class="objetivos" *ngIf="goals.length">
+      <div class="objetivo" *ngFor="let goal of goals">
+        <div class="objetivo-texto">
+          <span>{{ goal.label }}</span>
+          <strong dato class="objetivo-valor">{{ goal.done }} / {{ goal.target }}{{ goal.done >= goal.target ? ' 🎯' : '' }}</strong>
+        </div>
+        <ion-progress-bar [value]="goal.progress" [color]="goal.done >= goal.target ? 'success' : 'tertiary'"></ion-progress-bar>
+      </div>
     </div>
   </ng-container>
 

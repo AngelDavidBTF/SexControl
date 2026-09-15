@@ -1,4 +1,5 @@
 import { Timestamp } from '@angular/fire/firestore';
+import { PeriodCount } from './friend.model';
 
 // Debe coincidir con el tope de isValidGroup en firestore.rules.
 export const MAX_GROUP_MEMBERS = 200;
@@ -10,6 +11,11 @@ export interface GroupMember {
   photoURL: string | null;
   solitario: number;
   compania: number;
+  // Para los rankings por periodo (ver PeriodCount).
+  week?: PeriodCount | null;
+  month?: PeriodCount | null;
+  // El miembro ha pausado la compartición: sus números no se muestran.
+  hidden?: boolean;
 }
 
 // groups/{groupId}. Las estadísticas del grupo son los faps totales de cada miembro,

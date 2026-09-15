@@ -1,0 +1,145 @@
+<app-header titulo="Perfil y ajustes"></app-header>
+
+<ion-content class="ajustes">
+  <!-- Perfil -->
+  <section class="tarjeta perfil">
+    <div class="avatar-wrap">
+      <button type="button" class="avatar" (click)="photoInput.click()" aria-label="Cambiar foto">
+        <img [src]="photoURL || 'assets/icon-user.svg'" alt="" />
+        <span class="editar"><ion-icon name="camera"></ion-icon></span>
+      </button>
+      <input #photoInput type="file" accept="image/*" hidden (change)="onPhotoSelected($event)" />
+      <ion-button *ngIf="photoURL" fill="clear" size="small" color="medium" (click)="removePhoto()">Quitar foto</ion-button>
+    </div>
+    <ion-input
+      label="Nombre"
+      labelPlacement="stacked"
+      fill="outline"
+      [(ngModel)]="displayName"
+      (ionInput)="profileDirty = true"
+      [maxlength]="40"
+      class="nombre"
+    ></ion-input>
+    <p class="muted email">{{ email }}</p>
+    <ion-button expand="block" color="secondary" (click)="saveProfile()" [disabled]="!profileDirty || savingProfile" class="guardar-perfil">
+      Guardar perfil
+    </ion-button>
+  </section>
+
+  <!-- Objetivos -->
+  <h3 class="seccion">🎯 Objetivos</h3>
+  <section class="tarjeta">
+    <p class="muted">Ponte una meta y verás tu progreso en Sumar. Déjalo vacío para no tener objetivo.</p>
+    <div class="fila-2">
+      <ion-input label="Por semana" labelPlacement="stacked" fill="outline" type="number" min="1" max="999" [(ngModel)]="goalWeek" (ionInput)="goalsDirty = true" class="objetivo-semana"></ion-input>
+      <ion-input label="Por mes" labelPlacement="stacked" fill="outline" type="number" min="1" max="999" [(ngModel)]="goalMonth" (ionInput)="goalsDirty = true" class="objetivo-mes"></ion-input>
+    </div>
+    <ion-button expand="block" fill="outline" (click)="saveGoals()" class="guardar-objetivos">Guardar objetivos</ion-button>
+  </section>
+
+  <!-- Privacidad -->
+  <h3 class="seccion">🛡️ Privacidad</h3>
+  <section class="tarjeta lista">
+    <ion-item lines="none">
+      <ion-toggle [checked]="paused" (ionChange)="onPausedChange($event)" class="pausar">
+        <ion-label>
+          Pausar lo que compartes
+          <p>Tus amigos y grupos dejan de ver tus números hasta que lo reactives.</p>
+        </ion-label>
+      </ion-toggle>
+    </ion-item>
+    <p class="muted nota">Para elegir qué ve cada amigo, tócalo en la pestaña Amigos.</p>
+  </section>
+
+  <!-- Recordatorios -->
+  <h3 class="seccion">🔔 Recordatorios</h3>
+  <section class="tarjeta lista">
+    <ion-item lines="none">
+      <ion-toggle [checked]="settings.reminders().enabled" (ionChange)="onRemindersChange($event)" class="recordatorios">
+        <ion-label>
+          Avisarme si no apunto nada
+          <p>Una notificación en este dispositivo.</p>
+        </ion-label>
+      </ion-toggle>
+    </ion-item>
+    <ng-container *ngIf="settings.reminders().enabled">
+      <ion-item lines="none">
+        <ion-select label="Tras" interface="popover" [value]="settings.reminders().days" (ionChange)="settings.updateReminders({ days: $event.detail.value })">
+          <ion-select-option *ngFor="let d of dayOptions" [value]="d">{{ d }} {{ d === 1 ? 'día' : 'días' }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-select label="A las" interface="popover" [value]="settings.reminders().hour" (ionChange)="settings.updateReminders({ hour: $event.detail.value })">
+          <ion-select-option *ngFor="let h of hourOptions" [value]="h">{{ h }}:00</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </ng-container>
+  </section>
+
+  <!-- Modo discreto -->
+  <h3 class="seccion">🥷 Modo discreto</h3>
+  <section class="tarjeta lista">
+    <ion-item lines="none">
+      <ion-toggle [checked]="settings.discreet().enabled" (ionChange)="onDiscreetChange($event)" class="discreto">
+        <ion-label>
+          Activar modo discreto
+          <p>Para usar la app sin que nadie cotillee. Puedes activarlo y desactivarlo cuando quieras.</p>
+        </ion-label>
+      </ion-toggle>
+    </ion-item>
+    <ng-container *ngIf="settings.discreet().enabled">
+      <ion-item lines="none">
+        <ion-toggle [checked]="settings.discreet().hideNumbers" (ionChange)="settings.updateDiscreet({ hideNumbers: $event.detail.checked })" class="ocultar-numeros">
+          <ion-label>
+            Ocultar números
+            <p>Se ven difuminados; tócalos para verlos unos segundos.</p>
+          </ion-label>
+        </ion-toggle>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-toggle [checked]="settings.discreet().neutralName" (ionChange)="settings.updateDiscreet({ neutralName: $event.detail.checked })" class="nombre-neutro">
+          <ion-label>
+            Nombre e icono neutros
+            <p>La pestaña del navegador y las notificaciones se llaman "Notas".</p>
+          </ion-label>
+        </ion-toggle>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-toggle [checked]="settings.lockEnabled()" (ionChange)="onLockChange($event)" class="bloqueo-pin">
+          <ion-label>
+            Bloquear con PIN
+            <p>Al abrir la app y al volver a ella tras 30 segundos.</p>
+          </ion-label>
+        </ion-toggle>
+      </ion-item>
+      <ion-item lines="none" *ngIf="settings.lockEnabled()" button (click)="changePin()">
+        <ion-label>Cambiar PIN</ion-label>
+      </ion-item>
+    </ng-container>
+  </section>
+
+  <!-- Apariencia -->
+  <h3 class="seccion">🎨 Apariencia</h3>
+  <section class="tarjeta">
+    <ion-segment [value]="settings.theme()" (ionChange)="setTheme($event)" class="tema">
+      <ion-segment-button value="sistema"><ion-label>Sistema</ion-label></ion-segment-button>
+      <ion-segment-button value="claro"><ion-label>Claro</ion-label></ion-segment-button>
+      <ion-segment-button value="oscuro"><ion-label>Oscuro</ion-label></ion-segment-button>
+    </ion-segment>
+  </section>
+
+  <section class="tarjeta" *ngIf="install.canInstall() && !install.installed()">
+    <p class="muted">Instala la app en tu dispositivo para abrirla como una app normal, incluso sin conexión.</p>
+    <ion-button expand="block" color="tertiary" (click)="installApp()">
+      <ion-icon slot="start" name="download-outline"></ion-icon>
+      Instalar app
+    </ion-button>
+  </section>
+
+  <!-- Cuenta -->
+  <h3 class="seccion">👤 Cuenta</h3>
+  <section class="tarjeta">
+    <ion-button expand="block" fill="outline" color="medium" (click)="logout()" class="cerrar-sesion">Cerrar sesión</ion-button>
+    <ion-button expand="block" fill="clear" color="danger" (click)="confirmDeleteAccount()" class="borrar-cuenta">Borrar mi cuenta</ion-button>
+  </section>
+</ion-content>

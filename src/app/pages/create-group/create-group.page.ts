@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { Observable, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
+import { ProfileService } from '../../core/profile.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupsService, PartialGroupWriteError } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
@@ -29,6 +30,7 @@ export class CreateGroupPage {
   private groupsService = inject(GroupsService);
   private ui = inject(UiService);
   private router = inject(Router);
+  private profiles = inject(ProfileService);
 
   nameGroup = '';
   imageUrl: string | null = null;
@@ -89,13 +91,15 @@ export class CreateGroupPage {
 
     this.guardando = true;
     try {
-      const counts = await firstValueFrom(this.fapService.fapCounts$(me.uid));
+      const [profile, counts] = await Promise.all([this.profiles.current(me.uid), firstValueFrom(this.fapService.fapCounts$(me.uid))]);
       const groupId = await this.groupsService.createGroup(
-        { uid: me.uid, displayName: me.displayName, photoURL: me.photoURL, counts },
+        { uid: me.uid, displayName: profile.displayName, photoURL: profile.photoURL, counts },
         this.nameGroup,
         this.imageUrl,
         this.selectedUsers
       );
+      // Rellena mi entrada con los recuentos de semana y mes para los rankings por periodo.
+      void this.fapService.publish(me.uid);
       await this.router.navigate(['/group', groupId], { replaceUrl: true });
     } catch (error) {
       console.error('Error creando grupo', error);

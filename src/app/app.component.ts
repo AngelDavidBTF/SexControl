@@ -1,31 +1,51 @@
 import { Component, DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { filter, of, switchMap, take } from 'rxjs';
+import { combineLatest, filter, of, switchMap, take } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { FapService } from './core/fap.service';
+import { LockService } from './core/lock.service';
+import { RemindersService } from './core/reminders.service';
+import { SettingsService } from './core/settings.service';
+import { LockScreenComponent } from './components/lock-screen/lock-screen.component';
 import { STATS_VERSION } from './shared/fap.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [IonicModule],
+  imports: [CommonModule, IonicModule, LockScreenComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
+  // Aplica tema y modo discreto desde el arranque (efectos del servicio).
+  readonly settings = inject(SettingsService);
+  readonly lock = inject(LockService);
+
   constructor() {
     const fapService = inject(FapService);
+    const reminders = inject(RemindersService);
+    const auth = inject(AuthService);
+    const destroyRef = inject(DestroyRef);
     const rebuilt = new Set<string>();
 
     // Si fapStats no tiene el formato actual (usuarios con faps anteriores a los recuentos por
     // día/hora, o recién registrados), se reconstruye una única vez. El documento ya lo escucha
     // Sumar, así que comprobarlo no cuesta lecturas; después la versión queda guardada en él.
-    inject(AuthService)
-      .user$.pipe(
-        switchMap((user) => (user ? fapService.stats$(user.uid).pipe(take(1), filter((s) => s.v !== STATS_VERSION), switchMap(() => of(user.uid))) : of(null))),
+    auth.user$
+      .pipe(
+        switchMap((user) =>
+          user
+            ? fapService.stats$(user.uid).pipe(
+                take(1),
+                filter((s) => s.v !== STATS_VERSION),
+                switchMap(() => of(user.uid))
+              )
+            : of(null)
+        ),
         filter((uid): uid is string => uid !== null && !rebuilt.has(uid)),
-        takeUntilDestroyed(inject(DestroyRef))
+        takeUntilDestroyed(destroyRef)
       )
       .subscribe((uid) => {
         rebuilt.add(uid);
@@ -33,6 +53,18 @@ export class AppComponent {
           rebuilt.delete(uid);
           console.error('No se pudieron reconstruir las estadísticas', error);
         });
+      });
+
+    // Recordatorio "llevas N días sin apuntar": se reprograma al cambiar datos o ajustes.
+    combineLatest([
+      auth.user$.pipe(switchMap((user) => (user ? fapService.stats$(user.uid) : of(null)))),
+      toObservable(this.settings.reminders),
+    ])
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(([stats]) => {
+        if (stats) {
+          void reminders.reschedule(stats.days);
+        }
       });
   }
 }
