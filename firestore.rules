@@ -111,10 +111,14 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Totales + recuentos por día (`days`) y hora (`hours`) para las estadísticas; `v` es la
+    // versión del formato (fap.model.ts#STATS_VERSION).
     match /fapStats/{uid} {
       allow read: if isOwner(uid);
       allow create, update: if isOwner(uid) &&
-        request.resource.data.keys().hasOnly(['solitario', 'compania', 'updatedAt']) &&
+        request.resource.data.keys().hasOnly(['solitario', 'compania', 'updatedAt', 'days', 'hours', 'v']) &&
+        request.resource.data.get('days', {}) is map &&
+        request.resource.data.get('hours', {}) is map &&
         request.resource.data.get('solitario', 0) is int && request.resource.data.get('solitario', 0) >= 0 &&
         request.resource.data.get('compania', 0) is int && request.resource.data.get('compania', 0) >= 0;
       allow delete: if false;

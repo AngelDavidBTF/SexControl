@@ -1,0 +1,179 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Estadísticas</ion-title>
+  </ion-toolbar>
+  <ion-toolbar class="periodos">
+    <ion-segment [value]="state.period" mode="md" color="secondary" (ionChange)="onPeriodChange($event)">
+      <ion-segment-button *ngFor="let p of periods" [value]="p.value">{{ p.label }}</ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="stats">
+  <ng-container *ngIf="vm$ | async as vm; else cargando">
+    <div *ngIf="!vm.hasData" class="vacio">
+      <div class="vacio-emoji" aria-hidden="true">📊</div>
+      <h2>Aún no hay nada que contar</h2>
+      <p>Cuando sumes tu primer registro verás aquí tus rachas, récords y gráficas.</p>
+      <ion-button routerLink="/tabs/sumar" color="secondary">Ir a Sumar</ion-button>
+    </div>
+
+    <ng-container *ngIf="vm.hasData">
+      <!-- Navegación del periodo -->
+      <div class="navegacion" *ngIf="state.period !== 'rango'">
+        <ion-button fill="clear" size="small" (click)="move(-1)" [disabled]="state.period === 'siempre'" aria-label="Periodo anterior" class="nav-prev">
+          <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+        </ion-button>
+        <h2 class="titulo-periodo">{{ vm.title }}</h2>
+        <ion-button fill="clear" size="small" (click)="move(1)" [disabled]="!vm.canGoNext" aria-label="Periodo siguiente" class="nav-next">
+          <ion-icon slot="icon-only" name="chevron-forward"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="rango" *ngIf="state.period === 'rango'">
+        <ion-input
+          label="Desde"
+          labelPlacement="stacked"
+          type="date"
+          fill="outline"
+          [value]="customFrom"
+          [max]="today"
+          (ionChange)="onCustomChange('from', $event)"
+          class="rango-desde"
+        ></ion-input>
+        <ion-input
+          label="Hasta"
+          labelPlacement="stacked"
+          type="date"
+          fill="outline"
+          [value]="customTo"
+          [max]="today"
+          (ionChange)="onCustomChange('to', $event)"
+          class="rango-hasta"
+        ></ion-input>
+      </div>
+
+      <!-- Resumen del periodo -->
+      <section class="tarjeta resumen">
+        <div class="hero">
+          <span class="hero-numero total-periodo">{{ vm.totals.total }}</span>
+          <div class="hero-texto">
+            <span>{{ vm.totals.total === 1 ? 'vez' : 'veces' }}</span>
+            <span class="muted">{{ vm.totals.activeDays }} {{ vm.totals.activeDays === 1 ? 'día activo' : 'días activos' }}</span>
+          </div>
+        </div>
+
+        <div class="delta" *ngIf="vm.delta as delta">
+          <ng-container *ngIf="delta.diff !== 0; else igual">
+            <span class="flecha" aria-hidden="true">{{ delta.diff > 0 ? '▲' : '▼' }}</span>
+            <strong>{{ delta.pct !== null ? (delta.pct > 0 ? '+' : '') + delta.pct + ' %' : (delta.diff > 0 ? '+' : '') + delta.diff }}</strong>
+            <span class="muted">vs {{ delta.label }}</span>
+          </ng-container>
+          <ng-template #igual><span class="muted">Igual que {{ delta.label }}</span></ng-template>
+        </div>
+
+        <div class="reparto" *ngIf="vm.totals.total > 0">
+          <div class="reparto-barra" role="img" [attr.aria-label]="vm.pctCompania + ' % en compañía, ' + (100 - vm.pctCompania) + ' % en solitario'">
+            <div class="compania" [style.flex-grow]="vm.totals.compania"></div>
+            <div class="solitario" [style.flex-grow]="vm.totals.solitario"></div>
+          </div>
+          <div class="reparto-leyenda">
+            <span><i class="swatch compania"></i>Compañía <strong class="reparto-compania">{{ vm.totals.compania }}</strong> · {{ vm.pctCompania }} %</span>
+            <span><i class="swatch solitario"></i>Solitario <strong class="reparto-solitario">{{ vm.totals.solitario }}</strong> · {{ 100 - vm.pctCompania }} %</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Evolución -->
+      <section class="tarjeta">
+        <h3>Evolución</h3>
+        <app-bar-chart [bars]="vm.bars" [height]="150"></app-bar-chart>
+      </section>
+
+      <!-- Rachas -->
+      <section class="tarjeta rachas">
+        <div class="racha">
+          <span class="racha-emoji" aria-hidden="true">🔥</span>
+          <span class="racha-numero racha-actual">{{ vm.streaks.current }}</span>
+          <span class="muted">{{ vm.streaks.current === 1 ? 'día de racha' : 'días de racha' }}</span>
+        </div>
+        <div class="racha">
+          <span class="racha-emoji" aria-hidden="true">⭐</span>
+          <span class="racha-numero racha-mejor">{{ vm.streaks.best }}</span>
+          <span class="muted">mejor racha</span>
+        </div>
+        <div class="racha">
+          <span class="racha-emoji" aria-hidden="true">⏱️</span>
+          <span class="racha-numero dias-ultimo">{{ vm.streaks.daysSinceLast === 0 ? 'Hoy' : (vm.streaks.daysSinceLast ?? '—') }}</span>
+          <span class="muted">{{ vm.streaks.daysSinceLast === 0 ? 'último registro' : vm.streaks.daysSinceLast === 1 ? 'día desde el último' : 'días desde el último' }}</span>
+        </div>
+      </section>
+
+      <!-- Curiosidades -->
+      <h3 class="seccion">Curiosidades</h3>
+      <div class="curiosidades">
+        <section class="tarjeta curiosidad" *ngFor="let insight of vm.insights">
+          <span class="curiosidad-icono" aria-hidden="true">{{ insight.icon }}</span>
+          <span class="muted">{{ insight.label }}</span>
+          <strong class="curiosidad-valor">{{ insight.value }}</strong>
+          <span class="curiosidad-detalle muted">{{ insight.detail }}</span>
+        </section>
+      </div>
+
+      <!-- Actividad -->
+      <section class="tarjeta">
+        <h3>Actividad de los últimos 6 meses</h3>
+        <app-heat-map [map]="vm.heat"></app-heat-map>
+      </section>
+
+      <section class="tarjeta">
+        <h3>Por día de la semana</h3>
+        <app-bar-chart [bars]="vm.weekdayBars" [height]="110" emptyHint="Toca un día para ver el detalle"></app-bar-chart>
+      </section>
+
+      <section class="tarjeta">
+        <h3>Por franja horaria</h3>
+        <app-bar-chart [bars]="vm.timeSlotBars" [height]="110" emptyHint="Toca una franja para ver el detalle"></app-bar-chart>
+      </section>
+
+      <!-- Historial -->
+      <section class="tarjeta historial">
+        <h3>Historial</h3>
+        <ng-container *ngIf="!historyOpen; else lista">
+          <p class="muted">Consulta tus registros uno a uno y borra los que quieras.</p>
+          <ion-button expand="block" fill="outline" color="medium" (click)="openHistory()" class="ver-historial">Ver historial</ion-button>
+        </ng-container>
+
+        <ng-template #lista>
+          <ion-list lines="full">
+            <ion-item-sliding *ngFor="let entry of history; trackBy: trackById" #sliding>
+              <ion-item class="registro">
+                <ion-icon slot="start" [name]="entry.solitario ? 'person' : 'people'" [color]="entry.solitario ? 'primary' : 'secondary'"></ion-icon>
+                <ion-label>
+                  <h2>{{ formatEntry(entry) }}</h2>
+                  <p>{{ entry.solitario ? 'En solitario' : 'En compañía' }}</p>
+                </ion-label>
+              </ion-item>
+              <ion-item-options side="end">
+                <ion-item-option color="danger" (click)="confirmDelete(entry, sliding)" class="borrar-registro">
+                  <ion-icon slot="icon-only" name="trash"></ion-icon>
+                </ion-item-option>
+              </ion-item-options>
+            </ion-item-sliding>
+          </ion-list>
+          <p class="muted ayuda" *ngIf="history.length > 0">Desliza un registro hacia la izquierda para borrarlo.</p>
+          <div class="ion-text-center" *ngIf="historyLoading">
+            <ion-spinner name="circular" color="danger"></ion-spinner>
+          </div>
+          <ion-button *ngIf="historyHasMore && !historyLoading" expand="block" fill="clear" (click)="loadMoreHistory()" class="cargar-mas">Cargar más</ion-button>
+        </ng-template>
+      </section>
+    </ng-container>
+  </ng-container>
+
+  <ng-template #cargando>
+    <div class="ion-text-center ion-margin">
+      <ion-spinner name="circular" color="danger"></ion-spinner>
+    </div>
+  </ng-template>
+</ion-content>

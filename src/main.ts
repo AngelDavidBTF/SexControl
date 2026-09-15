@@ -4,6 +4,8 @@ import {
   add,
   addCircle,
   checkmarkCircle,
+  chevronBack,
+  chevronForward,
   personAddOutline,
   trash,
   arrowBack,
@@ -38,6 +40,8 @@ addIcons({
   'checkmark-circle': checkmarkCircle,
   'person-add-outline': personAddOutline,
   trash,
+  'chevron-back': chevronBack,
+  'chevron-forward': chevronForward,
 });
 
 bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

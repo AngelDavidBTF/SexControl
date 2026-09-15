@@ -1,16 +1,10 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
-import { distinctUntilChanged, filter, map } from 'rxjs';
+import { filter, of, switchMap, take } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { FapService } from './core/fap.service';
-
-// Versión del recálculo de totales: subirla fuerza un nuevo recálculo en todos los dispositivos.
-const RECONCILE_VERSION = '2';
-
-function reconcileKey(uid: string): string {
-  return `sexcontrol.statsReconciled.${uid}`;
-}
+import { STATS_VERSION } from './shared/fap.model';
 
 @Component({
   selector: 'app-root',
@@ -22,38 +16,23 @@ function reconcileKey(uid: string): string {
 export class AppComponent {
   constructor() {
     const fapService = inject(FapService);
+    const rebuilt = new Set<string>();
 
-    // Una vez por usuario y dispositivo se recalculan los totales de fapStats y se propagan a
-    // amigos y grupos (alta de usuarios con faps anteriores). Después, sumar y borrar los
-    // mantienen al día, así que abrir la app no gasta lecturas en esto.
+    // Si fapStats no tiene el formato actual (usuarios con faps anteriores a los recuentos por
+    // día/hora, o recién registrados), se reconstruye una única vez. El documento ya lo escucha
+    // Sumar, así que comprobarlo no cuesta lecturas; después la versión queda guardada en él.
     inject(AuthService)
       .user$.pipe(
-        map((user) => user?.uid ?? null),
-        distinctUntilChanged(),
-        filter((uid): uid is string => uid !== null && readFlag(reconcileKey(uid)) !== RECONCILE_VERSION),
+        switchMap((user) => (user ? fapService.stats$(user.uid).pipe(take(1), filter((s) => s.v !== STATS_VERSION), switchMap(() => of(user.uid))) : of(null))),
+        filter((uid): uid is string => uid !== null && !rebuilt.has(uid)),
         takeUntilDestroyed(inject(DestroyRef))
       )
       .subscribe((uid) => {
-        fapService
-          .reconcileStats(uid)
-          .then(() => writeFlag(reconcileKey(uid), RECONCILE_VERSION))
-          .catch((error) => console.error('No se pudieron recalcular los totales', error));
+        rebuilt.add(uid);
+        fapService.rebuildStats(uid).catch((error) => {
+          rebuilt.delete(uid);
+          console.error('No se pudieron reconstruir las estadísticas', error);
+        });
       });
-  }
-}
-
-function readFlag(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeFlag(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Sin almacenamiento local se recalculará en el próximo arranque; no es un error.
   }
 }

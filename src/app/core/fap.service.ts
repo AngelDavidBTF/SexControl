@@ -1,11 +1,13 @@
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import { Auth, authState } from '@angular/fire/auth';
 import {
+  DocumentSnapshot,
   Firestore,
+  QueryDocumentSnapshot,
+  Timestamp,
   collection,
   doc,
   docData,
-  getCountFromServer,
   getDocs,
   increment,
   limit,
@@ -13,12 +15,14 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  startAfter,
   updateDoc,
   where,
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, firstValueFrom, map } from 'rxjs';
-import { FapCounts } from '../shared/fap.model';
+import { DayBuckets, Fap, FapCounts, FapStats, HourBuckets, STATS_VERSION } from '../shared/fap.model';
+import { dayKey, hourKey } from '../shared/stats';
 import { FriendsService } from './friends.service';
 import { GroupsService } from './groups.service';
 import { PerUserStreams } from './per-user-streams';
@@ -26,14 +30,30 @@ import { PerUserStreams } from './per-user-streams';
 interface FapStatsDoc {
   solitario?: number;
   compania?: number;
+  days?: DayBuckets;
+  hours?: HourBuckets;
+  v?: number;
+}
+
+export interface FapEntry {
+  id: string;
+  solitario: boolean;
+  fecha: Date | null;
+  snapshot: QueryDocumentSnapshot;
+}
+
+export interface FapPage {
+  entries: FapEntry[];
+  // Cursor para la siguiente página; null si no hay más.
+  next: QueryDocumentSnapshot | null;
 }
 
 // Máximo de escrituras por batch de Firestore (500), con margen.
 const FAN_OUT_BATCH_SIZE = 450;
 
-// Totales en fapStats/{uid} (solo los lee su dueño). Al sumar o borrar, el usuario propaga
-// sus totales a social/{amigo} y a cada grupo suyo: sumar es mucho menos frecuente que abrir
-// pantallas, así que las listas de amigos y grupos se leen de 1 documento en vez de N.
+// fapStats/{uid} (solo lo lee su dueño) guarda totales y recuentos por día y hora: Sumar y las
+// estadísticas leen ese único documento. Al sumar o borrar, el usuario propaga sus totales a
+// social/{amigo} y a cada grupo suyo: sumar es mucho menos frecuente que abrir pantallas.
 @Injectable({
   providedIn: 'root',
 })
@@ -45,13 +65,22 @@ export class FapService {
   private streams = new PerUserStreams(authState(inject(Auth)));
   private fapsCollection = collection(this.firestore, 'faps');
 
-  // Totales propios; {0, 0} si aún no existen.
-  fapCounts$(uid: string): Observable<FapCounts> {
+  stats$(uid: string): Observable<FapStats> {
     return this.streams.get('fapStats', uid, () =>
       (this.inContext(() => docData(this.statsRef(uid))) as Observable<FapStatsDoc | undefined>).pipe(
-        map((stats) => ({ solitario: stats?.solitario ?? 0, compania: stats?.compania ?? 0 }))
+        map((stats) => ({
+          solitario: stats?.solitario ?? 0,
+          compania: stats?.compania ?? 0,
+          days: stats?.days ?? {},
+          hours: stats?.hours ?? {},
+          v: stats?.v ?? null,
+        }))
       )
     );
+  }
+
+  fapCounts$(uid: string): Observable<FapCounts> {
+    return this.stats$(uid).pipe(map(({ solitario, compania }) => ({ solitario, compania })));
   }
 
   async addFap(uid: string, solitario: boolean): Promise<void> {
@@ -64,7 +93,7 @@ export class FapService {
       numero: 1,
       fecha: serverTimestamp(),
     });
-    batch.set(this.statsRef(uid), this.statsDelta(solitario, 1), { merge: true });
+    batch.set(this.statsRef(uid), this.statsDelta(solitario, new Date(), 1), { merge: true });
     await batch.commit();
 
     await this.fanOut(uid, this.applyDelta(current, solitario, 1));
@@ -73,43 +102,87 @@ export class FapService {
   async removeLastFap(uid: string): Promise<void> {
     const q = query(this.fapsCollection, where('uid', '==', uid), orderBy('fecha', 'desc'), limit(1));
     const snapshot = await this.inContext(() => getDocs(q));
-    const last = snapshot.docs[0];
-    if (!last) {
+    if (snapshot.docs[0]) {
+      await this.removeFap(uid, snapshot.docs[0]);
+    }
+  }
+
+  // Borra un fap concreto (desde el historial o "Borrar último") y descuenta sus recuentos.
+  async removeFap(uid: string, fapDoc: DocumentSnapshot | QueryDocumentSnapshot): Promise<void> {
+    const data = fapDoc.data() as Fap | undefined;
+    if (!data) {
       return;
     }
-    const solitario = last.data()['solitario'] === true;
     const current = await firstValueFrom(this.fapCounts$(uid));
+    const fecha = data.fecha instanceof Timestamp ? data.fecha.toDate() : new Date();
 
     const batch = writeBatch(this.firestore);
-    batch.delete(last.ref);
-    batch.set(this.statsRef(uid), this.statsDelta(solitario, -1), { merge: true });
+    batch.delete(fapDoc.ref);
+    batch.set(this.statsRef(uid), this.statsDelta(data.solitario, fecha, -1), { merge: true });
     try {
       await batch.commit();
     } catch (error) {
       // Totales desfasados (p. ej. quedarían en negativo y las reglas lo rechazan):
-      // se borra el fap igualmente y se recalculan desde cero.
-      console.warn('No se pudo actualizar fapStats al borrar; se recalcula', error);
+      // se borra el fap igualmente y se reconstruyen las estadísticas.
+      console.warn('No se pudo actualizar fapStats al borrar; se reconstruye', error);
       const retry = writeBatch(this.firestore);
-      retry.delete(last.ref);
+      retry.delete(fapDoc.ref);
       await retry.commit();
-      await this.reconcileStats(uid);
+      await this.rebuildStats(uid);
       return;
     }
 
-    await this.fanOut(uid, this.applyDelta(current, solitario, -1));
+    await this.fanOut(uid, this.applyDelta(current, data.solitario, -1));
   }
 
-  // Recalcula fapStats a partir de los faps reales con consultas de agregación (1 lectura por
-  // cada 1000 faps, sin descargar documentos) y propaga el resultado. Se ejecuta una vez por
-  // dispositivo (AppComponent) y cuando se detecta un desfase.
-  async reconcileStats(uid: string): Promise<void> {
-    const countWhere = (solitario: boolean) =>
-      this.inContext(() =>
-        getCountFromServer(query(this.fapsCollection, where('uid', '==', uid), where('solitario', '==', solitario)))
-      );
-    const [solitario, compania] = await Promise.all([countWhere(true), countWhere(false)]);
-    const counts = { solitario: solitario.data().count, compania: compania.data().count };
-    await setDoc(this.statsRef(uid), { ...counts, updatedAt: serverTimestamp() });
+  // Historial bajo demanda, del más reciente al más antiguo (lecturas solo de la página pedida).
+  async fapsPage(uid: string, pageSize: number, after: QueryDocumentSnapshot | null): Promise<FapPage> {
+    const constraints = [
+      where('uid', '==', uid),
+      orderBy('fecha', 'desc'),
+      ...(after ? [startAfter(after)] : []),
+      limit(pageSize),
+    ];
+    const snapshot = await this.inContext(() => getDocs(query(this.fapsCollection, ...constraints)));
+    return {
+      entries: snapshot.docs.map((d) => {
+        const fap = d.data() as Fap;
+        return {
+          id: d.id,
+          solitario: fap.solitario,
+          fecha: fap.fecha instanceof Timestamp ? fap.fecha.toDate() : null,
+          snapshot: d,
+        };
+      }),
+      next: snapshot.docs.length === pageSize ? snapshot.docs[snapshot.docs.length - 1] : null,
+    };
+  }
+
+  // Reconstruye fapStats (totales y recuentos por día/hora) leyendo todos los faps del usuario.
+  // Cuesta 1 lectura por fap, pero solo ocurre una vez por usuario: al pasar a esta versión del
+  // formato (AppComponent) o si se detecta un desfase al borrar.
+  async rebuildStats(uid: string): Promise<void> {
+    const snapshot = await this.inContext(() => getDocs(query(this.fapsCollection, where('uid', '==', uid))));
+    const days: DayBuckets = {};
+    const hours: HourBuckets = {};
+    let solitario = 0;
+    let compania = 0;
+
+    for (const d of snapshot.docs) {
+      const fap = d.data() as Fap;
+      const field = fap.solitario ? 's' : 'c';
+      fap.solitario ? solitario++ : compania++;
+      if (fap.fecha instanceof Timestamp) {
+        const date = fap.fecha.toDate();
+        const day = (days[dayKey(date)] ??= {});
+        day[field] = (day[field] ?? 0) + 1;
+        const hour = (hours[hourKey(date)] ??= {});
+        hour[field] = (hour[field] ?? 0) + 1;
+      }
+    }
+
+    const counts = { solitario, compania };
+    await setDoc(this.statsRef(uid), { ...counts, days, hours, v: STATS_VERSION, updatedAt: serverTimestamp() });
     await this.fanOut(uid, counts);
   }
 
@@ -163,9 +236,13 @@ export class FapService {
     return doc(this.firestore, 'fapStats', uid);
   }
 
-  private statsDelta(solitario: boolean, delta: number) {
+  // Incremento (o decremento) de totales y de los recuentos del día y la hora locales de `fecha`.
+  private statsDelta(solitario: boolean, fecha: Date, delta: number) {
+    const bucketField = solitario ? 's' : 'c';
     return {
       [solitario ? 'solitario' : 'compania']: increment(delta),
+      days: { [dayKey(fecha)]: { [bucketField]: increment(delta) } },
+      hours: { [hourKey(fecha)]: { [bucketField]: increment(delta) } },
       updatedAt: serverTimestamp(),
     };
   }
