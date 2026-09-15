@@ -1,17 +1,20 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import {
   Auth,
   User as FirebaseUser,
   authState,
   createUserWithEmailAndPassword,
   getAdditionalUserInfo,
+  getRedirectResult,
   GoogleAuthProvider,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
+  UserCredential,
 } from '@angular/fire/auth';
 import { Firestore, doc, serverTimestamp, setDoc } from '@angular/fire/firestore';
 import { UiService } from './ui.service';
@@ -22,6 +25,7 @@ import { UiService } from './ui.service';
 export class AuthService {
   private auth = inject(Auth);
   private firestore = inject(Firestore);
+  private injector = inject(Injector);
   private ui = inject(UiService);
 
   readonly user$ = authState(this.auth);
@@ -46,16 +50,46 @@ export class AuthService {
     }
   }
 
+  // Popup en web; si el navegador bloquea popups (o no los admite, como algunos WebView) se
+  // usa redirección y el resultado se recoge al volver con completeGoogleRedirect().
   async loginGoogle(): Promise<FirebaseUser | null> {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      const credential = await signInWithPopup(this.auth, new GoogleAuthProvider());
-      const user = credential.user;
-      await this.ensureUserDoc(user, getAdditionalUserInfo(credential)?.isNewUser === true);
-      return user;
+      return await this.afterGoogleLogin(await signInWithPopup(this.auth, provider));
     } catch (error: unknown) {
+      const code = authErrorCode(error);
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        return null;
+      }
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-environment') {
+        await signInWithRedirect(this.auth, provider);
+        return null;
+      }
+      console.error('Error al iniciar sesión con Google', error);
       await this.ui.alertaInformativa(this.mapAuthError(error));
       return null;
     }
+  }
+
+  async completeGoogleRedirect(): Promise<FirebaseUser | null> {
+    try {
+      // Se llama desde ngOnInit tras un await, fuera del contexto de inyección que exige AngularFire.
+      const credential = await runInInjectionContext(this.injector, () => getRedirectResult(this.auth));
+      return credential ? await this.afterGoogleLogin(credential) : null;
+    } catch (error: unknown) {
+      console.error('Error al volver del inicio de sesión con Google', error);
+      await this.ui.alertaInformativa(this.mapAuthError(error));
+      return null;
+    }
+  }
+
+  private async afterGoogleLogin(credential: UserCredential): Promise<FirebaseUser> {
+    const user = credential.user;
+    await this.ensureUserDoc(user, getAdditionalUserInfo(credential)?.isNewUser === true).catch((error) =>
+      console.error('No se pudo actualizar users/{uid}', error)
+    );
+    return user;
   }
 
   async register(email: string, password: string, displayName: string): Promise<FirebaseUser | null> {
@@ -115,8 +149,7 @@ export class AuthService {
   }
 
   private mapAuthError(error: unknown): string {
-    const code = (error as { code?: string } | undefined)?.code;
-    switch (code) {
+    switch (authErrorCode(error)) {
       case 'auth/invalid-email':
         return 'El email tiene un formato incorrecto';
       case 'auth/wrong-password':
@@ -127,8 +160,22 @@ export class AuthService {
         return 'Ya existe una cuenta con ese email';
       case 'auth/weak-password':
         return 'La contraseña es demasiado débil';
+      case 'auth/account-exists-with-different-credential':
+        return 'Ya tienes una cuenta con ese email. Entra con tu email y contraseña';
+      case 'auth/unauthorized-domain':
+        return 'Este dominio no está autorizado para entrar con Google';
+      case 'auth/operation-not-allowed':
+        return 'El inicio de sesión con Google no está activado';
+      case 'auth/network-request-failed':
+        return 'No hay conexión. Comprueba tu red e inténtalo de nuevo';
+      case 'auth/too-many-requests':
+        return 'Demasiados intentos. Espera un poco e inténtalo de nuevo';
       default:
         return 'Ha ocurrido un error, inténtalo de nuevo';
     }
   }
+}
+
+function authErrorCode(error: unknown): string | undefined {
+  return (error as { code?: string } | undefined)?.code;
 }

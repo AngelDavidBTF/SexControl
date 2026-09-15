@@ -8,6 +8,7 @@ import {
   chevronForward,
   personAddOutline,
   trash,
+  timeOutline,
   arrowBack,
   arrowBackCircle,
   checkmarkOutline,
@@ -42,6 +43,7 @@ addIcons({
   trash,
   'chevron-back': chevronBack,
   'chevron-forward': chevronForward,
+  'time-outline': timeOutline,
 });
 
 bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

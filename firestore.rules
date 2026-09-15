@@ -106,7 +106,11 @@ service cloud.firestore {
     // Los faps individuales (con fecha) y los totales propios solo los ve su dueño.
     match /faps/{fapId} {
       allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      // La fecha puede ser pasada (fap olvidado) pero no futura; se admite un pequeño margen por
+      // desfase del reloj del dispositivo.
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid &&
+        request.resource.data.fecha is timestamp &&
+        request.resource.data.fecha <= request.time + duration.value(5, 'm');
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }

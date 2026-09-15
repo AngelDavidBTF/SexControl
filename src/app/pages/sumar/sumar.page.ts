@@ -1,10 +1,14 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ModalController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
+import { UiService } from '../../core/ui.service';
+import { AddPastFapModal, PastFap } from './add-past-fap.modal';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 @Component({
   selector: 'app-sumar',
@@ -17,6 +21,8 @@ export class SumarPage implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private fapService = inject(FapService);
   private router = inject(Router);
+  private modalController = inject(ModalController);
+  private ui = inject(UiService);
 
   displayName = '';
   numberC = 0;
@@ -57,6 +63,26 @@ export class SumarPage implements OnInit, OnDestroy {
       return;
     }
     await this.fapService.addFap(uid, solitario);
+  }
+
+  async sumarOlvidada(): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid) {
+      return;
+    }
+    const modal = await this.modalController.create({ component: AddPastFapModal });
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss<PastFap>();
+    if (role !== 'confirm' || !data) {
+      return;
+    }
+    try {
+      await this.fapService.addFap(uid, data.solitario, data.fecha);
+      await this.ui.toast(`Añadida: ${format(data.fecha, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es })}`);
+    } catch (error) {
+      console.error('Error añadiendo fap olvidado', error);
+      await this.ui.toast('No se pudo añadir');
+    }
   }
 
   async borrar(): Promise<void> {

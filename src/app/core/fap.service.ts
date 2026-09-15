@@ -83,7 +83,8 @@ export class FapService {
     return this.stats$(uid).pipe(map(({ solitario, compania }) => ({ solitario, compania })));
   }
 
-  async addFap(uid: string, solitario: boolean): Promise<void> {
+  // Sin `fecha` se registra ahora (hora del servidor); con ella, un fap olvidado en esa fecha.
+  async addFap(uid: string, solitario: boolean, fecha?: Date): Promise<void> {
     const current = await firstValueFrom(this.fapCounts$(uid));
 
     const batch = writeBatch(this.firestore);
@@ -91,9 +92,9 @@ export class FapService {
       uid,
       solitario,
       numero: 1,
-      fecha: serverTimestamp(),
+      fecha: fecha ? Timestamp.fromDate(fecha) : serverTimestamp(),
     });
-    batch.set(this.statsRef(uid), this.statsDelta(solitario, new Date(), 1), { merge: true });
+    batch.set(this.statsRef(uid), this.statsDelta(solitario, fecha ?? new Date(), 1), { merge: true });
     await batch.commit();
 
     await this.fanOut(uid, this.applyDelta(current, solitario, 1));
