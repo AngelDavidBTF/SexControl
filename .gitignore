@@ -34,3 +34,6 @@ npm-debug.log*
 # Capacitor native projects (Fase 5, generados con `npx cap add`)
 /android
 /ios
+
+# Caché de despliegue de Firebase CLI
+/.firebase
