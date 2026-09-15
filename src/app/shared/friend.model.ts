@@ -20,8 +20,3 @@ export interface FriendRequest {
   toUid: string;
   createdAt?: Timestamp;
 }
-
-export interface FapCounts {
-  solitario: number;
-  compania: number;
-}

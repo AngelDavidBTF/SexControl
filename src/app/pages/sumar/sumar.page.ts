@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
-import { Fap } from '../../shared/fap.model';
 
 @Component({
   selector: 'app-sumar',
@@ -25,7 +24,6 @@ export class SumarPage implements OnInit, OnDestroy {
   numberTotal = 0;
   showLoader = true;
 
-  private faps: Fap[] = [];
   private authSub?: Subscription;
   private fapsSub?: Subscription;
 
@@ -35,7 +33,6 @@ export class SumarPage implements OnInit, OnDestroy {
 
       if (!user) {
         this.displayName = '';
-        this.faps = [];
         this.numberC = 0;
         this.numberS = 0;
         this.numberTotal = 0;
@@ -45,11 +42,10 @@ export class SumarPage implements OnInit, OnDestroy {
 
       this.displayName = user.displayName ?? user.email ?? '';
       this.showLoader = true;
-      this.fapsSub = this.fapService.fapsForUser$(user.uid).subscribe((faps) => {
-        this.faps = faps;
-        this.numberC = faps.filter((fap) => !fap.solitario).length;
-        this.numberS = faps.filter((fap) => fap.solitario).length;
-        this.numberTotal = faps.length;
+      this.fapsSub = this.fapService.fapCounts$(user.uid).subscribe((counts) => {
+        this.numberC = counts?.compania ?? 0;
+        this.numberS = counts?.solitario ?? 0;
+        this.numberTotal = this.numberC + this.numberS;
         this.showLoader = false;
       });
     });
@@ -65,7 +61,7 @@ export class SumarPage implements OnInit, OnDestroy {
 
   async borrar(): Promise<void> {
     const uid = this.authService.currentUid();
-    if (!uid || this.faps.length === 0) {
+    if (!uid) {
       return;
     }
     await this.fapService.removeLastFap(uid);

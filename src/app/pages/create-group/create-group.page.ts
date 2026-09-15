@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { Observable, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FriendsService } from '../../core/friends.service';
-import { GroupsService } from '../../core/groups.service';
+import { GroupsService, PartialGroupWriteError } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
 import { Friend } from '../../shared/friend.model';
@@ -95,6 +95,11 @@ export class CreateGroupPage {
       await this.router.navigate(['/group', groupId], { replaceUrl: true });
     } catch (error) {
       console.error('Error creando grupo', error);
+      if (error instanceof PartialGroupWriteError) {
+        await this.router.navigate(['/group', error.groupId], { replaceUrl: true });
+        await this.ui.toast('Grupo creado, pero no se pudo añadir a todos los miembros');
+        return;
+      }
       await this.ui.toast('No se pudo crear el grupo');
     } finally {
       this.guardando = false;

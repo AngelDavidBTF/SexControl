@@ -1,7 +1,7 @@
 import { Timestamp } from '@angular/fire/firestore';
 
 // Debe coincidir con el tope de isValidGroup en firestore.rules.
-export const MAX_GROUP_MEMBERS = 15;
+export const MAX_GROUP_MEMBERS = 200;
 
 // groups/{groupId}. Las estadísticas del grupo son los faps totales de cada miembro,
 // igual que en la versión anterior (no hay faps "de grupo").

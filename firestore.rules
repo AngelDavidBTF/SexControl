@@ -23,8 +23,8 @@ service cloud.firestore {
       return /databases/$(database)/documents/groups/$(groupId);
     }
 
-    // users/{uid}.groupIds: grupos a los que pertenece el usuario. Se usa en la regla de faps
-    // para que los miembros de un mismo grupo vean los faps del resto. Como da acceso a datos
+    // users/{uid}.groupIds: grupos a los que pertenece el usuario. Se usa en la regla de fapStats
+    // para que los miembros de un mismo grupo vean los totales del resto. Como da acceso a datos
     // ajenos, nadie (ni el propio usuario) puede tocarlo libremente: cada escritura cambia un
     // único grupo, indicado en groupChange, y debe cuadrar con groups/{groupId}.memberUids tal
     // como queda tras el batch (groups.service.ts).
@@ -99,22 +99,34 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Los faps individuales (con fecha) solo los ve su dueño. Amigos y miembros de grupo
+    // ven únicamente los totales de fapStats.
     match /faps/{fapId} {
-      allow read: if isSignedIn() &&
-        (resource.data.uid == request.auth.uid ||
-         isFriendOf(resource.data.uid) ||
-         sharesGroup(resource.data.uid));
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
 
-    // Tope de miembros: cada miembro añadido consume una llamada exists() en la regla de users,
-    // y un batch admite como máximo 20 llamadas de acceso.
+    // fapStats/{uid}: totales por usuario, mantenidos en el mismo batch que crea o borra el fap
+    // (fap.service.ts) y recalculados al iniciar sesión. Evita que amigos y grupos tengan que
+    // descargar todos los faps de cada persona para contarlos.
+    match /fapStats/{uid} {
+      allow read: if isOwner(uid) || isFriendOf(uid) || sharesGroup(uid);
+      allow create, update: if isOwner(uid) &&
+        request.resource.data.keys().hasOnly(['solitario', 'compania', 'updatedAt']) &&
+        request.resource.data.get('solitario', 0) is int && request.resource.data.get('solitario', 0) >= 0 &&
+        request.resource.data.get('compania', 0) is int && request.resource.data.get('compania', 0) >= 0;
+      allow delete: if false;
+    }
+
+    // Tope de 200 miembros (MAX_GROUP_MEMBERS en group.model.ts). Cada miembro añadido consume
+    // una llamada exists() en la regla de users y un batch admite como máximo 20, así que
+    // groups.service.ts añade los miembros en tandas.
     function isValidGroup(data) {
       return data.ownerUid == request.auth.uid &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
-        data.memberUids is list && request.auth.uid in data.memberUids && data.memberUids.size() <= 15 &&
+        data.memberUids is list && request.auth.uid in data.memberUids && data.memberUids.size() <= 200 &&
         (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() < 200000));
     }
 

@@ -7,7 +7,8 @@ import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupsService } from '../../core/groups.service';
-import { FapCounts, Friend } from '../../shared/friend.model';
+import { FapCounts } from '../../shared/fap.model';
+import { Friend } from '../../shared/friend.model';
 import { Group } from '../../shared/group.model';
 import { FiltroPipe } from '../../shared/filtro.pipe';
 

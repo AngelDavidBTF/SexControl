@@ -8,7 +8,7 @@ import { FapService } from '../../core/fap.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
-import { FapCounts } from '../../shared/friend.model';
+import { FapCounts } from '../../shared/fap.model';
 import { Group } from '../../shared/group.model';
 import { FiltroPipe } from '../../shared/filtro.pipe';
 import { AddMembersModal } from './add-members.modal';
