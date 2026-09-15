@@ -43,7 +43,7 @@
     <ion-searchbar placeholder="Buscar miembro" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
     <ion-list>
-      <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index" [disabled]="!vm.isOwner || member.uid === vm.group.ownerUid">
+      <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index; trackBy: trackByUid" [disabled]="!vm.isOwner || member.uid === vm.group.ownerUid">
         <ion-item class="miembro">
           <ion-avatar slot="start">
             <img [src]="member.photoURL || 'assets/icon-user.svg'" alt="" />

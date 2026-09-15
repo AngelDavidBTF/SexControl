@@ -1,22 +1,33 @@
 import { Timestamp } from '@angular/fire/firestore';
 
-// users/{uid}/friends/{friendUid}: doc espejo creado en ambos usuarios al aceptar una solicitud.
-export interface Friend {
-  uid: string;
+// Perfil y totales de otra persona tal como se guardan en social/{uid}. Los totales los
+// propaga esa persona al sumar/borrar (fap.service.ts#fanOut).
+export interface SocialEntry {
   displayName: string | null;
   email: string | null;
   photoURL: string | null;
-  createdAt?: Timestamp;
+  solitario?: number;
+  compania?: number;
+  since?: Timestamp;
 }
 
-// friendRequests/{fromUid}_{toUid}: su mera existencia significa "pendiente".
-// Al aceptar o rechazar se borra.
-export interface FriendRequest {
-  id?: string;
-  fromUid: string;
-  fromDisplayName: string | null;
-  fromEmail: string | null;
-  fromPhotoURL: string | null;
-  toUid: string;
-  createdAt?: Timestamp;
+// social/{uid}: un único documento por usuario.
+//  - friends:  amigos aceptados.
+//  - requests: solicitudes recibidas (clave = remitente).
+//  - sent:     solicitudes enviadas (clave = destinatario).
+export interface SocialDoc {
+  friends?: Record<string, SocialEntry>;
+  requests?: Record<string, SocialEntry>;
+  sent?: Record<string, SocialEntry>;
+}
+
+// Vista de una entrada con su uid, para listas en pantalla.
+export interface Friend extends SocialEntry {
+  uid: string;
+}
+
+export interface Social {
+  friends: Friend[];
+  requests: Friend[];
+  sent: Friend[];
 }

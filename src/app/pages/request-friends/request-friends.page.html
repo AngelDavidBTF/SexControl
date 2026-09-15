@@ -5,17 +5,17 @@
 
   <ng-container *ngIf="requests$ | async as requests; else cargando">
     <ion-item
-      *ngFor="let view of requests | filtro: textoBuscar"
+      *ngFor="let request of requests | filtro: textoBuscar"
       button
-      (click)="presentActionSheet(view)"
+      (click)="presentActionSheet(request)"
       class="solicitud"
     >
       <ion-avatar slot="start">
-        <img [src]="view.photoURL || 'assets/icon-user.svg'" alt="" />
+        <img [src]="request.photoURL || 'assets/icon-user.svg'" alt="" />
       </ion-avatar>
       <ion-label>
-        <h2>{{ view.displayName }}</h2>
-        <p class="ion-text-wrap">{{ view.email }}</p>
+        <h2>{{ request.displayName }}</h2>
+        <p class="ion-text-wrap">{{ request.email }}</p>
       </ion-label>
       <ion-icon name="person-add" slot="end"></ion-icon>
     </ion-item>

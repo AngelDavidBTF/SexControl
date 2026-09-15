@@ -1,25 +1,29 @@
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
+import { Auth, authState } from '@angular/fire/auth';
 import {
   Firestore,
-  WriteBatch,
   arrayRemove,
   arrayUnion,
   collection,
   collectionData,
+  deleteDoc,
+  deleteField,
   doc,
-  docData,
   query,
   serverTimestamp,
+  setDoc,
+  updateDoc,
   where,
-  writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
-import { Group } from '../shared/group.model';
-import { User } from '../shared/user.model';
+import { FapCounts } from '../shared/fap.model';
+import { Friend } from '../shared/friend.model';
+import { Group, GroupMember } from '../shared/group.model';
+import { PerUserStreams } from './per-user-streams';
 
-// Añadir un miembro cuesta una llamada exists() en firestore.rules y cada batch admite 20,
-// así que los miembros se añaden en tandas de este tamaño.
-const MEMBERS_PER_BATCH = 10;
+// firestore.rules comprueba con un get() que cada miembro nuevo tiene al dueño como amigo, y
+// una petición admite como máximo 10: los miembros se añaden en tandas de este tamaño.
+const MEMBERS_PER_WRITE = 9;
 
 function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -29,6 +33,13 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+export interface GroupOwner {
+  uid: string;
+  displayName: string | null;
+  photoURL: string | null;
+  counts: FapCounts;
+}
+
 // El grupo se creó pero no se pudo añadir a todos los miembros.
 export class PartialGroupWriteError extends Error {
   constructor(readonly groupId: string, cause: unknown) {
@@ -36,54 +47,58 @@ export class PartialGroupWriteError extends Error {
   }
 }
 
+function memberFrom(user: { displayName: string | null; photoURL: string | null }, counts: Partial<FapCounts>): GroupMember {
+  return {
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    solitario: counts.solitario ?? 0,
+    compania: counts.compania ?? 0,
+  };
+}
+
+// Cada grupo guarda los totales de sus miembros en `members`: la lista de grupos es la única
+// consulta (1 lectura por grupo) y la página de un grupo se sirve de ella sin leer nada más.
 @Injectable({
   providedIn: 'root',
 })
 export class GroupsService {
   private firestore = inject(Firestore);
   private injector = inject(Injector);
+  private streams = new PerUserStreams(authState(inject(Auth)));
 
   groupsForUser$(uid: string): Observable<Group[]> {
-    const q = query(collection(this.firestore, 'groups'), where('memberUids', 'array-contains', uid));
-    return this.inContext(() => collectionData(q, { idField: 'id' })) as Observable<Group[]>;
+    return this.streams.get('groups', uid, () => {
+      const q = query(collection(this.firestore, 'groups'), where('memberUids', 'array-contains', uid));
+      return this.inContext(() => collectionData(q, { idField: 'id' })) as Observable<Group[]>;
+    });
   }
 
-  group$(groupId: string): Observable<Group | null> {
-    return (this.inContext(() => docData(doc(this.firestore, 'groups', groupId), { idField: 'id' })) as Observable<
-      Group | undefined
-    >).pipe(map((group) => group ?? null));
+  group$(uid: string, groupId: string): Observable<Group | null> {
+    return this.groupsForUser$(uid).pipe(map((groups) => groups.find((group) => group.id === groupId) ?? null));
   }
 
-  userProfile$(uid: string): Observable<User | null> {
-    return (this.inContext(() => docData(doc(this.firestore, 'users', uid))) as Observable<User | undefined>).pipe(
-      map((user) => (user ? { ...user, uid } : null))
-    );
-  }
-
-  // Cada escritura de miembros va en un batch junto a users/{uid}.groupIds, que es lo que
-  // firestore.rules usa para dar acceso a los totales entre miembros (ver isValidGroupChange).
-  // Cada tanda deja grupo y usuarios coherentes aunque falle una posterior.
-  async createGroup(ownerUid: string, name: string, imageUrl: string | null, memberUids: string[]): Promise<string> {
+  // Los totales iniciales de cada amigo salen de social/{dueño} (los mantiene cada amigo).
+  async createGroup(owner: GroupOwner, name: string, imageUrl: string | null, friends: Friend[]): Promise<string> {
     const ref = doc(collection(this.firestore, 'groups'));
-    const [firstChunk = [], ...otherChunks] = chunk(
-      [...new Set(memberUids)].filter((uid) => uid !== ownerUid),
-      MEMBERS_PER_BATCH
-    );
+    const unique = [...new Map(friends.filter((f) => f.uid !== owner.uid).map((f) => [f.uid, f])).values()];
+    const [firstChunk = [], ...otherChunks] = chunk(unique, MEMBERS_PER_WRITE);
 
-    const batch = writeBatch(this.firestore);
-    batch.set(ref, {
+    await setDoc(ref, {
       name: name.trim(),
       imageUrl,
-      ownerUid,
-      memberUids: [ownerUid, ...firstChunk],
+      ownerUid: owner.uid,
+      memberUids: [owner.uid, ...firstChunk.map((f) => f.uid)],
+      members: {
+        [owner.uid]: memberFrom(owner, owner.counts),
+        ...Object.fromEntries(firstChunk.map((f) => [f.uid, memberFrom(f, f)])),
+      },
+      addedUids: firstChunk.map((f) => f.uid),
       createdAt: serverTimestamp(),
     });
-    [ownerUid, ...firstChunk].forEach((uid) => this.linkUser(batch, uid, ref.id));
-    await batch.commit();
 
     try {
       for (const members of otherChunks) {
-        await this.commitAddMembers(ref.id, members);
+        await this.writeNewMembers(ref.id, members);
       }
     } catch (error) {
       throw new PartialGroupWriteError(ref.id, error);
@@ -91,51 +106,41 @@ export class GroupsService {
     return ref.id;
   }
 
-  async addMembers(group: Group, uids: string[]): Promise<void> {
-    const newMembers = [...new Set(uids)].filter((uid) => !group.memberUids.includes(uid));
+  async addMembers(group: Group, friends: Friend[]): Promise<void> {
     if (!group.id) {
       return;
     }
-    for (const members of chunk(newMembers, MEMBERS_PER_BATCH)) {
-      await this.commitAddMembers(group.id, members);
+    const newMembers = [...new Map(friends.map((f) => [f.uid, f])).values()].filter(
+      (f) => !group.memberUids.includes(f.uid)
+    );
+    for (const members of chunk(newMembers, MEMBERS_PER_WRITE)) {
+      await this.writeNewMembers(group.id, members);
     }
   }
 
-  private async commitAddMembers(groupId: string, members: string[]): Promise<void> {
-    const batch = writeBatch(this.firestore);
-    batch.update(doc(this.firestore, 'groups', groupId), { memberUids: arrayUnion(...members) });
-    members.forEach((uid) => this.linkUser(batch, uid, groupId));
-    await batch.commit();
+  private async writeNewMembers(groupId: string, members: Friend[]): Promise<void> {
+    await updateDoc(doc(this.firestore, 'groups', groupId), {
+      memberUids: arrayUnion(...members.map((f) => f.uid)),
+      addedUids: members.map((f) => f.uid),
+      ...Object.fromEntries(members.map((f) => [`members.${f.uid}`, memberFrom(f, f)])),
+    });
   }
 
   async removeMember(group: Group, uid: string): Promise<void> {
     if (!group.id) {
       return;
     }
-    const batch = writeBatch(this.firestore);
-    batch.update(doc(this.firestore, 'groups', group.id), { memberUids: arrayRemove(uid) });
-    this.unlinkUser(batch, uid, group.id);
-    await batch.commit();
+    await updateDoc(doc(this.firestore, 'groups', group.id), {
+      memberUids: arrayRemove(uid),
+      [`members.${uid}`]: deleteField(),
+      addedUids: [],
+    });
   }
 
-  // Quitar miembros no consume llamadas por miembro en las reglas: un único batch basta
-  // (200 miembros + el grupo quedan lejos del máximo de 500 escrituras).
   async deleteGroup(group: Group): Promise<void> {
-    if (!group.id) {
-      return;
+    if (group.id) {
+      await deleteDoc(doc(this.firestore, 'groups', group.id));
     }
-    const batch = writeBatch(this.firestore);
-    batch.delete(doc(this.firestore, 'groups', group.id));
-    group.memberUids.forEach((uid) => this.unlinkUser(batch, uid, group.id!));
-    await batch.commit();
-  }
-
-  private linkUser(batch: WriteBatch, uid: string, groupId: string): void {
-    batch.update(doc(this.firestore, 'users', uid), { groupIds: arrayUnion(groupId), groupChange: groupId });
-  }
-
-  private unlinkUser(batch: WriteBatch, uid: string, groupId: string): void {
-    batch.update(doc(this.firestore, 'users', uid), { groupIds: arrayRemove(groupId), groupChange: groupId });
   }
 
   // Las funciones de AngularFire deben ejecutarse dentro de un contexto de inyección;

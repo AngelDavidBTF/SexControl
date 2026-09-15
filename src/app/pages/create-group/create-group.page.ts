@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupsService, PartialGroupWriteError } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
@@ -23,6 +24,7 @@ import { resizeImageToDataUrl } from '../../shared/image';
 })
 export class CreateGroupPage {
   private authService = inject(AuthService);
+  private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private groupsService = inject(GroupsService);
   private ui = inject(UiService);
@@ -35,7 +37,8 @@ export class CreateGroupPage {
   guardando = false;
 
   readonly friends$: Observable<Friend[]> = this.authService.user$.pipe(
-    switchMap((user) => (user ? this.friendsService.friends$(user.uid) : of([])))
+    switchMap((user) => (user ? this.friendsService.social$(user.uid) : of(null))),
+    map((social) => social?.friends ?? [])
   );
 
   get canCreate(): boolean {
@@ -79,18 +82,19 @@ export class CreateGroupPage {
   }
 
   async createGroup(): Promise<void> {
-    const uid = this.authService.currentUid();
-    if (!uid || !this.canCreate) {
+    const me = this.authService.currentUser();
+    if (!me || !this.canCreate) {
       return;
     }
 
     this.guardando = true;
     try {
+      const counts = await firstValueFrom(this.fapService.fapCounts$(me.uid));
       const groupId = await this.groupsService.createGroup(
-        uid,
+        { uid: me.uid, displayName: me.displayName, photoURL: me.photoURL, counts },
         this.nameGroup,
         this.imageUrl,
-        this.selectedUsers.map((user) => user.uid)
+        this.selectedUsers
       );
       await this.router.navigate(['/group', groupId], { replaceUrl: true });
     } catch (error) {

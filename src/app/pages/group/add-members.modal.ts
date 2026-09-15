@@ -80,8 +80,8 @@ export class AddMembersModal implements OnInit {
 
   ngOnInit(): void {
     this.candidates$ = this.authService.user$.pipe(
-      switchMap((user) => (user ? this.friendsService.friends$(user.uid) : of([]))),
-      map((friends) => friends.filter((friend) => !this.group.memberUids.includes(friend.uid)))
+      switchMap((user) => (user ? this.friendsService.social$(user.uid) : of(null))),
+      map((social) => (social?.friends ?? []).filter((friend) => !this.group.memberUids.includes(friend.uid)))
     );
   }
 
@@ -108,10 +108,7 @@ export class AddMembersModal implements OnInit {
   async addMembers(): Promise<void> {
     this.guardando = true;
     try {
-      await this.groupsService.addMembers(
-        this.group,
-        this.selectedUsers.map((user) => user.uid)
-      );
+      await this.groupsService.addMembers(this.group, this.selectedUsers);
       await this.close();
     } catch (error) {
       console.error('Error añadiendo miembros', error);

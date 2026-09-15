@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { Subscription, combineLatest, of, switchMap } from 'rxjs';
+import { Subscription, firstValueFrom, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-import { FriendsService } from '../../core/friends.service';
+import { FapService } from '../../core/fap.service';
+import { FriendsService, SEARCH_MIN_CHARS } from '../../core/friends.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
 import { User } from '../../shared/user.model';
@@ -17,53 +18,44 @@ import { User } from '../../shared/user.model';
 })
 export class AddFriendPage implements OnInit, OnDestroy {
   private authService = inject(AuthService);
+  private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private ui = inject(UiService);
 
+  readonly minChars = SEARCH_MIN_CHARS;
   textoBuscar = '';
   users: User[] = [];
   buscando = false;
 
-  // Uids que no deben aparecer en la búsqueda: yo, mis amigos y solicitudes pendientes en cualquier sentido.
+  // Uids que no deben aparecer en la búsqueda: yo, mis amigos y solicitudes pendientes en
+  // cualquier sentido. Sale de social/{uid}, que ya está en memoria si se viene de Amigos.
   private excluded = new Set<string>();
   private excludedSub?: Subscription;
   private searchSeq = 0;
 
   ngOnInit(): void {
     this.excludedSub = this.authService.user$
-      .pipe(
-        switchMap((user) =>
-          user
-            ? combineLatest([
-                of(user.uid),
-                this.friendsService.friends$(user.uid),
-                this.friendsService.outgoingRequests$(user.uid),
-                this.friendsService.incomingRequests$(user.uid),
-              ])
-            : of(null)
-        )
-      )
-      .subscribe((data) => {
-        if (!data) {
-          this.excluded = new Set();
-          return;
-        }
-        const [uid, friends, outgoing, incoming] = data;
-        this.excluded = new Set([
-          uid,
-          ...friends.map((friend) => friend.uid),
-          ...outgoing.map((request) => request.toUid),
-          ...incoming.map((request) => request.fromUid),
-        ]);
+      .pipe(switchMap((user) => (user ? this.friendsService.social$(user.uid) : of(null))))
+      .subscribe((social) => {
+        const uid = this.authService.currentUid();
+        this.excluded = new Set(
+          social && uid
+            ? [uid, ...[...social.friends, ...social.sent, ...social.requests].map((entry) => entry.uid)]
+            : []
+        );
         this.users = this.users.filter((user) => !this.excluded.has(user.uid));
       });
+  }
+
+  get tooShort(): boolean {
+    return this.textoBuscar.trim().length < SEARCH_MIN_CHARS;
   }
 
   async onSearchChange(event: CustomEvent): Promise<void> {
     this.textoBuscar = event.detail.value ?? '';
     const seq = ++this.searchSeq;
 
-    if (!this.textoBuscar.trim()) {
+    if (this.tooShort) {
       this.users = [];
       this.buscando = false;
       return;
@@ -93,7 +85,8 @@ export class AddFriendPage implements OnInit, OnDestroy {
     }
 
     try {
-      await this.friendsService.sendRequest(me, user.uid);
+      const myCounts = await firstValueFrom(this.fapService.fapCounts$(me.uid));
+      await this.friendsService.sendRequest(me, myCounts, user);
       this.users = this.users.filter((u) => u.uid !== user.uid);
       await this.ui.toast('Se ha enviado la petición correctamente');
     } catch (error) {

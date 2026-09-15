@@ -4,7 +4,6 @@ import { ActionSheetController, AlertController, IonicModule, ModalController } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-import { FapService } from '../../core/fap.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
@@ -47,7 +46,6 @@ export class GroupPage {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private authService = inject(AuthService);
-  private fapService = inject(FapService);
   private groupsService = inject(GroupsService);
   private ui = inject(UiService);
   private actionSheetController = inject(ActionSheetController);
@@ -56,56 +54,52 @@ export class GroupPage {
 
   textoBuscar = '';
 
-  // null: el grupo no existe o ya no se tiene acceso (p. ej. te han sacado o se ha borrado).
+  // Todo sale del documento del grupo, que ya está en la lista de grupos del usuario: abrir
+  // un grupo no cuesta lecturas extra. null: el grupo no existe o ya no perteneces a él.
   readonly vm$: Observable<GroupView | null> = combineLatest([this.route.paramMap, this.authService.user$]).pipe(
     switchMap(([params, user]) => {
       const groupId = params.get('id');
       if (!groupId || !user) {
         return of(null);
       }
-      return this.groupsService.group$(groupId).pipe(
+      return this.groupsService.group$(user.uid, groupId).pipe(
         catchError(() => of(null)),
-        switchMap((group) => (group ? this.buildView(group, user.uid) : of(null)))
+        map((group) => (group ? this.buildView(group, user.uid) : null))
       );
     })
   );
 
-  private buildView(group: Group, myUid: string): Observable<GroupView> {
-    return combineLatest(
-      group.memberUids.map((uid) =>
-        combineLatest([
-          this.groupsService.userProfile$(uid).pipe(catchError(() => of(null))),
-          this.fapService.fapCounts$(uid).pipe(catchError(() => of(null))),
-        ]).pipe(
-          map(
-            ([profile, counts]): MemberView => ({
-              uid,
-              displayName: profile?.displayName ?? null,
-              email: profile?.email ?? null,
-              photoURL: profile?.photoURL ?? null,
-              counts,
-            })
-          )
-        )
-      )
-    ).pipe(
-      map((members) => {
-        const sorted = [...members].sort((a, b) => memberTotal(b) - memberTotal(a));
-        const totalCompania = members.reduce((sum, m) => sum + (m.counts?.compania ?? 0), 0);
-        const totalSolitario = members.reduce((sum, m) => sum + (m.counts?.solitario ?? 0), 0);
-        const count = members.length || 1;
-        return {
-          group,
-          isOwner: group.ownerUid === myUid,
-          members: sorted,
-          totalCompania,
-          totalSolitario,
-          mediaCompania: totalCompania / count,
-          mediaSolitario: totalSolitario / count,
-          mediaGrupo: (totalCompania + totalSolitario) / count,
-        };
-      })
-    );
+  private buildView(group: Group, myUid: string): GroupView {
+    const members = group.memberUids.map((uid): MemberView => {
+      const member = group.members?.[uid];
+      return {
+        uid,
+        displayName: member?.displayName ?? null,
+        email: null,
+        photoURL: member?.photoURL ?? null,
+        counts: member ? { solitario: member.solitario ?? 0, compania: member.compania ?? 0 } : null,
+      };
+    });
+    const sorted = [...members].sort((a, b) => memberTotal(b) - memberTotal(a));
+    const totalCompania = members.reduce((sum, m) => sum + (m.counts?.compania ?? 0), 0);
+    const totalSolitario = members.reduce((sum, m) => sum + (m.counts?.solitario ?? 0), 0);
+    const count = members.length || 1;
+    return {
+      group,
+      isOwner: group.ownerUid === myUid,
+      members: sorted,
+      totalCompania,
+      totalSolitario,
+      mediaCompania: totalCompania / count,
+      mediaSolitario: totalSolitario / count,
+      mediaGrupo: (totalCompania + totalSolitario) / count,
+    };
+  }
+
+  // Las actualizaciones en vivo crean objetos nuevos: sin trackBy se recrearían las filas
+  // (y se cerraría una fila deslizada a medias).
+  trackByUid(_: number, member: MemberView): string {
+    return member.uid;
   }
 
   onSearchChange(event: CustomEvent): void {

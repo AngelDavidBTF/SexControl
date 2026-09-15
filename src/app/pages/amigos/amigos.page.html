@@ -30,17 +30,15 @@
 
     <ng-container *ngIf="friends$ | async as friends; else cargando">
       <ion-list *ngIf="friends.length > 0">
-        <ion-item *ngFor="let friend of friends | filtro: textoBuscar" class="amigo">
+        <ion-item *ngFor="let friend of friends | filtro: textoBuscar; trackBy: trackByUid" class="amigo">
           <ion-avatar slot="start">
             <img [src]="friend.photoURL || 'assets/icon-user.svg'" alt="" />
           </ion-avatar>
           <ion-label>
             <h2>{{ friend.displayName || friend.email }}</h2>
           </ion-label>
-          <ng-container *ngIf="friend.counts">
-            <ion-badge color="secondary" class="ion-margin-horizontal badge-compania">{{ friend.counts.compania }}</ion-badge>
-            <ion-badge color="primary" class="badge-solitario">{{ friend.counts.solitario }}</ion-badge>
-          </ng-container>
+          <ion-badge color="secondary" class="ion-margin-horizontal badge-compania">{{ friend.compania ?? 0 }}</ion-badge>
+          <ion-badge color="primary" class="badge-solitario">{{ friend.solitario ?? 0 }}</ion-badge>
         </ion-item>
       </ion-list>
       <h5 *ngIf="friends.length === 0" class="ion-text-center">No has agregado ningún amigo todavía.</h5>
@@ -66,7 +64,7 @@
     <ion-searchbar placeholder="Buscar grupo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
     <ng-container *ngIf="groups$ | async as groups; else cargando">
-      <ion-item *ngFor="let group of groups | filtro: textoBuscar" button [routerLink]="['/group', group.id]" class="grupo">
+      <ion-item *ngFor="let group of groups | filtro: textoBuscar; trackBy: trackById" button [routerLink]="['/group', group.id]" class="grupo">
         <ion-avatar slot="start">
           <img [src]="group.imageUrl || 'assets/groups/icon-group.svg'" alt="" />
         </ion-avatar>

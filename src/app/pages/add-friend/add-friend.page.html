@@ -9,7 +9,7 @@
     animated
   ></ion-searchbar>
 
-  <ng-container *ngIf="textoBuscar.trim() !== ''; else ayuda">
+  <ng-container *ngIf="!tooShort; else ayuda">
     <div *ngIf="buscando" class="ion-text-center ion-margin">
       <ion-spinner name="circular" color="danger"></ion-spinner>
     </div>
@@ -30,7 +30,8 @@
 
   <ng-template #ayuda>
     <h5 class="textSearch">
-      Introduce un nombre de usuario o un email, para poder enviar una solicitud de amistad. <br />
+      Introduce al menos {{ minChars }} letras del nombre de usuario o del email para poder enviar una solicitud de
+      amistad. <br />
       (Por motivos de privacidad no se muestran resultados hasta introducir texto).
     </h5>
   </ng-template>

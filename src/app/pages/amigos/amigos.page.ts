@@ -2,23 +2,19 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { RouterLink } from '@angular/router';
-import { Observable, catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupsService } from '../../core/groups.service';
-import { FapCounts } from '../../shared/fap.model';
-import { Friend } from '../../shared/friend.model';
+import { Friend, Social } from '../../shared/friend.model';
 import { Group } from '../../shared/group.model';
 import { FiltroPipe } from '../../shared/filtro.pipe';
 
-export interface FriendWithCounts extends Friend {
-  counts: FapCounts | null;
+function total(friend: Friend): number {
+  return (friend.solitario ?? 0) + (friend.compania ?? 0);
 }
 
-function total(friend: FriendWithCounts): number {
-  return (friend.counts?.solitario ?? 0) + (friend.counts?.compania ?? 0);
-}
+const EMPTY_SOCIAL: Social = { friends: [], requests: [], sent: [] };
 
 @Component({
   selector: 'app-amigos',
@@ -28,41 +24,38 @@ function total(friend: FriendWithCounts): number {
 })
 export class AmigosPage {
   private authService = inject(AuthService);
-  private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private groupsService = inject(GroupsService);
 
   segment: 'amigos' | 'grupos' = 'amigos';
   textoBuscar = '';
 
+  // Todo sale de social/{uid}: 1 lectura para amigos, totales y solicitudes.
+  private readonly social$: Observable<Social> = this.authService.user$.pipe(
+    switchMap((user) => (user ? this.friendsService.social$(user.uid) : of(EMPTY_SOCIAL)))
+  );
+
   // Amigos ordenados de más a menos faps totales, igual que en la versión anterior.
-  readonly friends$: Observable<FriendWithCounts[]> = this.authService.user$.pipe(
-    switchMap((user) => (user ? this.friendsService.friends$(user.uid) : of([]))),
-    switchMap((friends) => {
-      if (friends.length === 0) {
-        return of([]);
-      }
-      return combineLatest(
-        friends.map((friend) =>
-          this.fapService.fapCounts$(friend.uid).pipe(
-            // Sin permiso de lectura (p. ej. amistad recién eliminada) se muestra el amigo sin conteos.
-            catchError(() => of(null)),
-            map((counts): FriendWithCounts => ({ ...friend, counts }))
-          )
-        )
-      ).pipe(map((list) => [...list].sort((a, b) => total(b) - total(a))));
-    })
+  readonly friends$: Observable<Friend[]> = this.social$.pipe(
+    map((social) => [...social.friends].sort((a, b) => total(b) - total(a)))
   );
 
-  readonly pendingRequests$: Observable<number> = this.authService.user$.pipe(
-    switchMap((user) => (user ? this.friendsService.incomingRequests$(user.uid) : of([]))),
-    map((requests) => requests.length)
-  );
+  readonly pendingRequests$: Observable<number> = this.social$.pipe(map((social) => social.requests.length));
 
+  // Solo se consulta al abrir el segmento Grupos (la plantilla se suscribe dentro de él).
   readonly groups$: Observable<Group[]> = this.authService.user$.pipe(
     switchMap((user) => (user ? this.groupsService.groupsForUser$(user.uid) : of([]))),
     map((groups) => [...groups].sort((a, b) => a.name.localeCompare(b.name)))
   );
+
+  // Las actualizaciones en vivo crean objetos nuevos: trackBy evita recrear todas las filas.
+  trackByUid(_: number, friend: Friend): string {
+    return friend.uid;
+  }
+
+  trackById(_: number, group: Group): string | undefined {
+    return group.id;
+  }
 
   onSegmentChange(event: CustomEvent): void {
     this.segment = event.detail.value;
