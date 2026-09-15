@@ -1,7 +1,7 @@
-import { ApplicationConfig, isDevMode, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, isDevMode, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
-import { provideIonicAngular } from '@ionic/angular/standalone';
+import { IonicModule } from '@ionic/angular';
 import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { ReCaptchaEnterpriseProvider, initializeAppCheck, provideAppCheck } from '@angular/fire/app-check';
 import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
@@ -37,7 +37,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideIonicAngular(),
+    // Las páginas importan IonicModule (carga perezosa de componentes), así que Ionic se arranca con
+    // IonicModule.forRoot(): es lo que registra los custom elements. provideIonicAngular() de
+    // '@ionic/angular/standalone' no lo hace y la app se quedaba en blanco con la build de producción.
+    importProvidersFrom(IonicModule.forRoot()),
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     // App Check: solo peticiones desde la app real llegan a Firebase (protege de abusos y de
     // costes inesperados). Se activa al poner la clave de reCAPTCHA Enterprise en environment.
