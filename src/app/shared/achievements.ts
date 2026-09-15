@@ -74,6 +74,11 @@ function total(ctx: AchievementContext): number {
   return ctx.stats.solitario + ctx.stats.compania;
 }
 
+// Cuántos logros lleva desbloqueados (se publica a amigos y grupos para la ficha y los títulos).
+export function unlockedCount(ctx: AchievementContext): number {
+  return achievements(ctx).filter((achievement) => achievement.unlocked).length;
+}
+
 // Se calculan en el dispositivo a partir de datos que ya están cargados: no cuestan lecturas.
 export function achievements(ctx: AchievementContext): Achievement[] {
   return DEFINITIONS.map((definition) => {

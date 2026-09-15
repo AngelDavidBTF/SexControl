@@ -83,6 +83,12 @@ export function firstActiveDay(days: DayBuckets): Date | null {
   return first ? parseISO(first) : null;
 }
 
+// Último día con actividad en 'yyyy-MM-dd' (lo que se comparte con amigos y grupos).
+export function lastActiveDayKey(days: DayBuckets): string | null {
+  const keys = activeKeys(days);
+  return keys.length > 0 ? keys[keys.length - 1] : null;
+}
+
 // ---------------------------------------------------------------- periodos
 
 export function periodRange(period: Period, anchor: Date, days: DayBuckets, custom?: DateRange): DateRange {
@@ -383,6 +389,25 @@ export function weekKey(date: Date): string {
 
 export function monthKey(date: Date): string {
   return format(date, 'yyyy-MM');
+}
+
+// Claves del periodo anterior, para publicar lo de la semana/mes que acaban de cerrarse.
+export function previousWeekKey(date: Date): string {
+  return weekKey(addWeeks(date, -1));
+}
+
+export function previousMonthKey(date: Date): string {
+  return monthKey(addMonths(date, -1));
+}
+
+export function previousWeekTotals(days: DayBuckets, today: Date): Totals {
+  const start = addWeeks(startOfWeek(today, WEEK), -1);
+  return sumRange(days, { start, end: addWeeks(start, 1) });
+}
+
+export function previousMonthTotals(days: DayBuckets, today: Date): Totals {
+  const start = addMonths(startOfMonth(today), -1);
+  return sumRange(days, { start, end: addMonths(start, 1) });
 }
 
 export function currentWeekTotals(days: DayBuckets, today: Date): Totals {

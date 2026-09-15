@@ -23,6 +23,20 @@ export interface SocialEntry {
   week?: PeriodCount | null;
   month?: PeriodCount | null;
   since?: Timestamp;
+  // Datos para la ficha y la liga de amigos, publicados por su dueño junto con los totales
+  // (ver sharing.service.ts). Con privacidad "solo el total" o "nada" van a null.
+  //  - streak:    días seguidos de racha en curso.
+  //  - lastDay:   último día con actividad, 'yyyy-MM-dd'.
+  //  - badges:    cuántos logros lleva desbloqueados.
+  //  - prevWeek:  recuento de la semana anterior (para las flechas de subida y bajada).
+  //  - prevMonth: recuento del mes anterior (para cerrar las temporadas de grupo).
+  //  - wins:      duelos ganados en total.
+  streak?: number | null;
+  lastDay?: string | null;
+  badges?: number | null;
+  prevWeek?: PeriodCount | null;
+  prevMonth?: PeriodCount | null;
+  wins?: number | null;
 }
 
 export type PrivacyLevel = 'todo' | 'total' | 'nada';

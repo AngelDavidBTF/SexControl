@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActionSheetController, AlertController, IonicModule } from '@ionic/angular';
+import { ActionSheetController, AlertController, IonicModule, ModalController } from '@ionic/angular';
 import { RouterLink } from '@angular/router';
-import { Observable, firstValueFrom, map, of, shareReplay, switchMap } from 'rxjs';
+import { Observable, combineLatest, firstValueFrom, map, of, shareReplay, switchMap } from 'rxjs';
 import { Timestamp } from '@angular/fire/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -10,12 +10,16 @@ import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupsService } from '../../core/groups.service';
+import { ProfileService } from '../../core/profile.service';
 import { SharingService } from '../../core/sharing.service';
 import { UiService } from '../../core/ui.service';
+import { FriendAction, FriendDetailModal } from '../../components/friend-detail/friend-detail.modal';
+import { FriendsLeagueComponent } from '../../components/friends-league/friends-league.component';
 import { DatoDirective } from '../../shared/dato.directive';
 import { Friend, PRIVACY_LABELS, PrivacyLevel, REACTION_EMOJIS, ReceivedReaction, Social } from '../../shared/friend.model';
 import { Group } from '../../shared/group.model';
 import { FiltroPipe } from '../../shared/filtro.pipe';
+import { MyEntry, myEntry } from '../../shared/social';
 
 function total(friend: Friend): number {
   if (friend.hidden) {
@@ -29,7 +33,7 @@ const EMPTY_SOCIAL: Social = { friends: [], requests: [], sent: [], reactions: [
 @Component({
   selector: 'app-amigos',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink, FiltroPipe, DatoDirective],
+  imports: [CommonModule, IonicModule, RouterLink, FiltroPipe, DatoDirective, FriendsLeagueComponent],
   templateUrl: './amigos.page.html',
   styleUrl: './amigos.page.scss',
 })
@@ -38,10 +42,12 @@ export class AmigosPage {
   private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private groupsService = inject(GroupsService);
+  private profileService = inject(ProfileService);
   private sharing = inject(SharingService);
   private ui = inject(UiService);
   private actionSheetController = inject(ActionSheetController);
   private alertController = inject(AlertController);
+  private modalController = inject(ModalController);
 
   segment: 'amigos' | 'grupos' = 'amigos';
   textoBuscar = '';
@@ -60,6 +66,19 @@ export class AmigosPage {
   // Amigos ordenados de más a menos faps totales; los que no comparten, al final.
   readonly friends$: Observable<Friend[]> = this.social$.pipe(
     map((social) => [...social.friends].sort((a, b) => total(b) - total(a)))
+  );
+
+  // Mis propios datos con la forma de una entrada de amigo, para la liga y la ficha. Sale de
+  // fapStats y del perfil, que ya están escuchándose: no cuesta lecturas.
+  readonly me$: Observable<MyEntry | null> = this.authService.user$.pipe(
+    switchMap((user) =>
+      user
+        ? combineLatest([this.profileService.profile$(user.uid), this.fapService.stats$(user.uid)]).pipe(
+            map(([profile, stats]) => myEntry(user.uid, profile, stats, new Date()))
+          )
+        : of(null)
+    ),
+    shareReplay({ bufferSize: 1, refCount: true })
   );
 
   readonly pendingRequests$: Observable<number> = this.social$.pipe(map((social) => social.requests.length));
@@ -106,19 +125,19 @@ export class AmigosPage {
 
   // ---------------------------------------------------------------- acciones sobre un amigo
 
+  // Al tocar un amigo se abre su ficha; las acciones de siempre salen de ella.
   async friendActions(friend: Friend): Promise<void> {
     const name = friend.displayName || friend.email || 'tu amigo';
-    const sheet = await this.actionSheetController.create({
-      header: name,
-      buttons: [
-        { text: 'Mandar una reacción', icon: 'happy-outline', data: 'react' },
-        { text: `Qué ve de ti: ${PRIVACY_LABELS[this.privacyFor(friend.uid)].toLowerCase()}`, icon: 'eye-outline', data: 'privacy' },
-        { text: 'Eliminar amistad', icon: 'person-remove-outline', role: 'destructive', data: 'remove' },
-        { text: 'Cancelar', role: 'cancel', icon: 'close' },
-      ],
+    const me = await firstValueFrom(this.me$);
+    if (!me) {
+      return;
+    }
+    const modal = await this.modalController.create({
+      component: FriendDetailModal,
+      componentProps: { friend, me, privacy: this.privacyFor(friend.uid) },
     });
-    await sheet.present();
-    const { data } = await sheet.onDidDismiss<string>();
+    await modal.present();
+    const { data } = await modal.onDidDismiss<FriendAction>();
     if (data === 'react') {
       await this.chooseReaction(friend, name);
     } else if (data === 'privacy') {

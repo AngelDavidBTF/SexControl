@@ -42,6 +42,9 @@
       </div>
     </ng-container>
 
+    <!-- Clasificación entre amigos; se calcula con los datos que ya trae social/{uid}. -->
+    <app-friends-league *ngIf="friends$ | async as friends" [friends]="friends" [me]="(me$ | async) ?? null"></app-friends-league>
+
     <ion-item-divider>
       <ion-label>Amigos agregados</ion-label>
     </ion-item-divider>

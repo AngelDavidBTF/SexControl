@@ -16,6 +16,12 @@ export interface GroupMember {
   month?: PeriodCount | null;
   // El miembro ha pausado la compartición: sus números no se muestran.
   hidden?: boolean;
+  // Para los títulos semanales y las temporadas (ver friend.model.ts#SocialEntry).
+  streak?: number | null;
+  lastDay?: string | null;
+  badges?: number | null;
+  prevWeek?: PeriodCount | null;
+  prevMonth?: PeriodCount | null;
 }
 
 // groups/{groupId}. Las estadísticas del grupo son los faps totales de cada miembro,

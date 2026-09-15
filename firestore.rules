@@ -91,7 +91,8 @@ service cloud.firestore {
         request.auth.uid in mapField(request.resource.data, 'friends') &&
         request.resource.data.friends[request.auth.uid]
           .diff(resource.data.friends[request.auth.uid]).affectedKeys()
-          .hasOnly(['solitario', 'compania', 'total', 'hidden', 'week', 'month', 'displayName', 'photoURL']);
+          .hasOnly(['solitario', 'compania', 'total', 'hidden', 'week', 'month', 'prevWeek', 'prevMonth',
+                    'streak', 'lastDay', 'badges', 'wins', 'displayName', 'photoURL']);
     }
 
     // 5) eliminar la amistad: quitarse de mi lista de amigos (al borrar la amistad o su cuenta),
