@@ -19,6 +19,8 @@ import { environment, firebaseConfig } from '../environments/environment';
 // así que App Check usa un token de depuración registrado en Firebase Console. El token no está en
 // el código: se lee de localStorage ('sexcontrol.appCheckDebugToken'). Si no hay ninguno, el SDK
 // genera uno y lo muestra en la consola del navegador para poder registrarlo.
+// Ojo: AngularFire además activa el modo depuración siempre que la app se abra en localhost, aunque
+// sea la build de producción; la validación real con reCAPTCHA solo se ve en el dominio publicado.
 const APP_CHECK_DEBUG_TOKEN_KEY = 'sexcontrol.appCheckDebugToken';
 
 function enableAppCheckDebugToken(): void {
