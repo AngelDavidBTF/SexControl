@@ -1,7 +1,11 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { addIcons } from 'ionicons';
 import {
+  add,
   addCircle,
+  checkmarkCircle,
+  personAddOutline,
+  trash,
   arrowBack,
   arrowBackCircle,
   checkmarkOutline,
@@ -30,6 +34,10 @@ addIcons({
   'checkmark-outline': checkmarkOutline,
   close,
   'arrow-back': arrowBack,
+  add,
+  'checkmark-circle': checkmarkCircle,
+  'person-add-outline': personAddOutline,
+  trash,
 });
 
 bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

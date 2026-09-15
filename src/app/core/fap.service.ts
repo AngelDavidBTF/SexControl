@@ -13,6 +13,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { Fap } from '../shared/fap.model';
+import { FapCounts } from '../shared/friend.model';
 
 // Se ordena en el cliente (por fecha) en lugar de usar orderBy en Firestore para no
 // requerir un índice compuesto (uid + fecha): el volumen por usuario es pequeño (contador personal).
@@ -32,6 +33,16 @@ export class FapService {
     const q = query(this.fapsCollection, where('uid', '==', uid));
     return (this.inContext(() => collectionData(q, { idField: 'id' })) as Observable<Fap[]>).pipe(
       map((faps) => [...faps].sort(byFechaAsc))
+    );
+  }
+
+  fapCounts$(uid: string): Observable<FapCounts> {
+    const q = query(this.fapsCollection, where('uid', '==', uid));
+    return (this.inContext(() => collectionData(q)) as Observable<Fap[]>).pipe(
+      map((faps) => ({
+        solitario: faps.filter((fap) => fap.solitario).length,
+        compania: faps.filter((fap) => !fap.solitario).length,
+      }))
     );
   }
 

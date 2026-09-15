@@ -1,0 +1,62 @@
+<app-header titulo="Crear grupo"></app-header>
+
+<ion-content>
+  <ion-item class="ion-padding-horizontal">
+    <ion-avatar slot="start">
+      <img [src]="imageUrl || 'assets/groups/icon-group.svg'" alt="" class="imagen-grupo" />
+    </ion-avatar>
+    <ion-label>Icono de grupo</ion-label>
+    <ion-button slot="end" (click)="fileInput.click()">Elegir imagen</ion-button>
+    <input #fileInput type="file" accept="image/*" hidden (change)="onImageSelected($event)" />
+  </ion-item>
+
+  <ion-item class="ion-padding-horizontal">
+    <ion-input
+      label="Nombre del grupo *"
+      labelPlacement="floating"
+      [(ngModel)]="nameGroup"
+      [maxlength]="50"
+      name="nameGroup"
+      class="nombre-grupo"
+    ></ion-input>
+  </ion-item>
+
+  <div class="ion-padding-horizontal">
+    <ion-chip *ngFor="let user of selectedUsers" (click)="toggle(user)">
+      <ion-avatar>
+        <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
+      </ion-avatar>
+      <ion-label class="avatar-group">{{ user.displayName || user.email }}</ion-label>
+      <ion-icon name="close"></ion-icon>
+    </ion-chip>
+  </div>
+
+  <ion-item-divider>
+    <ion-label>Elige los amigos del grupo</ion-label>
+  </ion-item-divider>
+
+  <ion-searchbar placeholder="Buscar amigo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
+
+  <ng-container *ngIf="friends$ | async as friends">
+    <ion-item *ngFor="let user of friends | filtro: textoBuscar" button (click)="toggle(user)" class="amigo-seleccionable">
+      <ion-avatar slot="start">
+        <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.displayName }}</h2>
+        <p class="ion-text-wrap">{{ user.email }}</p>
+      </ion-label>
+      <ion-icon *ngIf="isSelected(user)" slot="end" name="checkmark-circle" color="secondary"></ion-icon>
+    </ion-item>
+
+    <div *ngIf="friends.length === 0" class="ion-padding ion-text-center">
+      Necesitas tener amigos agregados para crear un grupo.
+    </div>
+  </ng-container>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="canCreate">
+    <ion-fab-button color="secondary" (click)="createGroup()" class="crear-grupo">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

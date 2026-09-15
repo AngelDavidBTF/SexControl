@@ -1,0 +1,77 @@
+<ng-container *ngIf="vm$ | async as vm; else sinGrupo">
+  <app-header [titulo]="vm.group.name"></app-header>
+
+  <ion-content>
+    <div class="cabecera">
+      <ion-avatar>
+        <img [src]="vm.group.imageUrl || 'assets/groups/icon-group.svg'" alt="" />
+      </ion-avatar>
+      <ion-button *ngIf="vm.isOwner" size="small" color="primary" (click)="presentActionSheet(vm.group)" class="editar-grupo">
+        Editar grupo
+      </ion-button>
+    </div>
+
+    <div class="contenedorNumeros contenedorTotal">
+      <ion-text color="warning">
+        <p class="letrasTotal">Total Grupo</p>
+        <h1 class="numeroTotal total-grupo">{{ vm.totalCompania + vm.totalSolitario }}</h1>
+      </ion-text>
+      <ion-text color="warning">
+        <p class="letrasTotal">Media Total Grupo</p>
+        <h1 class="numeroTotal">{{ vm.mediaGrupo | number: '1.0-0' }}</h1>
+      </ion-text>
+    </div>
+    <div class="contenedorNumeros">
+      <ion-text color="secondary">
+        <p class="letras">Total Compañía</p>
+        <h1 class="numero total-compania">{{ vm.totalCompania }}</h1>
+      </ion-text>
+      <ion-text color="primary">
+        <p class="letras">Total Solitario</p>
+        <h1 class="numero total-solitario">{{ vm.totalSolitario }}</h1>
+      </ion-text>
+      <ion-text color="secondary">
+        <p class="letras">Media Compañía</p>
+        <h1 class="numero">{{ vm.mediaCompania | number: '1.0-0' }}</h1>
+      </ion-text>
+      <ion-text color="primary">
+        <p class="letras">Media Solitario</p>
+        <h1 class="numero">{{ vm.mediaSolitario | number: '1.0-0' }}</h1>
+      </ion-text>
+    </div>
+
+    <ion-searchbar placeholder="Buscar miembro" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
+
+    <ion-list>
+      <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index" [disabled]="!vm.isOwner || member.uid === vm.group.ownerUid">
+        <ion-item class="miembro">
+          <ion-avatar slot="start">
+            <img [src]="member.photoURL || 'assets/icon-user.svg'" alt="" />
+          </ion-avatar>
+          <ion-img *ngIf="!textoBuscar && i < 3" class="podium" [src]="'assets/groups/' + (i + 1) + '.svg'"></ion-img>
+          <ion-label>
+            <h2>{{ member.displayName || member.email }}</h2>
+            <p *ngIf="member.uid === vm.group.ownerUid">Creador del grupo</p>
+          </ion-label>
+          <ng-container *ngIf="member.counts">
+            <ion-badge color="secondary" class="badge-compania">{{ member.counts.compania }}</ion-badge>
+            <ion-badge color="primary" class="ion-margin-horizontal badge-solitario">{{ member.counts.solitario }}</ion-badge>
+          </ng-container>
+        </ion-item>
+
+        <ion-item-options side="end">
+          <ion-item-option color="danger" (click)="removeMember(vm.group, member)" class="quitar-miembro">
+            <ion-icon slot="icon-only" name="trash"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </ion-content>
+</ng-container>
+
+<ng-template #sinGrupo>
+  <app-header titulo="Grupo"></app-header>
+  <ion-content>
+    <h5 class="ion-text-center ion-margin">Este grupo no existe o ya no perteneces a él.</h5>
+  </ion-content>
+</ng-template>

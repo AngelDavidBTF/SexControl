@@ -1,0 +1,48 @@
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px;
+}
+
+.numero {
+  padding: 10px;
+  margin: 10px;
+  margin-top: 1px;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.numeroTotal {
+  padding: 10px;
+  margin: 10px 40px;
+  margin-top: 1px;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.contenedorNumeros {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: flex-end;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.letras {
+  margin: 10px 10px -10px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.letrasTotal {
+  margin: 10px 23px -10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.podium {
+  width: 30px;
+  padding-right: 8px;
+}

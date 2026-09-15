@@ -45,14 +45,37 @@
       </ion-list>
       <h5 *ngIf="friends.length === 0" class="ion-text-center">No has agregado ningún amigo todavía.</h5>
     </ng-container>
-    <ng-template #cargando>
-      <div class="ion-text-center ion-margin">
-        <ion-spinner name="circular" color="danger"></ion-spinner>
-      </div>
-    </ng-template>
   </ng-container>
 
+  <ng-template #cargando>
+    <div class="ion-text-center ion-margin">
+      <ion-spinner name="circular" color="danger"></ion-spinner>
+    </div>
+  </ng-template>
+
   <ng-container *ngIf="segment === 'grupos'">
-    <h5 class="ion-text-center ion-margin">Próximamente: crear y gestionar grupos.</h5>
+    <ion-item button routerLink="/create-group">
+      <ion-icon slot="start" name="add-circle" color="secondary"></ion-icon>
+      <ion-label>Crear grupo</ion-label>
+    </ion-item>
+
+    <ion-item-divider>
+      <ion-label>Grupos</ion-label>
+    </ion-item-divider>
+
+    <ion-searchbar placeholder="Buscar grupo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
+
+    <ng-container *ngIf="groups$ | async as groups; else cargando">
+      <ion-item *ngFor="let group of groups | filtro: textoBuscar" button [routerLink]="['/group', group.id]" class="grupo">
+        <ion-avatar slot="start">
+          <img [src]="group.imageUrl || 'assets/groups/icon-group.svg'" alt="" />
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ group.name }}</h2>
+          <p>{{ group.memberUids.length }} {{ group.memberUids.length === 1 ? 'miembro' : 'miembros' }}</p>
+        </ion-label>
+      </ion-item>
+      <h5 *ngIf="groups.length === 0" class="ion-text-center">No tienes ningún grupo aún.</h5>
+    </ng-container>
   </ng-container>
 </ion-content>

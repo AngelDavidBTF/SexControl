@@ -15,9 +15,62 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/users/$(uid)/friends/$(request.auth.uid));
     }
 
+    function userDoc(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function groupDoc(groupId) {
+      return /databases/$(database)/documents/groups/$(groupId);
+    }
+
+    // users/{uid}.groupIds: grupos a los que pertenece el usuario. Se usa en la regla de faps
+    // para que los miembros de un mismo grupo vean los faps del resto. Como da acceso a datos
+    // ajenos, nadie (ni el propio usuario) puede tocarlo libremente: cada escritura cambia un
+    // único grupo, indicado en groupChange, y debe cuadrar con groups/{groupId}.memberUids tal
+    // como queda tras el batch (groups.service.ts).
+    function sharesGroup(uid) {
+      return get(userDoc(request.auth.uid)).data.get('groupIds', [])
+        .hasAny(get(userDoc(uid)).data.get('groupIds', []));
+    }
+
+    function touchesGroupIds() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['groupIds', 'groupChange']);
+    }
+
+    // Solo el dueño del grupo añade miembros, y solo a amigos suyos (o a sí mismo).
+    function isGroupAdd(uid, groupId, before, after) {
+      return !(groupId in before) &&
+        after == before.concat([groupId]) &&
+        existsAfter(groupDoc(groupId)) &&
+        getAfter(groupDoc(groupId)).data.ownerUid == request.auth.uid &&
+        uid in getAfter(groupDoc(groupId)).data.memberUids &&
+        (isOwner(uid) || exists(/databases/$(database)/documents/users/$(uid)/friends/$(request.auth.uid)));
+    }
+
+    // Quitar el grupo solo si el usuario ya no es miembro (o el grupo se ha borrado),
+    // hecho por el dueño del grupo o por el propio usuario.
+    function isGroupRemove(uid, groupId, before, after) {
+      return groupId in before &&
+        after == before.removeAll([groupId]) &&
+        (!existsAfter(groupDoc(groupId)) || !(uid in getAfter(groupDoc(groupId)).data.memberUids)) &&
+        (isOwner(uid) || get(groupDoc(groupId)).data.ownerUid == request.auth.uid);
+    }
+
+    function isValidGroupChange(uid) {
+      return isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['groupIds', 'groupChange']) &&
+        request.resource.data.groupChange is string &&
+        (isGroupAdd(uid, request.resource.data.groupChange,
+                    resource.data.get('groupIds', []), request.resource.data.get('groupIds', [])) ||
+         isGroupRemove(uid, request.resource.data.groupChange,
+                       resource.data.get('groupIds', []), request.resource.data.get('groupIds', [])));
+    }
+
     match /users/{uid} {
       allow read: if isSignedIn();
-      allow write: if isOwner(uid);
+      allow create: if isOwner(uid) && !request.resource.data.keys().hasAny(['groupIds', 'groupChange']);
+      allow update: if (isOwner(uid) && !touchesGroupIds()) || isValidGroupChange(uid);
+      allow delete: if false;
 
       match /friends/{friendUid} {
         allow read: if isOwner(uid) || isOwner(friendUid);
@@ -50,17 +103,26 @@ service cloud.firestore {
       allow read: if isSignedIn() &&
         (resource.data.uid == request.auth.uid ||
          isFriendOf(resource.data.uid) ||
-         (resource.data.groupId != null &&
-          request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.memberUids));
+         sharesGroup(resource.data.uid));
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
 
+    // Tope de miembros: cada miembro añadido consume una llamada exists() en la regla de users,
+    // y un batch admite como máximo 20 llamadas de acceso.
+    function isValidGroup(data) {
+      return data.ownerUid == request.auth.uid &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
+        data.memberUids is list && request.auth.uid in data.memberUids && data.memberUids.size() <= 15 &&
+        (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() < 200000));
+    }
+
     match /groups/{groupId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.memberUids;
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isSignedIn() && isValidGroup(request.resource.data);
+      allow update: if isSignedIn() && resource.data.ownerUid == request.auth.uid && isValidGroup(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
     }
   }
 }

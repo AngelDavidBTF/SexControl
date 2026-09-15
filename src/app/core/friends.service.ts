@@ -15,8 +15,7 @@ import {
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
-import { Fap } from '../shared/fap.model';
-import { FapCounts, Friend, FriendRequest } from '../shared/friend.model';
+import { Friend, FriendRequest } from '../shared/friend.model';
 import { User } from '../shared/user.model';
 
 const SEARCH_LIMIT = 20;
@@ -45,16 +44,6 @@ export class FriendsService {
   outgoingRequests$(uid: string): Observable<FriendRequest[]> {
     const q = query(collection(this.firestore, 'friendRequests'), where('fromUid', '==', uid));
     return this.inContext(() => collectionData(q, { idField: 'id' })) as Observable<FriendRequest[]>;
-  }
-
-  fapCounts$(uid: string): Observable<FapCounts> {
-    const q = query(collection(this.firestore, 'faps'), where('uid', '==', uid));
-    return (this.inContext(() => collectionData(q)) as Observable<Fap[]>).pipe(
-      map((faps) => ({
-        solitario: faps.filter((fap) => fap.solitario).length,
-        compania: faps.filter((fap) => !fap.solitario).length,
-      }))
-    );
   }
 
   // Búsqueda por prefijo de email o nombre (en minúsculas) sobre users/. Por privacidad
