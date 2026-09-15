@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import {
   Auth,
   User as FirebaseUser,
@@ -12,7 +12,7 @@ import {
   signOut,
   updateProfile,
 } from '@angular/fire/auth';
-import { Firestore, doc, serverTimestamp, setDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, serverTimestamp, setDoc } from '@angular/fire/firestore';
 import { UiService } from './ui.service';
 
 @Injectable({
@@ -21,6 +21,7 @@ import { UiService } from './ui.service';
 export class AuthService {
   private auth = inject(Auth);
   private firestore = inject(Firestore);
+  private injector = inject(Injector);
   private ui = inject(UiService);
 
   readonly user$ = authState(this.auth);
@@ -29,9 +30,15 @@ export class AuthService {
     return this.auth.currentUser?.uid ?? null;
   }
 
+  currentUser(): FirebaseUser | null {
+    return this.auth.currentUser;
+  }
+
   async login(email: string, password: string): Promise<FirebaseUser | null> {
     try {
       const { user } = await signInWithEmailAndPassword(this.auth, email, password);
+      // No bloquea el login: si falla solo afecta a que el usuario aparezca en búsquedas.
+      await this.ensureUserDoc(user).catch((error) => console.error('No se pudo actualizar users/{uid}', error));
       return user;
     } catch (error: unknown) {
       await this.ui.alertaInformativa(this.mapAuthError(error));
@@ -85,8 +92,11 @@ export class AuthService {
     return user.emailVerified === true;
   }
 
+  // emailLower/displayNameLower permiten la búsqueda por prefijo de amigos (friends.service).
+  // Se llama también en cada login para dar de alta a usuarios creados antes de existir users/{uid}.
   private async ensureUserDoc(user: FirebaseUser): Promise<void> {
     const ref = doc(this.firestore, `users/${user.uid}`);
+    const snapshot = await this.inContext(() => getDoc(ref));
     await setDoc(
       ref,
       {
@@ -95,7 +105,9 @@ export class AuthService {
         displayName: user.displayName,
         photoURL: user.photoURL,
         emailVerified: user.emailVerified,
-        createdAt: serverTimestamp(),
+        emailLower: user.email?.toLowerCase() ?? null,
+        displayNameLower: user.displayName?.toLowerCase() ?? null,
+        ...(snapshot.exists() ? {} : { createdAt: serverTimestamp() }),
       },
       { merge: true }
     );
@@ -117,5 +129,11 @@ export class AuthService {
       default:
         return 'Ha ocurrido un error, inténtalo de nuevo';
     }
+  }
+
+  // Las funciones de AngularFire deben ejecutarse dentro de un contexto de inyección;
+  // estos métodos se llaman desde suscripciones y callbacks, fuera de él.
+  private inContext<T>(fn: () => T): T {
+    return runInInjectionContext(this.injector, fn);
   }
 }

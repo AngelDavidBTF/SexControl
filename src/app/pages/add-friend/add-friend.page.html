@@ -1,0 +1,37 @@
+<app-header titulo="Añadir amigo"></app-header>
+
+<ion-content>
+  <ion-searchbar
+    placeholder="Buscar usuario"
+    (ionInput)="onSearchChange($event)"
+    [debounce]="400"
+    inputmode="text"
+    animated
+  ></ion-searchbar>
+
+  <ng-container *ngIf="textoBuscar.trim() !== ''; else ayuda">
+    <div *ngIf="buscando" class="ion-text-center ion-margin">
+      <ion-spinner name="circular" color="danger"></ion-spinner>
+    </div>
+
+    <ion-item *ngFor="let user of users" button (click)="enviarPeticion(user)" class="resultado">
+      <ion-avatar slot="start">
+        <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ user.displayName }}</h2>
+        <p class="ion-text-wrap">{{ user.email }}</p>
+      </ion-label>
+      <ion-icon name="person-add" slot="end"></ion-icon>
+    </ion-item>
+
+    <h5 *ngIf="!buscando && users.length === 0" class="textSearch">No se ha encontrado ningún usuario.</h5>
+  </ng-container>
+
+  <ng-template #ayuda>
+    <h5 class="textSearch">
+      Introduce un nombre de usuario o un email, para poder enviar una solicitud de amistad. <br />
+      (Por motivos de privacidad no se muestran resultados hasta introducir texto).
+    </h5>
+  </ng-template>
+</ion-content>

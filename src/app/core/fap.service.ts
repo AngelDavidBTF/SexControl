@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import {
   Firestore,
   addDoc,
@@ -25,11 +25,12 @@ function byFechaAsc(a: Fap, b: Fap): number {
 })
 export class FapService {
   private firestore = inject(Firestore);
+  private injector = inject(Injector);
   private fapsCollection = collection(this.firestore, 'faps');
 
   fapsForUser$(uid: string): Observable<Fap[]> {
     const q = query(this.fapsCollection, where('uid', '==', uid));
-    return (collectionData(q, { idField: 'id' }) as Observable<Fap[]>).pipe(
+    return (this.inContext(() => collectionData(q, { idField: 'id' })) as Observable<Fap[]>).pipe(
       map((faps) => [...faps].sort(byFechaAsc))
     );
   }
@@ -45,7 +46,7 @@ export class FapService {
 
   async removeLastFap(uid: string): Promise<void> {
     const q = query(this.fapsCollection, where('uid', '==', uid));
-    const snapshot = await getDocs(q);
+    const snapshot = await this.inContext(() => getDocs(q));
     const faps = snapshot.docs
       .map((d) => ({ id: d.id, ...(d.data() as Fap) }))
       .sort(byFechaAsc);
@@ -53,5 +54,11 @@ export class FapService {
     if (lastDoc?.id) {
       await deleteDoc(doc(this.firestore, 'faps', lastDoc.id));
     }
+  }
+
+  // Las funciones de AngularFire deben ejecutarse dentro de un contexto de inyección;
+  // estos métodos se llaman desde suscripciones y callbacks, fuera de él.
+  private inContext<T>(fn: () => T): T {
+    return runInInjectionContext(this.injector, fn);
   }
 }

@@ -1,0 +1,30 @@
+<app-header titulo="Solicitudes de amistad"></app-header>
+
+<ion-content>
+  <ion-searchbar placeholder="Buscar petición" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
+
+  <ng-container *ngIf="requests$ | async as requests; else cargando">
+    <ion-item
+      *ngFor="let view of requests | filtro: textoBuscar"
+      button
+      (click)="presentActionSheet(view)"
+      class="solicitud"
+    >
+      <ion-avatar slot="start">
+        <img [src]="view.photoURL || 'assets/icon-user.svg'" alt="" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ view.displayName }}</h2>
+        <p class="ion-text-wrap">{{ view.email }}</p>
+      </ion-label>
+      <ion-icon name="person-add" slot="end"></ion-icon>
+    </ion-item>
+
+    <h5 *ngIf="requests.length === 0" class="ion-text-center">No hay ninguna solicitud de amistad</h5>
+  </ng-container>
+  <ng-template #cargando>
+    <div class="ion-text-center ion-margin">
+      <ion-spinner name="circular" color="danger"></ion-spinner>
+    </div>
+  </ng-template>
+</ion-content>

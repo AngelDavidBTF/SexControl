@@ -21,18 +21,29 @@ service cloud.firestore {
 
       match /friends/{friendUid} {
         allow read: if isOwner(uid) || isOwner(friendUid);
-        // Los documentos espejo de amistad los crea el propio usuario en ambos lados
-        // al aceptar una solicitud (ver friends.service.ts, fase 2).
-        allow write: if isOwner(uid) || isOwner(friendUid);
+        // Los documentos espejo los crea en ambos lados quien acepta la solicitud
+        // (friends.service.ts#acceptRequest), en un batch que además borra la solicitud.
+        // Solo se permite si existe una solicitud pendiente entre ambos: la regla ve el
+        // estado previo al batch, así que la solicitud aún existe al evaluarla.
+        allow create: if
+          (isOwner(uid) && exists(/databases/$(database)/documents/friendRequests/$(friendUid + '_' + uid))) ||
+          (isOwner(friendUid) && exists(/databases/$(database)/documents/friendRequests/$(uid + '_' + friendUid)));
+        allow update: if false;
+        allow delete: if isOwner(uid) || isOwner(friendUid);
       }
     }
 
+    // Id determinista {fromUid}_{toUid}: evita duplicados y permite comprobar su existencia
+    // desde la regla de friends. Pendiente mientras exista; se borra al aceptar o rechazar.
     match /friendRequests/{requestId} {
-      allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
-      allow read, update: if isSignedIn() &&
+      allow create: if isSignedIn() &&
+        request.resource.data.fromUid == request.auth.uid &&
+        request.resource.data.toUid != request.auth.uid &&
+        requestId == request.resource.data.fromUid + '_' + request.resource.data.toUid &&
+        !exists(/databases/$(database)/documents/users/$(request.resource.data.toUid)/friends/$(request.auth.uid));
+      allow read, delete: if isSignedIn() &&
         (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
-      allow delete: if isSignedIn() &&
-        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow update: if false;
     }
 
     match /faps/{fapId} {

@@ -32,6 +32,16 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'add-friend',
+    loadComponent: () => import('./pages/add-friend/add-friend.page').then((m) => m.AddFriendPage),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'request-friends',
+    loadComponent: () => import('./pages/request-friends/request-friends.page').then((m) => m.RequestFriendsPage),
+    canActivate: [authGuard],
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),
   },
