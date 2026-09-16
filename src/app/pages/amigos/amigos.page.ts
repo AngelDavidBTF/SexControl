@@ -11,6 +11,7 @@ import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupsService } from '../../core/groups.service';
 import { ProfileService } from '../../core/profile.service';
+import { SettingsService } from '../../core/settings.service';
 import { SharingService } from '../../core/sharing.service';
 import { UiService } from '../../core/ui.service';
 import { FriendAction, FriendDetailModal } from '../../components/friend-detail/friend-detail.modal';
@@ -105,6 +106,7 @@ export class AmigosPage {
   private actionSheetController = inject(ActionSheetController);
   private alertController = inject(AlertController);
   private modalController = inject(ModalController);
+  private settings = inject(SettingsService);
 
   segment: 'amigos' | 'grupos' = 'amigos';
   textoBuscar = '';
@@ -246,6 +248,11 @@ export class AmigosPage {
     return item.challenge.uid;
   }
 
+  // En modo discreto se usan los textos neutros (sin emojis explícitos ni detalles).
+  get discreto(): boolean {
+    return this.settings.discreet().enabled;
+  }
+
   retoTexto(challenge: Challenge): string {
     return challengeLabel(challenge).toLowerCase();
   }
@@ -382,6 +389,9 @@ export class AmigosPage {
         wins: this.wins + (won ? 1 : 0),
       });
       const name = challenge.friend?.displayName || 'tu amigo';
+      if (won) {
+        this.ui.celebrate();
+      }
       await this.ui.toast(won ? `🏆 ¡Has ganado el duelo con ${name}!` : lost ? `Has perdido el duelo con ${name}` : `Empate con ${name}`);
     } catch (error) {
       console.warn('No se pudo cerrar el duelo', error);

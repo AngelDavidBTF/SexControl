@@ -37,7 +37,7 @@
       <div class="novedades" *ngIf="novedades.length > 0">
         <div class="novedad" *ngFor="let evento of novedades">
           <span class="novedad-emoji" aria-hidden="true">{{ evento.emoji }}</span>
-          <span>{{ evento.text }}</span>
+          <span>{{ discreto ? evento.discreto : evento.text }}</span>
         </div>
       </div>
     </ng-container>
@@ -86,7 +86,7 @@
           <ion-button fill="clear" size="small" color="medium" (click)="clearReactions()" class="limpiar-reacciones">Limpiar</ion-button>
         </div>
         <div class="reaccion" *ngFor="let poke of pokes; trackBy: trackByPoke">
-          <span class="reaccion-texto"><strong>{{ poke.displayName || 'Un amigo' }}</strong>: {{ poke.label }}</span>
+          <span class="reaccion-texto"><strong>{{ poke.displayName || 'Un amigo' }}</strong>: {{ discreto ? poke.discreto : poke.label }}</span>
           <span class="muted">{{ timeAgo(poke.at) }}</span>
         </div>
       </div>

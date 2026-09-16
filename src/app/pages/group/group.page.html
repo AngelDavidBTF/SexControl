@@ -106,7 +106,7 @@
         <ion-avatar>
           <img [src]="entrada.photoURL || 'assets/icon-user.svg'" alt="" />
         </ion-avatar>
-        <span class="muro-texto">{{ entrada.text }}</span>
+        <span class="muro-texto">{{ discreto ? entrada.discreto : entrada.text }}</span>
         <ion-button
           *ngIf="vm.isBoss || entrada.uid === miUid"
           size="small"

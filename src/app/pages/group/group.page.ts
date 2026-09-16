@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
 import { GroupFeedService } from '../../core/group-feed.service';
+import { SettingsService } from '../../core/settings.service';
 import { SharingService } from '../../core/sharing.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
@@ -98,6 +99,7 @@ export class GroupPage {
   private actionSheetController = inject(ActionSheetController);
   private alertController = inject(AlertController);
   private modalController = inject(ModalController);
+  private settings = inject(SettingsService);
 
   textoBuscar = '';
   verPalmares = false;
@@ -108,6 +110,11 @@ export class GroupPage {
   private readonly period$ = new BehaviorSubject<RankingPeriod>('total');
   // Temporadas ya intentadas en esta sesión (el vm$ se recalcula con cada cambio del grupo).
   private readonly closing = new Set<string>();
+
+  // En modo discreto, los textos del muro van en su versión neutra.
+  get discreto(): boolean {
+    return this.settings.discreet().enabled;
+  }
 
   get period(): RankingPeriod {
     return this.period$.value;

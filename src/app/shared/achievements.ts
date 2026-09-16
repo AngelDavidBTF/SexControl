@@ -17,6 +17,10 @@ export interface AchievementContext {
   friends: number;
   groups: number;
   today: Date;
+  // Logros sociales (S5): duelos ganados y temporadas de grupo ganadas. Salen de datos que ya
+  // están cargados (social/{uid} y los grupos), así que no cuestan lecturas.
+  wins?: number;
+  championships?: number;
 }
 
 interface Definition {
@@ -58,6 +62,16 @@ const DEFINITIONS: Definition[] = [
   },
   { id: 'social', emoji: '🤝', title: 'Social', description: 'Ten 5 amigos', measure: (c) => [c.friends, 5] },
   { id: 'grupo', emoji: '👥', title: 'En grupo', description: 'Forma parte de un grupo', measure: (c) => [c.groups, 1] },
+  { id: 'duelista', emoji: '⚔️', title: 'Duelista', description: 'Gana tu primer duelo', measure: (c) => [c.wins ?? 0, 1] },
+  { id: 'invicto', emoji: '🛡️', title: 'Invicto', description: 'Gana 5 duelos', measure: (c) => [c.wins ?? 0, 5] },
+  { id: 'campeon', emoji: '👑', title: 'Campeón', description: 'Gana el mes en un grupo', measure: (c) => [c.championships ?? 0, 1] },
+  {
+    id: 'tricampeon',
+    emoji: '🏆',
+    title: 'Tricampeón',
+    description: 'Gana el mes tres veces',
+    measure: (c) => [c.championships ?? 0, 3],
+  },
   {
     id: 'aniversario',
     emoji: '🎂',

@@ -27,7 +27,19 @@ export class AchievementsService {
       this.groupsService.groupsForUser$(uid),
     ]).pipe(
       map(([stats, social, groups]) =>
-        achievements({ stats, friends: social.friends.length, groups: groups.length, today: new Date() })
+        achievements({
+          stats,
+          friends: social.friends.length,
+          groups: groups.length,
+          today: new Date(),
+          wins: social.wins,
+          // Temporadas de grupo ganadas, contando todos sus grupos.
+          championships: groups.reduce(
+            (count, group) =>
+              count + Object.values(group.seasons ?? {}).filter((season) => season.winnerUid === uid).length,
+            0
+          ),
+        })
       )
     );
   }
