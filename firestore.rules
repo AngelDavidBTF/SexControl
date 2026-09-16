@@ -222,7 +222,22 @@ service cloud.firestore {
         data.ownerUid in data.memberUids &&
         data.members is map && data.members.keys().toSet() == data.memberUids.toSet() &&
         (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() < 200000)) &&
-        isValidGoal(data.get('goal', null));
+        isValidGoal(data.get('goal', null)) &&
+        // Los administradores son siempre miembros del grupo, y pocos.
+        data.get('admins', []) is list && data.get('admins', []).size() <= 10 &&
+        data.get('admins', []).toSet().difference(data.memberUids.toSet()).size() == 0;
+    }
+    // Dueño o co-administrador editando el grupo. El dueño no se puede cambiar, y la lista de
+    // administradores solo la toca el dueño.
+    function isBossEdit() {
+      return (resource.data.ownerUid == request.auth.uid ||
+              request.auth.uid in resource.data.get('admins', [])) &&
+        request.resource.data.ownerUid == resource.data.ownerUid &&
+        (resource.data.ownerUid == request.auth.uid ||
+         request.resource.data.get('admins', []) == resource.data.get('admins', [])) &&
+        isValidGroup(request.resource.data) &&
+        validAdditions(resource.data.memberUids.toSet(), request.resource.data) &&
+        request.resource.data.members.diff(resource.data.members).changedKeys().hasOnly([request.auth.uid]);
     }
     // Objetivo colectivo del grupo: null, o un periodo válido con un tope razonable.
     function isValidGoal(goal) {
@@ -296,6 +311,42 @@ service cloud.firestore {
         hasInvite(resource.data);
     }
 
+    // ------------------------------------------------------- muro del grupo
+    // groupFeed/{groupId}: una entrada por miembro (clave = su uid). Cada uno solo escribe la
+    // suya; el dueño y los administradores pueden retirar la de cualquiera.
+    function groupOf(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+    function isGroupMember(group) {
+      return request.auth.uid in group.memberUids;
+    }
+    function isGroupBoss(group) {
+      return group.ownerUid == request.auth.uid || request.auth.uid in group.get('admins', []);
+    }
+    function isValidFeedItem(item) {
+      return item.keys().hasOnly(['from', 'kind', 'msg', 'at']) &&
+        item.from == request.auth.uid &&
+        item.kind in ['mensaje', 'adelanta', 'racha', 'campeon', 'objetivo'] &&
+        // Solo ids de mensajes predefinidos y datos que genera la app: nada de texto libre.
+        (item.get('msg', null) == null || (item.msg is string && item.msg.size() <= 60));
+    }
+
+    match /groupFeed/{groupId} {
+      allow read: if isSignedIn() && isGroupMember(groupOf(groupId));
+      allow create: if isSignedIn() && isGroupMember(groupOf(groupId)) &&
+        request.resource.data.keys().hasOnly(['items']) &&
+        onlyMe(mapField(request.resource.data, 'items').keys().toSet()) &&
+        isValidFeedItem(request.resource.data.items[request.auth.uid]);
+      allow update: if isSignedIn() && isGroupMember(groupOf(groupId)) && (
+        (topKeysOnly(['items']) && onlyMe(mapDiff('items').affectedKeys()) &&
+         (mapDiff('items').removedKeys().size() == 1 ||
+          isValidFeedItem(request.resource.data.items[request.auth.uid]))) ||
+        // Dueño o administrador: retirar entradas de otros (moderación).
+        (isGroupBoss(groupOf(groupId)) && topKeysOnly(['items']) &&
+         mapDiff('items').addedKeys().size() == 0 && mapDiff('items').changedKeys().size() == 0)
+      );
+    }
+
     match /groups/{groupId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.memberUids;
 
@@ -308,11 +359,7 @@ service cloud.firestore {
       // miembros que ya estaban (solo puede alterar la suya).
       // Miembro: solo su propia entrada de `members` (propagación de sus totales).
       allow update: if isSignedIn() && (
-        (resource.data.ownerUid == request.auth.uid &&
-         request.resource.data.ownerUid == resource.data.ownerUid &&
-         isValidGroup(request.resource.data) &&
-         validAdditions(resource.data.memberUids.toSet(), request.resource.data) &&
-         request.resource.data.members.diff(resource.data.members).changedKeys().hasOnly([request.auth.uid])) ||
+        isBossEdit() ||
         (request.auth.uid in resource.data.memberUids &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
          request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]) &&

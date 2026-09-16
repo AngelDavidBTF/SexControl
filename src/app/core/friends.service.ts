@@ -24,6 +24,7 @@ import {
   DuelRecord,
   Friend,
   FriendChallenge,
+  GroupPrivacy,
   MAX_POKES,
   PrivacyLevel,
   ReceivedPoke,
@@ -100,6 +101,7 @@ export class FriendsService {
             record: data?.record ?? {},
             wins: data?.wins ?? 0,
             privacy: data?.privacy ?? {},
+            groupPrivacy: data?.groupPrivacy ?? {},
             paused: data?.paused === true,
           };
         })
@@ -233,6 +235,15 @@ export class FriendsService {
     await setDoc(
       this.socialRef(me),
       { privacy: { [friendUid]: level === 'todo' ? deleteField() : level } },
+      { merge: true }
+    );
+  }
+
+  // Qué comparto en un grupo concreto. "todo" es lo de siempre, así que se borra la excepción.
+  async setGroupPrivacy(me: string, groupId: string, level: GroupPrivacy): Promise<void> {
+    await setDoc(
+      this.socialRef(me),
+      { groupPrivacy: { [groupId]: level === 'todo' ? deleteField() : level } },
       { merge: true }
     );
   }

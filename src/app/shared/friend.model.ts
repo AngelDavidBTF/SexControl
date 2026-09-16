@@ -39,6 +39,8 @@ export interface SocialEntry {
   wins?: number | null;
 }
 
+export type GroupPrivacy = 'todo' | 'nada';
+
 export type PrivacyLevel = 'todo' | 'total' | 'nada';
 
 export const PRIVACY_LABELS: Record<PrivacyLevel, string> = {
@@ -142,6 +144,8 @@ export interface SocialDoc {
   record?: Record<string, DuelRecord>;
   wins?: number;
   privacy?: Record<string, PrivacyLevel>;
+  // Qué comparto en cada grupo: "todo" (por defecto) o "nada" (mis números salen ocultos).
+  groupPrivacy?: Record<string, GroupPrivacy>;
   paused?: boolean;
 }
 
@@ -182,5 +186,6 @@ export interface Social {
   record: Record<string, DuelRecord>;
   wins: number;
   privacy: Record<string, PrivacyLevel>;
+  groupPrivacy: Record<string, GroupPrivacy>;
   paused: boolean;
 }

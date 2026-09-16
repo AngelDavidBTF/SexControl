@@ -95,10 +95,49 @@
       </ion-text>
     </div>
 
+    <!-- Muro del grupo: una entrada por miembro, 1 lectura al abrir el grupo. -->
+    <div class="muro">
+      <div class="muro-cabecera">
+        <strong>Muro</strong>
+        <ion-button size="small" fill="clear" (click)="postToWall(vm.group)" class="escribir-muro">Escribir</ion-button>
+      </div>
+      <p class="muted sin-muro" *ngIf="vm.feed.length === 0">Todavía no hay nada por aquí. Estrénalo tú.</p>
+      <div class="muro-entrada" *ngFor="let entrada of vm.feed; trackBy: trackByUid">
+        <ion-avatar>
+          <img [src]="entrada.photoURL || 'assets/icon-user.svg'" alt="" />
+        </ion-avatar>
+        <span class="muro-texto">{{ entrada.text }}</span>
+        <ion-button
+          *ngIf="vm.isBoss || entrada.uid === miUid"
+          size="small"
+          fill="clear"
+          color="medium"
+          (click)="removeFromWall(vm.group, entrada, vm.isBoss)"
+          class="quitar-muro"
+          aria-label="Retirar del muro"
+        >
+          <ion-icon slot="icon-only" name="close"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
+    <ion-item lines="none" class="privacidad-grupo">
+      <ion-label>
+        <h3>Ocultar mis números aquí</h3>
+        <p class="muted">Sigues en el grupo, pero nadie ve tus cifras.</p>
+      </ion-label>
+      <ion-toggle
+        slot="end"
+        [checked]="vm.hiddenHere"
+        (ionChange)="toggleGroupPrivacy(vm.group, $event.detail.checked)"
+        class="toggle-privacidad-grupo"
+      ></ion-toggle>
+    </ion-item>
+
     <ion-searchbar placeholder="Buscar miembro" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
     <ion-list>
-      <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index; trackBy: trackByUid" [disabled]="!vm.isOwner || member.uid === vm.group.ownerUid">
+      <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index; trackBy: trackByUid" [disabled]="!vm.isBoss || member.uid === vm.group.ownerUid">
         <ion-item class="miembro">
           <ion-avatar slot="start">
             <img [src]="member.photoURL || 'assets/icon-user.svg'" alt="" />
@@ -110,6 +149,7 @@
               {{ member.displayName || member.email }}
             </h2>
             <p *ngIf="member.uid === vm.group.ownerUid">Creador del grupo</p>
+            <p *ngIf="member.uid !== vm.group.ownerUid && vm.admins.includes(member.uid)">Administra el grupo</p>
             <p *ngIf="!member.counts">No comparte sus números</p>
           </ion-label>
           <ng-container *ngIf="member.counts; else oculto">
@@ -120,6 +160,9 @@
         </ion-item>
 
         <ion-item-options side="end">
+          <ion-item-option *ngIf="vm.isOwner" color="secondary" (click)="toggleAdmin(vm.group, member)" class="hacer-admin">
+            <ion-icon slot="icon-only" name="checkmark-circle"></ion-icon>
+          </ion-item-option>
           <ion-item-option color="danger" (click)="removeMember(vm.group, member)" class="quitar-miembro">
             <ion-icon slot="icon-only" name="trash"></ion-icon>
           </ion-item-option>

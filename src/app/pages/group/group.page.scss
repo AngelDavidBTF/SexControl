@@ -180,3 +180,51 @@
     text-align: center;
   }
 }
+
+/* Muro del grupo y privacidad propia (S4). */
+.muro {
+  margin: 4px 16px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+
+  .muro-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sin-muro {
+    font-size: 0.82rem;
+    margin: 4px 0 0;
+  }
+
+  .muro-entrada {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.85rem;
+  }
+
+  ion-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .muro-texto {
+    flex: 1;
+  }
+}
+
+.privacidad-grupo {
+  --background: transparent;
+
+  h3 {
+    font-size: 0.95rem;
+  }
+
+  p {
+    font-size: 0.78rem;
+  }
+}

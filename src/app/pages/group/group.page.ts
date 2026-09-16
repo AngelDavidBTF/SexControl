@@ -2,14 +2,19 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActionSheetController, AlertController, IonicModule, ModalController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { FapService } from '../../core/fap.service';
+import { FriendsService } from '../../core/friends.service';
+import { GroupFeedService } from '../../core/group-feed.service';
+import { SharingService } from '../../core/sharing.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ShareInviteModal } from '../../components/share-invite/share-invite.modal';
 import { FapCounts } from '../../shared/fap.model';
-import { Group, GroupGoal, GroupMember, MAX_GROUP_GOAL } from '../../shared/group.model';
+import { FeedEntry, Group, GroupGoal, GroupMember, MAX_GROUP_GOAL } from '../../shared/group.model';
+import { POKE_MESSAGES } from '../../shared/friend.model';
 import {
   GoalProgress,
   SeasonEntry,
@@ -49,6 +54,11 @@ interface GroupView {
   seasons: SeasonEntry[];
   titles: Title[];
   goal: GoalProgress | null;
+  // Muro, mando y privacidad propia en este grupo.
+  feed: FeedEntry[];
+  isBoss: boolean;
+  admins: string[];
+  hiddenHere: boolean;
 }
 
 export type RankingPeriod = 'total' | 'mes' | 'semana';
@@ -80,6 +90,10 @@ export class GroupPage {
   private router = inject(Router);
   private authService = inject(AuthService);
   private groupsService = inject(GroupsService);
+  private groupFeedService = inject(GroupFeedService);
+  private friendsService = inject(FriendsService);
+  private fapService = inject(FapService);
+  private sharing = inject(SharingService);
   private ui = inject(UiService);
   private actionSheetController = inject(ActionSheetController);
   private alertController = inject(AlertController);
@@ -87,6 +101,8 @@ export class GroupPage {
 
   textoBuscar = '';
   verPalmares = false;
+  // Para saber qué entradas del muro son mías.
+  readonly miUid = this.authService.currentUid();
   // Vista previa de la tarjeta semanal cuando el navegador no admite compartir archivos.
   previewCard: string | null = null;
   private readonly period$ = new BehaviorSubject<RankingPeriod>('total');
@@ -107,13 +123,18 @@ export class GroupPage {
       }
       return this.groupsService.group$(user.uid, groupId).pipe(
         catchError(() => of(null)),
-        map((group) => {
+        switchMap((group) => {
           if (!group) {
-            return null;
+            return of(null);
           }
           // Si el mes pasado aún no está cerrado, lo cierra el primero que abra el grupo.
           void this.closeSeasonIfNeeded(group);
-          return this.buildView(group, user.uid, period);
+          // El muro es 1 lectura más (un único documento por grupo); la privacidad sale de
+          // social/{uid}, que ya está escuchándose.
+          return combineLatest([
+            this.groupFeedService.feed$(group).pipe(catchError(() => of([] as FeedEntry[]))),
+            this.friendsService.social$(user.uid),
+          ]).pipe(map(([feed, social]) => this.buildView(group, user.uid, period, feed, social.groupPrivacy[groupId] === 'nada')));
         })
       );
     })
@@ -123,7 +144,7 @@ export class GroupPage {
     this.period$.next(event.detail.value as RankingPeriod);
   }
 
-  private buildView(group: Group, myUid: string, period: RankingPeriod): GroupView {
+  private buildView(group: Group, myUid: string, period: RankingPeriod, feed: FeedEntry[], hiddenHere: boolean): GroupView {
     const now = new Date();
     const members = group.memberUids.map((uid): MemberView => {
       const member = group.members?.[uid];
@@ -154,6 +175,10 @@ export class GroupPage {
       seasons: seasonHistory(group),
       titles: weeklyTitles(group, now),
       goal: goalProgress(group, now),
+      feed,
+      admins: group.admins ?? [],
+      isBoss: group.ownerUid === myUid || (group.admins ?? []).includes(myUid),
+      hiddenHere,
     };
   }
 
@@ -199,8 +224,8 @@ export class GroupPage {
 
   // Las actualizaciones en vivo crean objetos nuevos: sin trackBy se recrearían las filas
   // (y se cerraría una fila deslizada a medias).
-  trackByUid(_: number, member: MemberView): string {
-    return member.uid;
+  trackByUid(_: number, item: { uid: string }): string {
+    return item.uid;
   }
 
   onSearchChange(event: CustomEvent): void {
@@ -214,6 +239,13 @@ export class GroupPage {
         {
           text: 'Añadir amigo al grupo',
           icon: 'person-add-outline',
+          handler: () => {
+            this.openAddMembers(group);
+          },
+        },
+        {
+          text: 'Editar grupo (solo el dueño y quien administre pueden añadir o quitar gente)',
+          icon: 'people',
           handler: () => {
             this.openAddMembers(group);
           },
@@ -301,6 +333,82 @@ export class GroupPage {
     } catch (error) {
       console.error('Error guardando el objetivo del grupo', error);
       await this.ui.toast('No se pudo guardar el objetivo');
+    }
+  }
+
+  // ---------------------------------------------------------------- muro
+
+  async postToWall(group: Group): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid || !group.id) {
+      return;
+    }
+    const sheet = await this.actionSheetController.create({
+      header: 'Escribir en el muro',
+      buttons: [
+        ...POKE_MESSAGES.map((message) => ({ text: `${message.emoji} ${message.text}`, data: message.id })),
+        { text: 'Cancelar', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+    const { data: msg } = await sheet.onDidDismiss<string>();
+    if (!msg) {
+      return;
+    }
+    try {
+      await this.groupFeedService.post(group.id, uid, 'mensaje', msg);
+    } catch (error) {
+      console.error('No se pudo escribir en el muro', error);
+      await this.ui.toast('No se pudo escribir en el muro');
+    }
+  }
+
+  // La propia entrada la retira cualquiera; las demás, solo el dueño o un administrador.
+  async removeFromWall(group: Group, entry: FeedEntry, canModerate: boolean): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!group.id || (!canModerate && entry.uid !== uid)) {
+      return;
+    }
+    try {
+      await this.groupFeedService.remove(group.id, entry.uid);
+    } catch (error) {
+      console.error('No se pudo retirar la entrada del muro', error);
+      await this.ui.toast('No se pudo retirar la entrada');
+    }
+  }
+
+  // ---------------------------------------------------------------- privacidad y mando
+
+  async toggleGroupPrivacy(group: Group, hidden: boolean): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid || !group.id) {
+      return;
+    }
+    try {
+      await this.friendsService.setGroupPrivacy(uid, group.id, hidden ? 'nada' : 'todo');
+      const stats = await firstValueFrom(this.fapService.stats$(uid));
+      await this.sharing.publish(uid, stats);
+      await this.ui.toast(hidden ? 'Tus números quedan ocultos en este grupo' : 'Vuelves a compartir en este grupo');
+    } catch (error) {
+      console.error('No se pudo cambiar la privacidad del grupo', error);
+      await this.ui.toast('No se pudo cambiar la privacidad');
+    }
+  }
+
+  // Nombrar o quitar administradores (solo el dueño).
+  async toggleAdmin(group: Group, member: MemberView): Promise<void> {
+    const admins = group.admins ?? [];
+    const isAdmin = admins.includes(member.uid);
+    try {
+      await this.groupsService.setAdmins(
+        group,
+        isAdmin ? admins.filter((uid) => uid !== member.uid) : [...admins, member.uid]
+      );
+      const name = member.displayName || 'El miembro';
+      await this.ui.toast(isAdmin ? `${name} ya no administra el grupo` : `${name} ahora administra el grupo`);
+    } catch (error) {
+      console.error('No se pudo cambiar el administrador', error);
+      await this.ui.toast('No se pudo cambiar el administrador');
     }
   }
 

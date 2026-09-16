@@ -186,6 +186,15 @@ export class GroupsService {
     await updateDoc(doc(this.firestore, 'groups', group.id), { goal, addedUids: [] });
   }
 
+  // Co-administradores (solo el dueño). Pueden añadir y quitar miembros, pero no cambiar quién
+  // manda ni la lista de administradores.
+  async setAdmins(group: Group, admins: string[]): Promise<void> {
+    if (!group.id) {
+      return;
+    }
+    await updateDoc(doc(this.firestore, 'groups', group.id), { admins, addedUids: [] });
+  }
+
   // ---------------------------------------------------------------- invitaciones
 
   // Código de invitación del grupo (lo crea el dueño la primera vez). El código es el id del

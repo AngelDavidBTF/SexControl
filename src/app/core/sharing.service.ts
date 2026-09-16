@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { unlockedCount } from '../shared/achievements';
 import { FapStats } from '../shared/fap.model';
 import { PeriodCount, PrivacyLevel, SocialEntry } from '../shared/friend.model';
-import { GroupMember } from '../shared/group.model';
+import { Group, GroupMember } from '../shared/group.model';
 import {
   currentMonthTotals,
   currentWeekTotals,
@@ -18,6 +18,7 @@ import {
   weekKey,
 } from '../shared/stats';
 import { FriendsService } from './friends.service';
+import { GroupFeedService } from './group-feed.service';
 import { GroupsService } from './groups.service';
 
 // Máximo de escrituras por batch de Firestore (500), con margen.
@@ -56,6 +57,7 @@ export class SharingService {
   private firestore = inject(Firestore);
   private friendsService = inject(FriendsService);
   private groupsService = inject(GroupsService);
+  private groupFeed = inject(GroupFeedService);
 
   async publish(uid: string, stats: FapStats, options: { onlyFriend?: string; profile?: ProfileChange } = {}): Promise<void> {
     try {
@@ -98,20 +100,53 @@ export class SharingService {
       }
 
       // Grupos: mi entrada sí está en memoria, así que solo se escriben los que cambian. Uno a
-      // uno, para que un grupo del que acaban de sacarme no impida actualizar los demás.
-      const share = groupShare(social.paused, stats, snapshot);
-      const next = { ...share, ...profile };
-      const outdated = groups.filter((group) => group.id && !sameEntry(group.members?.[uid], next));
+      // uno, para que un grupo del que acaban de sacarme no impida actualizar los demás. Cada
+      // grupo puede tener su propia privacidad ("nada" oculta mis números solo ahí).
       await Promise.allSettled(
-        outdated.map((group) =>
-          updateDoc(
-            doc(this.firestore, 'groups', group.id!),
-            Object.fromEntries(Object.entries(next).map(([field, value]) => [`members.${uid}.${field}`, value]))
-          )
-        )
+        groups
+          .filter((group) => group.id)
+          .map(async (group) => {
+            const hidden = social.paused || social.groupPrivacy[group.id!] === 'nada';
+            const next = { ...groupShare(hidden, stats, snapshot), ...profile };
+            if (sameEntry(group.members?.[uid], next)) {
+              return;
+            }
+            await updateDoc(
+              doc(this.firestore, 'groups', group.id!),
+              Object.fromEntries(Object.entries(next).map(([field, value]) => [`members.${uid}.${field}`, value]))
+            );
+            // Si con esta subida he adelantado a alguien, se cuenta en el muro del grupo.
+            if (!hidden) {
+              await this.announceOvertake(group, uid, snapshot.total);
+            }
+          })
       );
     } catch (error) {
       console.warn('No se pudieron publicar los datos a amigos y grupos', error);
+    }
+  }
+
+  // Al pasar a alguien en el total del grupo se escribe una entrada en el muro (1 escritura, y
+  // solo cuando pasa de verdad). Se compara con los totales que ya estaban en el documento.
+  private async announceOvertake(group: Group, uid: string, newTotal: number): Promise<void> {
+    const mine = group.members?.[uid];
+    const before = (mine?.solitario ?? 0) + (mine?.compania ?? 0);
+    if (newTotal <= before) {
+      return;
+    }
+    // De los que he adelantado justo ahora, el que más lleva: es el adelantamiento que importa.
+    let passed: { name: string; total: number } | null = null;
+    for (const [otherUid, member] of Object.entries(group.members ?? {})) {
+      if (otherUid === uid || member.hidden === true) {
+        continue;
+      }
+      const total = (member.solitario ?? 0) + (member.compania ?? 0);
+      if (before <= total && newTotal > total && (!passed || total > passed.total)) {
+        passed = { name: member.displayName?.trim() || 'alguien', total };
+      }
+    }
+    if (passed) {
+      await this.groupFeed.post(group.id!, uid, 'adelanta', passed.name).catch(() => undefined);
     }
   }
 }
@@ -155,8 +190,8 @@ function friendShare(level: PrivacyLevel, stats: FapStats, snapshot: Snapshot): 
   }
 }
 
-function groupShare(paused: boolean, stats: FapStats, snapshot: Snapshot): Omit<GroupMember, 'displayName' | 'photoURL'> {
-  return paused
+function groupShare(hidden: boolean, stats: FapStats, snapshot: Snapshot): Omit<GroupMember, 'displayName' | 'photoURL'> {
+  return hidden
     ? { solitario: 0, compania: 0, week: null, month: null, prevWeek: null, prevMonth: null, streak: null, lastDay: null, badges: null, hidden: true }
     : {
         solitario: stats.solitario,

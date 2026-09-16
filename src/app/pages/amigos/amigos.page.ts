@@ -83,6 +83,7 @@ const EMPTY_SOCIAL: Social = {
   record: {},
   wins: 0,
   privacy: {},
+  groupPrivacy: {},
   paused: false,
 };
 

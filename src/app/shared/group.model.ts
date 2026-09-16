@@ -63,6 +63,8 @@ export interface Group {
   goal?: GroupGoal | null;
   // Código del enlace de invitación (el id del documento groupInvites/{code}). Se puede renovar.
   inviteCode?: string | null;
+  // Co-administradores: pueden añadir y quitar miembros, pero no tocar quién manda.
+  admins?: string[];
 }
 
 // groupInvites/{code}: lo lee cualquiera que tenga el enlace, para saber a qué grupo lleva.
@@ -70,4 +72,33 @@ export interface GroupInvite {
   groupId: string;
   groupName: string;
   ownerUid: string;
+}
+
+// ---------------------------------------------------------------- muro del grupo
+
+// groupFeed/{groupId}: una entrada por miembro, con lo último que ha escrito o lo último que le
+// ha pasado. Al tener el uid como clave, las reglas pueden acotar quién escribe qué, y el muro
+// cuesta 1 lectura al abrirlo por mucha gente que haya en el grupo.
+export type FeedKind = 'mensaje' | 'adelanta' | 'racha' | 'campeon' | 'objetivo';
+
+export interface FeedItem {
+  from: string;
+  kind: FeedKind;
+  // Id de POKE_MESSAGES en los mensajes; en los eventos, el dato que los acompaña (un nombre o
+  // un número), siempre generado por la app.
+  msg?: string | null;
+  at: Timestamp | null;
+}
+
+export interface GroupFeed {
+  items?: Record<string, FeedItem>;
+}
+
+// Entrada del muro resuelta para pintarla.
+export interface FeedEntry extends FeedItem {
+  uid: string;
+  name: string;
+  photoURL: string | null;
+  text: string;
+  discreto: string;
 }
