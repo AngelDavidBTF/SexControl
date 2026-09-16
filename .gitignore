@@ -37,3 +37,7 @@ npm-debug.log*
 
 # Caché de despliegue de Firebase CLI
 /.firebase
+
+# Secretos y salidas de las pruebas
+/tests/app-check.local.json
+/tests/.out
