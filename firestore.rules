@@ -100,9 +100,11 @@ service cloud.firestore {
     function isUnfriend() {
       return resource != null &&
         request.auth.uid in mapField(resource.data, 'friends') &&
-        topKeysOnly(['friends', 'reactions']) &&
+        topKeysOnly(['friends', 'reactions', 'challenges', 'pokes']) &&
         onlyMe(mapDiff('friends').removedKeys()) && onlyMe(mapDiff('friends').affectedKeys()) &&
-        mapDiff('reactions').affectedKeys().hasOnly([request.auth.uid]);
+        mapDiff('reactions').affectedKeys().hasOnly([request.auth.uid]) &&
+        mapDiff('challenges').affectedKeys().hasOnly([request.auth.uid]) &&
+        mapDiff('pokes').affectedKeys().hasOnly([request.auth.uid]);
     }
 
     // 6) retirar la solicitud que me envió.
@@ -125,13 +127,53 @@ service cloud.firestore {
         request.resource.data.reactions[request.auth.uid].emoji.size() <= 8;
     }
 
+    // 8) mandarme una pulla (mensaje predefinido) o una reacción, siendo mi amigo. Cada persona
+    //    tiene UNA entrada en mi mapa, con su uid como clave: así la regla puede comprobar lo que
+    //    escribe y nadie puede llenar el documento ni tocar lo que han mandado otros. Se guarda la
+    //    última de cada amigo; el dueño las borra cuando quiere.
+    function isPoke() {
+      return resource != null &&
+        request.auth.uid in mapField(resource.data, 'friends') &&
+        topKeysOnly(['pokes']) &&
+        onlyMe(mapDiff('pokes').affectedKeys()) &&
+        // Retirar la propia pulla también vale.
+        (mapDiff('pokes').removedKeys().size() == 1 ||
+         isValidPoke(request.resource.data.pokes[request.auth.uid]));
+    }
+    function isValidPoke(poke) {
+      return poke.keys().hasOnly(['from', 'msg', 'emoji', 'at']) &&
+        poke.from == request.auth.uid &&
+        (poke.get('msg', null) == null || (poke.msg is string && poke.msg.size() <= 40)) &&
+        // Texto libre todavía no: de momento solo ids de mensajes predefinidos y emojis.
+        (poke.get('emoji', null) == null || (poke.emoji is string && poke.emoji.size() <= 8));
+    }
+    // 9) proponer, aceptar, rechazar o cerrar un duelo conmigo: solo su entrada (la de su uid).
+    function isChallenge(owner) {
+      return resource != null &&
+        request.auth.uid in mapField(resource.data, 'friends') &&
+        topKeysOnly(['challenges']) &&
+        onlyMe(mapDiff('challenges').affectedKeys()) &&
+        (mapDiff('challenges').removedKeys().size() == 1 ||
+         isValidChallenge(request.resource.data.challenges[request.auth.uid], owner));
+    }
+    // `from` solo puede ser uno de los dos duelistas: quien escribe o el dueño del documento.
+    function isValidChallenge(challenge, owner) {
+      return challenge.keys().hasOnly(['from', 'kind', 'week', 'target', 'status', 'at', 'winnerUid']) &&
+        (challenge.from == request.auth.uid || challenge.from == owner) &&
+        (challenge.kind == 'semana' || challenge.kind == 'carrera') &&
+        challenge.week is string && challenge.week.size() <= 10 &&
+        (challenge.get('target', null) == null ||
+          (challenge.target is int && challenge.target > 0 && challenge.target <= 100)) &&
+        challenge.status in ['pendiente', 'aceptado', 'rechazado', 'terminado'];
+    }
+
     match /social/{uid} {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid) || (isSignedIn() && isIncomingRequest());
       allow update: if isOwner(uid) ||
         (isSignedIn() && (isIncomingRequest() || isAcceptOfMySentRequest() ||
                           isRejectOfMySentRequest() || isFriendFanOut() || isUnfriend() ||
-                          isCancelOfSentRequest() || isReaction()));
+                          isCancelOfSentRequest() || isReaction() || isPoke() || isChallenge(uid)));
       allow delete: if isOwner(uid);
     }
 

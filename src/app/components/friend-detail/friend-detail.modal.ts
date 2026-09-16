@@ -2,11 +2,12 @@ import { Component, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { DatoDirective } from '../../shared/dato.directive';
-import { Friend, PRIVACY_LABELS, PrivacyLevel } from '../../shared/friend.model';
+import { Challenge, DuelRecord, Friend, PRIVACY_LABELS, PrivacyLevel } from '../../shared/friend.model';
+import { ChallengeScore, challengeLabel, challengeScore } from '../../shared/challenges';
 import { ComparisonRow, MyEntry, comparison, lastActivityLabel } from '../../shared/social';
 
 // Acciones que la ficha devuelve a la página de amigos.
-export type FriendAction = 'react' | 'privacy' | 'remove';
+export type FriendAction = 'react' | 'privacy' | 'remove' | 'poke' | 'challenge' | 'accept' | 'reject';
 
 // Ficha de un amigo: comparativa "tú vs él" en los periodos que comparte, racha, logros y
 // última actividad. Todo sale de social/{uid}, que ya está cargado: no cuesta lecturas.
@@ -80,8 +81,37 @@ export type FriendAction = 'react' | 'privacy' | 'remove';
         </p>
       </ng-template>
 
+      <!-- Duelo en curso o marcador histórico. -->
+      <div class="duelo" *ngIf="challenge as duelo">
+        <div class="duelo-cabecera">
+          <strong>⚔️ {{ label(duelo) }}</strong>
+          <span class="muted">{{ estado(duelo) }}</span>
+        </div>
+        <div class="duelo-marcador" *ngIf="score as marcador">
+          <span class="valor mio" dato>{{ marcador.mine }}</span>
+          <span class="muted">–</span>
+          <span class="valor suyo" dato>{{ marcador.theirs }}</span>
+        </div>
+        <p class="muted" *ngIf="!score">No se puede seguir: {{ name }} ha dejado de compartir su semana.</p>
+        <div class="duelo-acciones" *ngIf="duelo.status === 'pendiente' && duelo.from !== me.uid">
+          <ion-button size="small" color="secondary" (click)="act('accept')" class="aceptar-duelo">Aceptar</ion-button>
+          <ion-button size="small" fill="outline" color="medium" (click)="act('reject')" class="rechazar-duelo">Rechazar</ion-button>
+        </div>
+      </div>
+      <p class="marcador-historico muted" *ngIf="record && record.wins + record.losses > 0">
+        Duelos: ganas {{ record.wins }} – {{ record.losses }} {{ name }}
+      </p>
+
       <div class="acciones">
-        <ion-button expand="block" color="secondary" (click)="act('react')" class="accion-reaccion">
+        <ion-button *ngIf="!challenge" expand="block" color="primary" (click)="act('challenge')" class="accion-duelo">
+          <ion-icon slot="start" name="trophy"></ion-icon>
+          Retar a un duelo
+        </ion-button>
+        <ion-button expand="block" color="secondary" (click)="act('poke')" class="accion-pulla">
+          <ion-icon slot="start" name="hand-right"></ion-icon>
+          Mandar una pulla
+        </ion-button>
+        <ion-button expand="block" fill="outline" color="secondary" (click)="act('react')" class="accion-reaccion">
           <ion-icon slot="start" name="happy-outline"></ion-icon>
           Mandar una reacción
         </ion-button>
@@ -203,6 +233,39 @@ export type FriendAction = 'react' | 'privacy' | 'remove';
       .sin-datos {
         margin: 24px 0;
       }
+      .duelo {
+        margin-top: 18px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+      }
+      .duelo-cabecera {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 0.9rem;
+      }
+      .duelo-marcador {
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        gap: 12px;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .duelo-acciones {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 6px;
+      }
+      .marcador-historico {
+        text-align: center;
+        font-size: 0.85rem;
+        margin: 10px 0 0;
+      }
       .acciones {
         margin-top: 24px;
       }
@@ -213,11 +276,14 @@ export class FriendDetailModal implements OnInit {
   @Input({ required: true }) friend!: Friend;
   @Input({ required: true }) me!: MyEntry;
   @Input() privacy: PrivacyLevel = 'todo';
+  @Input() challenge: Challenge | null = null;
+  @Input() record: DuelRecord | null = null;
 
   private modalController = inject(ModalController);
 
   rows: ComparisonRow[] = [];
   lastActivity: string | null = null;
+  score: ChallengeScore | null = null;
   name = '';
 
   ngOnInit(): void {
@@ -225,6 +291,18 @@ export class FriendDetailModal implements OnInit {
     this.name = this.friend.displayName || this.friend.email || 'Tu amigo';
     this.rows = comparison(this.me, this.friend, today);
     this.lastActivity = lastActivityLabel(this.friend.lastDay, today);
+    this.score = this.challenge ? challengeScore(this.challenge, this.me, this.friend, today) : null;
+  }
+
+  label(challenge: Challenge): string {
+    return challengeLabel(challenge);
+  }
+
+  estado(challenge: Challenge): string {
+    if (challenge.status === 'pendiente') {
+      return challenge.from === this.me.uid ? 'esperando respuesta' : 'te ha retado';
+    }
+    return this.score?.finished ? 'terminado' : 'en juego';
   }
 
   get privacyLabel(): string {

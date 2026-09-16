@@ -39,3 +39,60 @@
 .oculto {
   font-size: 20px;
 }
+
+/* ---------------------------------------------------------------- duelos (S3) */
+
+.duelos {
+  padding: 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.duelo-aviso,
+.duelo-vivo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+  font-size: 0.85rem;
+}
+
+.duelo-emoji {
+  font-size: 1.2rem;
+}
+
+.duelo-texto {
+  flex: 1;
+}
+
+.duelo-marcador {
+  display: flex;
+  gap: 6px;
+  font-weight: 700;
+
+  .gano {
+    color: var(--ion-color-success);
+  }
+}
+
+/* Novedades de los amigos desde la última visita (S3). */
+.novedades {
+  padding: 8px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.novedad {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.novedad-emoji {
+  font-size: 1.1rem;
+}

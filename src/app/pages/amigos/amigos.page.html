@@ -27,17 +27,62 @@
       <ion-badge *ngIf="(pendingRequests$ | async) as pending" color="secondary" class="solicitudes-badge">{{ pending }}</ion-badge>
     </ion-item>
 
-    <!-- Reacciones recibidas -->
-    <ng-container *ngIf="reactions$ | async as reactions">
-      <div class="reacciones" *ngIf="reactions.length > 0">
+    <!-- Novedades desde la última visita -->
+    <ng-container *ngIf="activity$ | async as novedades">
+      <div class="novedades" *ngIf="novedades.length > 0">
+        <div class="novedad" *ngFor="let evento of novedades">
+          <span class="novedad-emoji" aria-hidden="true">{{ evento.emoji }}</span>
+          <span>{{ evento.text }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Duelos que me han propuesto -->
+    <ng-container *ngIf="pendingChallenges$ | async as pendientes">
+      <div class="duelos" *ngIf="pendientes.length > 0">
+        <div class="duelo-aviso" *ngFor="let duelo of pendientes; trackBy: trackByUid">
+          <span class="duelo-emoji" aria-hidden="true">⚔️</span>
+          <span class="duelo-texto">
+            <strong>{{ duelo.friend?.displayName || 'Un amigo' }}</strong> te reta: {{ retoTexto(duelo) }}
+          </span>
+          <ion-button size="small" color="secondary" (click)="answerChallenge(duelo.friend!, duelo.friend?.displayName || 'tu amigo', true)" class="aceptar-reto">
+            Aceptar
+          </ion-button>
+          <ion-button size="small" fill="clear" color="medium" (click)="answerChallenge(duelo.friend!, duelo.friend?.displayName || 'tu amigo', false)" class="rechazar-reto">
+            No
+          </ion-button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Duelos en juego, con marcador en vivo -->
+    <ng-container *ngIf="liveChallenges$ | async as enJuego">
+      <div class="duelos" *ngIf="enJuego.length > 0">
+        <div class="duelo-vivo" *ngFor="let duelo of enJuego; trackBy: trackByDuelo">
+          <span class="duelo-emoji" aria-hidden="true">⚔️</span>
+          <span class="duelo-texto">
+            <strong>{{ duelo.challenge.friend?.displayName || 'Un amigo' }}</strong>
+            <span class="muted"> · {{ retoTexto(duelo.challenge) }}</span>
+          </span>
+          <span class="duelo-marcador">
+            <span [class.gano]="duelo.mine > duelo.theirs" dato>{{ duelo.mine }}</span>
+            <span class="muted">–</span>
+            <span [class.gano]="duelo.theirs > duelo.mine" dato>{{ duelo.theirs }}</span>
+          </span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Pullas y reacciones recibidas -->
+    <ng-container *ngIf="pokes$ | async as pokes">
+      <div class="reacciones" *ngIf="pokes.length > 0">
         <div class="reacciones-cabecera">
-          <strong>Te han reaccionado</strong>
+          <strong>Te han escrito</strong>
           <ion-button fill="clear" size="small" color="medium" (click)="clearReactions()" class="limpiar-reacciones">Limpiar</ion-button>
         </div>
-        <div class="reaccion" *ngFor="let reaction of reactions; trackBy: trackByUid">
-          <span class="reaccion-emoji" aria-hidden="true">{{ reaction.emoji }}</span>
-          <span class="reaccion-texto"><strong>{{ reaction.displayName || 'Un amigo' }}</strong> te ha mandado {{ reaction.emoji }}</span>
-          <span class="muted">{{ timeAgo(reaction.at) }}</span>
+        <div class="reaccion" *ngFor="let poke of pokes; trackBy: trackByPoke">
+          <span class="reaccion-texto"><strong>{{ poke.displayName || 'Un amigo' }}</strong>: {{ poke.label }}</span>
+          <span class="muted">{{ timeAgo(poke.at) }}</span>
         </div>
       </div>
     </ng-container>

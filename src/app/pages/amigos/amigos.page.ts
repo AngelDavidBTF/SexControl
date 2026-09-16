@@ -16,10 +16,54 @@ import { UiService } from '../../core/ui.service';
 import { FriendAction, FriendDetailModal } from '../../components/friend-detail/friend-detail.modal';
 import { FriendsLeagueComponent } from '../../components/friends-league/friends-league.component';
 import { DatoDirective } from '../../shared/dato.directive';
-import { Friend, PRIVACY_LABELS, PrivacyLevel, REACTION_EMOJIS, ReceivedReaction, Social } from '../../shared/friend.model';
+import {
+  CHALLENGE_TARGETS,
+  Challenge,
+  ChallengeKind,
+  DuelRecord,
+  Friend,
+  FriendChallenge,
+  POKE_MESSAGES,
+  PRIVACY_LABELS,
+  PrivacyLevel,
+  REACTION_EMOJIS,
+  ReceivedPoke,
+  Social,
+} from '../../shared/friend.model';
+import { activeChallenge, challengeLabel, challengeScore, newChallenge } from '../../shared/challenges';
+import { ActivityEvent, ActivitySnapshot, activityEvents, takeSnapshot } from '../../shared/activity';
 import { Group } from '../../shared/group.model';
 import { FiltroPipe } from '../../shared/filtro.pipe';
 import { MyEntry, myEntry } from '../../shared/social';
+
+// Foto de los amigos en la última visita, por usuario y solo en este dispositivo.
+function snapshotKey(uid: string): string {
+  return `sexcontrol.activity.${uid}`;
+}
+
+function readSnapshot(uid: string): ActivitySnapshot | null {
+  try {
+    const raw = localStorage.getItem(snapshotKey(uid));
+    return raw ? (JSON.parse(raw) as ActivitySnapshot) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSnapshot(uid: string, snapshot: ActivitySnapshot): void {
+  try {
+    localStorage.setItem(snapshotKey(uid), JSON.stringify(snapshot));
+  } catch {
+    // Sin almacenamiento local simplemente no se muestran novedades.
+  }
+}
+
+// Quita de la vista los campos que no viven en Firestore (el uid va como clave, y el amigo se
+// resuelve al leer), para no escribirlos de vuelta en el documento.
+function plain(challenge: FriendChallenge): Challenge {
+  const { uid, friend, ...rest } = challenge;
+  return rest;
+}
 
 function total(friend: Friend): number {
   if (friend.hidden) {
@@ -28,7 +72,18 @@ function total(friend: Friend): number {
   return friend.total ?? (friend.solitario ?? 0) + (friend.compania ?? 0);
 }
 
-const EMPTY_SOCIAL: Social = { friends: [], requests: [], sent: [], reactions: [], privacy: {}, paused: false };
+const EMPTY_SOCIAL: Social = {
+  friends: [],
+  requests: [],
+  sent: [],
+  reactions: [],
+  pokes: [],
+  challenges: [],
+  record: {},
+  wins: 0,
+  privacy: {},
+  paused: false,
+};
 
 @Component({
   selector: 'app-amigos',
@@ -52,12 +107,22 @@ export class AmigosPage {
   segment: 'amigos' | 'grupos' = 'amigos';
   textoBuscar = '';
   private privacy: Record<string, PrivacyLevel> = {};
+  private challenges: Record<string, FriendChallenge> = {};
+  private record: Record<string, DuelRecord> = {};
+  private wins = 0;
+  // Duelos ya cerrados en esta sesión, para no repetir la escritura mientras llegan los cambios.
+  private readonly closedChallenges = new Set<string>();
+  // Foto de referencia de los amigos al entrar en la pestaña (una por usuario y sesión).
+  private readonly activityBaseline = new Map<string, ActivitySnapshot | null>();
 
   // Todo sale de social/{uid}: 1 lectura para amigos, totales, solicitudes y reacciones.
   private readonly social$: Observable<Social> = this.authService.user$.pipe(
     switchMap((user) => (user ? this.friendsService.social$(user.uid) : of(EMPTY_SOCIAL))),
     map((social) => {
       this.privacy = social.privacy;
+      this.challenges = Object.fromEntries(social.challenges.map((challenge) => [challenge.uid, challenge]));
+      this.record = social.record;
+      this.wins = social.wins;
       return social;
     }),
     shareReplay({ bufferSize: 1, refCount: true })
@@ -82,7 +147,64 @@ export class AmigosPage {
   );
 
   readonly pendingRequests$: Observable<number> = this.social$.pipe(map((social) => social.requests.length));
-  readonly reactions$: Observable<ReceivedReaction[]> = this.social$.pipe(map((social) => social.reactions));
+  readonly pokes$: Observable<ReceivedPoke[]> = this.social$.pipe(map((social) => social.pokes));
+
+  // Novedades desde la última visita a esta pestaña, comparando con la foto guardada en el
+  // dispositivo. La foto se actualiza al entrar, así que lo visto no se repite.
+  readonly activity$: Observable<ActivityEvent[]> = combineLatest([this.social$, this.me$]).pipe(
+    map(([social, me]) => {
+      if (!me) {
+        return [];
+      }
+      const today = new Date();
+      // La referencia se fija al entrar en la pestaña y no cambia mientras se está dentro: si se
+      // renovara con cada actualización, los cambios que llegan en vivo se borrarían a sí mismos.
+      if (!this.activityBaseline.has(me.uid)) {
+        this.activityBaseline.set(me.uid, readSnapshot(me.uid));
+      }
+      const events = activityEvents(this.activityBaseline.get(me.uid) ?? null, me, social.friends, today);
+      // Para la próxima visita, la referencia pasa a ser lo que se ve ahora.
+      writeSnapshot(me.uid, takeSnapshot(social.friends, today));
+      return events;
+    }),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+
+  // Duelos que esperan algo mío: los que me han propuesto y aún no he contestado.
+  readonly pendingChallenges$: Observable<FriendChallenge[]> = combineLatest([this.social$, this.me$]).pipe(
+    map(([social, me]) =>
+      me ? social.challenges.filter((challenge) => challenge.status === 'pendiente' && challenge.from !== me.uid) : []
+    )
+  );
+
+  // Duelos en juego, con su marcador en vivo. Los terminados se cierran solos aquí.
+  readonly liveChallenges$: Observable<{ challenge: FriendChallenge; mine: number; theirs: number }[]> = combineLatest([
+    this.social$,
+    this.me$,
+  ]).pipe(
+    map(([social, me]) => {
+      if (!me) {
+        return [];
+      }
+      const today = new Date();
+      const live: { challenge: FriendChallenge; mine: number; theirs: number }[] = [];
+      for (const challenge of social.challenges) {
+        if (challenge.status !== 'aceptado' || !challenge.friend) {
+          continue;
+        }
+        const score = challengeScore(challenge, me, challenge.friend, today);
+        if (!score) {
+          continue;
+        }
+        if (score.finished) {
+          void this.closeChallenge(me.uid, challenge, score.winnerUid);
+        } else {
+          live.push({ challenge, mine: score.mine, theirs: score.theirs });
+        }
+      }
+      return live;
+    })
+  );
 
   // Solo se consulta al abrir el segmento Grupos (la plantilla se suscribe dentro de él).
   readonly groups$: Observable<Group[]> = this.authService.user$.pipe(
@@ -114,6 +236,18 @@ export class AmigosPage {
     return group.id;
   }
 
+  trackByPoke(_: number, poke: ReceivedPoke): string {
+    return poke.id;
+  }
+
+  trackByDuelo(_: number, item: { challenge: FriendChallenge }): string {
+    return item.challenge.uid;
+  }
+
+  retoTexto(challenge: Challenge): string {
+    return challengeLabel(challenge).toLowerCase();
+  }
+
   onSegmentChange(event: CustomEvent): void {
     this.segment = event.detail.value;
     this.textoBuscar = '';
@@ -134,16 +268,130 @@ export class AmigosPage {
     }
     const modal = await this.modalController.create({
       component: FriendDetailModal,
-      componentProps: { friend, me, privacy: this.privacyFor(friend.uid) },
+      componentProps: {
+        friend,
+        me,
+        privacy: this.privacyFor(friend.uid),
+        challenge: activeChallenge(this.challenges, friend.uid),
+        record: this.record[friend.uid] ?? null,
+      },
     });
     await modal.present();
     const { data } = await modal.onDidDismiss<FriendAction>();
-    if (data === 'react') {
+    if (data === 'challenge') {
+      await this.proposeChallenge(friend, name);
+    } else if (data === 'accept' || data === 'reject') {
+      await this.answerChallenge(friend, name, data === 'accept');
+    } else if (data === 'poke') {
+      await this.choosePoke(friend, name);
+    } else if (data === 'react') {
       await this.chooseReaction(friend, name);
     } else if (data === 'privacy') {
       await this.choosePrivacy(friend, name);
     } else if (data === 'remove') {
       await this.confirmRemove(friend, name);
+    }
+  }
+
+  // ---------------------------------------------------------------- duelos
+
+  private async proposeChallenge(friend: Friend, name: string): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid) {
+      return;
+    }
+    const sheet = await this.actionSheetController.create({
+      header: `Retar a ${name}`,
+      buttons: [
+        { text: 'Quién suma más esta semana', icon: 'trophy', data: 'semana' },
+        ...CHALLENGE_TARGETS.map((target) => ({ text: `El primero en llegar a ${target}`, icon: 'flag', data: `carrera:${target}` })),
+        { text: 'Cancelar', role: 'cancel', icon: 'close' },
+      ],
+    });
+    await sheet.present();
+    const { data } = await sheet.onDidDismiss<string>();
+    if (!data) {
+      return;
+    }
+    const [kind, target] = data.split(':');
+    try {
+      await this.friendsService.sendChallenge(
+        uid,
+        friend.uid,
+        newChallenge(uid, kind as ChallengeKind, target ? Number(target) : null, new Date())
+      );
+      await this.ui.toast(`Duelo enviado a ${name}`);
+    } catch (error) {
+      console.error('Error enviando el duelo', error);
+      await this.ui.toast('No se pudo enviar el duelo');
+    }
+  }
+
+  async answerChallenge(friend: Friend, name: string, accept: boolean): Promise<void> {
+    const uid = this.authService.currentUid();
+    const challenge = this.challenges[friend.uid];
+    if (!uid || !challenge) {
+      return;
+    }
+    try {
+      await this.friendsService.updateChallenge(uid, friend.uid, plain(challenge), accept ? 'aceptado' : 'rechazado');
+      await this.ui.toast(accept ? `¡Duelo con ${name} en marcha!` : 'Duelo rechazado');
+    } catch (error) {
+      console.error('Error respondiendo al duelo', error);
+      await this.ui.toast('No se pudo responder al duelo');
+    }
+  }
+
+  // Cierra un duelo terminado y apunta el resultado. Lo hacen los dos dispositivos con los mismos
+  // datos, así que llegan al mismo ganador; la segunda escritura solo repite lo ya guardado.
+  private async closeChallenge(uid: string, challenge: FriendChallenge, winnerUid: string | null): Promise<void> {
+    const key = `${challenge.uid}:${challenge.week}`;
+    if (this.closedChallenges.has(key)) {
+      return;
+    }
+    this.closedChallenges.add(key);
+    const current = this.record[challenge.uid] ?? { wins: 0, losses: 0 };
+    const won = winnerUid === uid;
+    const lost = winnerUid !== null && !won;
+    try {
+      await this.friendsService.updateChallenge(uid, challenge.uid, plain(challenge), 'terminado', {
+        winnerUid,
+        record: { wins: current.wins + (won ? 1 : 0), losses: current.losses + (lost ? 1 : 0) },
+        wins: this.wins + (won ? 1 : 0),
+      });
+      const name = challenge.friend?.displayName || 'tu amigo';
+      await this.ui.toast(won ? `🏆 ¡Has ganado el duelo con ${name}!` : lost ? `Has perdido el duelo con ${name}` : `Empate con ${name}`);
+    } catch (error) {
+      console.warn('No se pudo cerrar el duelo', error);
+      this.closedChallenges.delete(key);
+    }
+  }
+
+  // ---------------------------------------------------------------- pullas
+
+  private async choosePoke(friend: Friend, name: string): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid) {
+      return;
+    }
+    const sheet = await this.actionSheetController.create({
+      header: `Pulla para ${name}`,
+      buttons: [
+        ...POKE_MESSAGES.map((message) => ({ text: `${message.emoji} ${message.text}`, data: message.id })),
+        { text: 'Cancelar', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
+    const { data: msg } = await sheet.onDidDismiss<string>();
+    if (!msg) {
+      return;
+    }
+    try {
+      await this.friendsService.sendPoke(uid, friend.uid, { msg });
+      await this.ui.toast(`Pulla enviada a ${name}`);
+    } catch (error) {
+      console.error('Error enviando la pulla', error);
+      await this.ui.toast('No se pudo enviar la pulla');
     }
   }
 
@@ -159,7 +407,7 @@ export class AmigosPage {
       return;
     }
     try {
-      await this.friendsService.sendReaction(uid, friend.uid, emoji);
+      await this.friendsService.sendPoke(uid, friend.uid, { emoji });
       await this.ui.toast(`Le has mandado ${emoji} a ${name}`);
     } catch (error) {
       console.error('Error enviando reacción', error);

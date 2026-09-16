@@ -16,8 +16,21 @@ import {
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
+import { pokeLabels, sortPokes } from '../shared/challenges';
 import { FapCounts } from '../shared/fap.model';
-import { Friend, PrivacyLevel, Social, SocialDoc, SocialEntry } from '../shared/friend.model';
+import {
+  Challenge,
+  ChallengeStatus,
+  DuelRecord,
+  Friend,
+  FriendChallenge,
+  MAX_POKES,
+  PrivacyLevel,
+  ReceivedPoke,
+  Social,
+  SocialDoc,
+  SocialEntry,
+} from '../shared/friend.model';
 import { User } from '../shared/user.model';
 import { PerUserStreams } from './per-user-streams';
 import type { Profile } from './profile.service';
@@ -68,6 +81,24 @@ export class FriendsService {
                 photoURL: byUid.get(uid)?.photoURL ?? null,
               }))
               .sort((a, b) => (b.at?.toMillis() ?? 0) - (a.at?.toMillis() ?? 0)),
+            // Pullas: solo las de quien sigue siendo amigo, de más reciente a más antigua.
+            pokes: sortPokes(
+              Object.entries(data?.pokes ?? {})
+                .filter(([uid, poke]) => byUid.has(uid) && poke.from === uid)
+                .map(([id, poke]): ReceivedPoke => ({
+                  ...poke,
+                  ...pokeLabels(poke),
+                  id,
+                  displayName: byUid.get(poke.from)?.displayName ?? null,
+                  photoURL: byUid.get(poke.from)?.photoURL ?? null,
+                })),
+              MAX_POKES
+            ),
+            challenges: Object.entries(data?.challenges ?? {})
+              .filter(([uid]) => byUid.has(uid))
+              .map(([uid, challenge]): FriendChallenge => ({ ...challenge, uid, friend: byUid.get(uid) ?? null })),
+            record: data?.record ?? {},
+            wins: data?.wins ?? 0,
             privacy: data?.privacy ?? {},
             paused: data?.paused === true,
           };
@@ -185,12 +216,14 @@ export class FriendsService {
         friends: { [friendUid]: deleteField() },
         reactions: { [friendUid]: deleteField() },
         privacy: { [friendUid]: deleteField() },
+        challenges: { [friendUid]: deleteField() },
+        record: { [friendUid]: deleteField() },
       },
       { merge: true }
     );
     batch.set(
       this.socialRef(friendUid),
-      { friends: { [me]: deleteField() }, reactions: { [me]: deleteField() } },
+      { friends: { [me]: deleteField() }, reactions: { [me]: deleteField() }, challenges: { [me]: deleteField() }, pokes: { [me]: deleteField() } },
       { merge: true }
     );
     await batch.commit();
@@ -217,13 +250,61 @@ export class FriendsService {
   }
 
   async clearReactions(me: string): Promise<void> {
-    await setDoc(this.socialRef(me), { reactions: deleteField() }, { merge: true });
+    await setDoc(this.socialRef(me), { reactions: deleteField(), pokes: deleteField() }, { merge: true });
+  }
+
+  // ---------------------------------------------------------------- pullas y duelos
+
+  // Una pulla (mensaje predefinido) o una reacción suelta. Se guarda la última de cada amigo, con
+  // su uid como clave: es lo único que las reglas pueden comprobar sin dejar que nadie llene el
+  // documento con claves inventadas.
+  async sendPoke(me: string, friendUid: string, poke: { msg?: string; emoji?: string }): Promise<void> {
+    await setDoc(
+      this.socialRef(friendUid),
+      { pokes: { [me]: { from: me, msg: poke.msg ?? null, emoji: poke.emoji ?? null, at: serverTimestamp() } } },
+      { merge: true }
+    );
+  }
+
+  // Propone un duelo: mi copia y la suya, cada una con la clave del otro.
+  async sendChallenge(me: string, friendUid: string, challenge: Omit<Challenge, 'at'>): Promise<void> {
+    const data = { ...challenge, at: serverTimestamp() };
+    const batch = writeBatch(this.firestore);
+    batch.set(this.socialRef(me), { challenges: { [friendUid]: data } }, { merge: true });
+    batch.set(this.socialRef(friendUid), { challenges: { [me]: data } }, { merge: true });
+    await batch.commit();
+  }
+
+  // Acepta, rechaza o cierra un duelo en los dos lados. Al cerrarlo se apunta el resultado en mi
+  // marcador con ese amigo (y en mis duelos ganados, que sí se publican).
+  async updateChallenge(
+    me: string,
+    friendUid: string,
+    challenge: Challenge,
+    status: ChallengeStatus,
+    outcome?: { winnerUid: string | null; record: DuelRecord; wins: number }
+  ): Promise<void> {
+    const data = { ...challenge, status, winnerUid: outcome ? outcome.winnerUid : (challenge.winnerUid ?? null) };
+    const batch = writeBatch(this.firestore);
+    batch.set(
+      this.socialRef(me),
+      {
+        challenges: { [friendUid]: data },
+        ...(outcome ? { record: { [friendUid]: outcome.record }, wins: outcome.wins } : {}),
+      },
+      { merge: true }
+    );
+    batch.set(this.socialRef(friendUid), { challenges: { [me]: data } }, { merge: true });
+    await batch.commit();
   }
 
   // Borrado de cuenta: me quito de las listas de mis amigos y retiro/rechazo solicitudes pendientes.
   async detachEverywhere(me: string, social: Social): Promise<void> {
     const writes: [string, Record<string, unknown>][] = [
-      ...social.friends.map((f): [string, Record<string, unknown>] => [f.uid, { friends: { [me]: deleteField() }, reactions: { [me]: deleteField() } }]),
+      ...social.friends.map((f): [string, Record<string, unknown>] => [
+        f.uid,
+        { friends: { [me]: deleteField() }, reactions: { [me]: deleteField() }, challenges: { [me]: deleteField() } },
+      ]),
       ...social.sent.map((s): [string, Record<string, unknown>] => [s.uid, { requests: { [me]: deleteField() } }]),
       ...social.requests.map((r): [string, Record<string, unknown>] => [r.uid, { sent: { [me]: deleteField() } }]),
     ];
