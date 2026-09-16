@@ -45,7 +45,7 @@ export function activityEvents(previous: ActivitySnapshot | null, me: MyEntry, f
     if (!before) {
       continue;
     }
-    const name = friend.displayName || friend.email || 'Un amigo';
+    const name = friend.displayName || 'Un amigo';
     const week = periodValue(friend, 'semana', today);
     const badges = friend.badges ?? 0;
     const streak = friend.streak ?? 0;

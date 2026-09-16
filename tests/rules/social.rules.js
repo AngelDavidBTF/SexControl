@@ -74,7 +74,34 @@ async function run() {
     setDoc(socialA(a.db), { record: { [b.uid]: { wins: 1, losses: 0 } }, wins: 1 }, { merge: true })
   );
 
+  // Las versiones anteriores copiaban el email en la lista de amigos: ahora solo se puede borrar.
+  await setDoc(socialA(a.db), { friends: { [b.uid]: { ...entry('B'), email: 'antiguo@ejemplo.com' } } }, { merge: true });
+  await expectRule('un amigo no puede publicar su email', false, () =>
+    setDoc(socialA(b.db), { friends: { [b.uid]: { email: 'nuevo@ejemplo.com' } } }, { merge: true })
+  );
+  await expectRule('una versión antigua que no toca el email sigue publicando', true, () =>
+    setDoc(socialA(b.db), { friends: { [b.uid]: { total: 1 } } }, { merge: true })
+  );
+  await expectRule('un amigo borra el email que quedó copiado', true, () =>
+    setDoc(socialA(b.db), { friends: { [b.uid]: { email: null, total: 0 } } }, { merge: true })
+  );
+
+  // Bloqueo: quien está bloqueado no puede pedir amistad ni quitarse el bloqueo.
+  await setDoc(socialA(a.db), { requests: { [c.uid]: deleteField() } }, { merge: true });
+  await setDoc(socialA(a.db), { blocked: { [c.uid]: { displayName: 'C', at: serverTimestamp() } } }, { merge: true });
+  await expectRule('un bloqueado no puede mandar solicitudes', false, () =>
+    setDoc(socialA(c.db), { requests: { [c.uid]: entry('C') } }, { merge: true })
+  );
+  await expectRule('un bloqueado no puede quitarse el bloqueo', false, () =>
+    setDoc(socialA(c.db), { blocked: { [c.uid]: deleteField() } }, { merge: true })
+  );
+  await setDoc(socialA(a.db), { blocked: { [c.uid]: deleteField() } }, { merge: true });
+  await expectRule('al desbloquearle vuelve a poder pedir amistad', true, () =>
+    setDoc(socialA(c.db), { requests: { [c.uid]: entry('C') } }, { merge: true })
+  );
+
   // Limpieza.
+  await setDoc(socialA(a.db), { requests: { [c.uid]: deleteField() } }, { merge: true });
   await setDoc(
     socialA(a.db),
     { pokes: deleteField(), challenges: deleteField(), record: deleteField(), wins: deleteField(), friends: {} },

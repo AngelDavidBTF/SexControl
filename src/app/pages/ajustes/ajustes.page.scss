@@ -111,3 +111,15 @@ ion-toggle {
     color: var(--ion-color-medium);
   }
 }
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+
+  .mi-usuario {
+    flex: 1;
+    font-size: 16px;
+  }
+}

@@ -7,7 +7,7 @@ import { ChallengeScore, challengeLabel, challengeScore } from '../../shared/cha
 import { ComparisonRow, MyEntry, comparison, lastActivityLabel } from '../../shared/social';
 
 // Acciones que la ficha devuelve a la página de amigos.
-export type FriendAction = 'react' | 'privacy' | 'remove' | 'poke' | 'challenge' | 'accept' | 'reject';
+export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | 'challenge' | 'accept' | 'reject';
 
 // Ficha de un amigo: comparativa "tú vs él" en los periodos que comparte, racha, logros y
 // última actividad. Todo sale de social/{uid}, que ya está cargado: no cuesta lecturas.
@@ -122,6 +122,10 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'poke' | 'challenge'
         <ion-button expand="block" fill="clear" color="danger" (click)="act('remove')" class="accion-eliminar">
           <ion-icon slot="start" name="person-remove-outline"></ion-icon>
           Eliminar amistad
+        </ion-button>
+        <ion-button expand="block" fill="clear" color="medium" (click)="act('block')" class="accion-bloquear">
+          <ion-icon slot="start" name="ban-outline"></ion-icon>
+          Bloquear
         </ion-button>
       </div>
     </ion-content>
@@ -288,7 +292,7 @@ export class FriendDetailModal implements OnInit {
 
   ngOnInit(): void {
     const today = new Date();
-    this.name = this.friend.displayName || this.friend.email || 'Tu amigo';
+    this.name = this.friend.displayName || 'Tu amigo';
     this.rows = comparison(this.me, this.friend, today);
     this.lastActivity = lastActivityLabel(this.friend.lastDay, today);
     this.score = this.challenge ? challengeScore(this.challenge, this.me, this.friend, today) : null;

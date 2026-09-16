@@ -2,6 +2,7 @@
 const { summary } = require('../helpers/report');
 
 const SUITES = [
+  require('./privacy.rules'),
   require('./social.rules'),
   require('./groups.rules'),
   require('./invites.rules'),

@@ -14,7 +14,9 @@ import { RemindersService } from '../../core/reminders.service';
 import { SettingsService, ThemeMode } from '../../core/settings.service';
 import { SharingService } from '../../core/sharing.service';
 import { UiService } from '../../core/ui.service';
+import { UsernamePromptService } from '../../core/username-prompt.service';
 import { HeaderComponent } from '../../components/header/header.component';
+import { BlockedUser } from '../../shared/friend.model';
 import { resizeImageToDataUrl } from '../../shared/image';
 
 // Foto de perfil pequeña: se copia en las listas de amigos y grupos, así que debe ocupar poco.
@@ -38,6 +40,7 @@ export class AjustesPage implements OnInit, OnDestroy {
   private profiles = inject(ProfileService);
   private reminders = inject(RemindersService);
   private ui = inject(UiService);
+  private usernamePrompt = inject(UsernamePromptService);
   private alertController = inject(AlertController);
   private router = inject(Router);
 
@@ -54,6 +57,9 @@ export class AjustesPage implements OnInit, OnDestroy {
   goalMonth: number | null = null;
   goalsDirty = false;
   paused = false;
+  searchable = true;
+  username: string | null = null;
+  blocked: BlockedUser[] = [];
 
   private sub?: Subscription;
 
@@ -72,6 +78,8 @@ export class AjustesPage implements OnInit, OnDestroy {
         }
         const [profile, stats, social] = data;
         this.email = profile.email ?? '';
+        this.searchable = profile.searchable;
+        this.username = profile.username;
         if (!this.profileDirty) {
           this.displayName = profile.displayName ?? '';
           this.photoURL = profile.photoURL;
@@ -82,6 +90,7 @@ export class AjustesPage implements OnInit, OnDestroy {
           this.goalMonth = stats.goals.mes ?? null;
         }
         this.paused = social.paused;
+        this.blocked = social.blocked;
       });
   }
 
@@ -148,6 +157,46 @@ export class AjustesPage implements OnInit, OnDestroy {
     await this.friendsService.setPaused(uid, paused);
     await this.sharing.publish(uid, await firstValueFrom(this.fapService.stats$(uid)));
     await this.ui.toast(paused ? 'Has dejado de compartir tus números' : 'Vuelves a compartir tus números');
+  }
+
+  async chooseUsername(): Promise<void> {
+    const uid = this.auth.currentUid();
+    if (uid) {
+      await this.usernamePrompt.choose(uid);
+    }
+  }
+
+  async onSearchableChange(event: CustomEvent): Promise<void> {
+    const user = this.auth.currentUser();
+    const searchable = event.detail.checked === true;
+    if (!user || searchable === this.searchable) {
+      return;
+    }
+    try {
+      await this.profiles.setSearchable(user, searchable);
+      await this.ui.toast(searchable ? 'Ya apareces en las búsquedas' : 'Ya no apareces en las búsquedas');
+    } catch (error) {
+      console.error('No se pudo cambiar la búsqueda por email', error);
+      await this.ui.toast('No se pudo guardar el cambio');
+    }
+  }
+
+  async unblock(person: BlockedUser): Promise<void> {
+    const uid = this.auth.currentUid();
+    if (!uid) {
+      return;
+    }
+    try {
+      await this.friendsService.unblockUser(uid, person.uid);
+      await this.ui.toast(`${person.displayName || 'Esa persona'} ya puede volver a mandarte solicitudes`);
+    } catch (error) {
+      console.error('No se pudo desbloquear', error);
+      await this.ui.toast('No se pudo desbloquear');
+    }
+  }
+
+  trackByUid(_: number, person: BlockedUser): string {
+    return person.uid;
   }
 
   // ---------------------------------------------------------------- recordatorios

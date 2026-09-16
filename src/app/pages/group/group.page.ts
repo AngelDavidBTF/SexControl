@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable, catchError, combineLatest, firstValueFrom,
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
+import { ProfileService } from '../../core/profile.service';
 import { GroupFeedService } from '../../core/group-feed.service';
 import { SettingsService } from '../../core/settings.service';
 import { SharingService } from '../../core/sharing.service';
@@ -15,7 +16,7 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { ShareInviteModal } from '../../components/share-invite/share-invite.modal';
 import { FapCounts } from '../../shared/fap.model';
 import { FeedEntry, Group, GroupGoal, GroupMember, MAX_GROUP_GOAL } from '../../shared/group.model';
-import { POKE_MESSAGES } from '../../shared/friend.model';
+import { POKE_MESSAGES, Social } from '../../shared/friend.model';
 import {
   GoalProgress,
   SeasonEntry,
@@ -33,12 +34,15 @@ import { DatoDirective } from '../../shared/dato.directive';
 import { FiltroPipe } from '../../shared/filtro.pipe';
 import { AddMembersModal } from './add-members.modal';
 
+// Qué relación tengo con cada miembro, para ofrecerle amistad con un toque.
+export type MemberRelation = 'yo' | 'amigo' | 'enviada' | 'recibida' | 'bloqueado' | 'ninguna';
+
 export interface MemberView {
   uid: string;
   displayName: string | null;
-  email: string | null;
   photoURL: string | null;
   counts: FapCounts | null;
+  relation: MemberRelation;
 }
 
 interface GroupView {
@@ -63,6 +67,28 @@ interface GroupView {
 }
 
 export type RankingPeriod = 'total' | 'mes' | 'semana';
+
+function relations(myUid: string, social: Social): (uid: string) => MemberRelation {
+  const friends = new Set(social.friends.map((f) => f.uid));
+  const sent = new Set(social.sent.map((f) => f.uid));
+  const received = new Set(social.requests.map((f) => f.uid));
+  const blocked = new Set(social.blocked.map((f) => f.uid));
+  return (uid) => {
+    if (uid === myUid) {
+      return 'yo';
+    }
+    if (friends.has(uid)) {
+      return 'amigo';
+    }
+    if (blocked.has(uid)) {
+      return 'bloqueado';
+    }
+    if (sent.has(uid)) {
+      return 'enviada';
+    }
+    return received.has(uid) ? 'recibida' : 'ninguna';
+  };
+}
 
 function memberTotal(member: MemberView): number {
   return member.counts ? member.counts.compania + member.counts.solitario : -1;
@@ -93,6 +119,7 @@ export class GroupPage {
   private groupsService = inject(GroupsService);
   private groupFeedService = inject(GroupFeedService);
   private friendsService = inject(FriendsService);
+  private profiles = inject(ProfileService);
   private fapService = inject(FapService);
   private sharing = inject(SharingService);
   private ui = inject(UiService);
@@ -141,7 +168,7 @@ export class GroupPage {
           return combineLatest([
             this.groupFeedService.feed$(group).pipe(catchError(() => of([] as FeedEntry[]))),
             this.friendsService.social$(user.uid),
-          ]).pipe(map(([feed, social]) => this.buildView(group, user.uid, period, feed, social.groupPrivacy[groupId] === 'nada')));
+          ]).pipe(map(([feed, social]) => this.buildView(group, user.uid, period, feed, social)));
         })
       );
     })
@@ -151,16 +178,18 @@ export class GroupPage {
     this.period$.next(event.detail.value as RankingPeriod);
   }
 
-  private buildView(group: Group, myUid: string, period: RankingPeriod, feed: FeedEntry[], hiddenHere: boolean): GroupView {
+  private buildView(group: Group, myUid: string, period: RankingPeriod, feed: FeedEntry[], social: Social): GroupView {
     const now = new Date();
+    const hiddenHere = social.groupPrivacy[group.id!] === 'nada';
+    const relationOf = relations(myUid, social);
     const members = group.memberUids.map((uid): MemberView => {
       const member = group.members?.[uid];
       return {
         uid,
         displayName: member?.displayName ?? null,
-        email: null,
         photoURL: member?.photoURL ?? null,
         counts: !member || member.hidden ? null : countsFor(member, period, now),
+        relation: relationOf(uid),
       };
     });
     // Quien no comparte sus números queda al final y fuera de las medias.
@@ -187,6 +216,50 @@ export class GroupPage {
       isBoss: group.ownerUid === myUid || (group.admins ?? []).includes(myUid),
       hiddenHere,
     };
+  }
+
+  // Tocar a un miembro: mandarle solicitud de amistad si aún no hay relación. Así se encuentra
+  // a la gente de los grupos sin buscarla.
+  async memberActions(member: MemberView): Promise<void> {
+    const name = member.displayName || 'este miembro';
+    switch (member.relation) {
+      case 'yo':
+        return;
+      case 'amigo':
+        await this.ui.toast(`${name} ya es tu amigo`);
+        return;
+      case 'enviada':
+        await this.ui.toast(`Ya le has mandado una solicitud a ${name}`);
+        return;
+      case 'recibida':
+        await this.router.navigate(['/request-friends']);
+        return;
+      case 'bloqueado':
+        await this.ui.toast(`Tienes bloqueado a ${name}. Puedes desbloquearlo en Ajustes`);
+        return;
+    }
+    const alert = await this.alertController.create({
+      header: 'Pedir amistad',
+      message: `¿Mandar una solicitud de amistad a ${name}? Solo compartiréis números cuando la acepte.`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Mandar', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    const uid = this.authService.currentUid();
+    if (role !== 'confirm' || !uid) {
+      return;
+    }
+    try {
+      const [me, counts] = await Promise.all([this.profiles.current(uid), firstValueFrom(this.fapService.fapCounts$(uid))]);
+      await this.friendsService.sendRequest(me, counts, { uid: member.uid, email: null, displayName: member.displayName, photoURL: member.photoURL });
+      await this.ui.toast(`Solicitud enviada a ${name}`);
+    } catch (error) {
+      console.error('Error enviando solicitud desde el grupo', error);
+      await this.ui.toast('No se pudo enviar la solicitud');
+    }
   }
 
   // 1 escritura al mes y por grupo. Si otro miembro se ha adelantado, las reglas rechazan la
@@ -292,7 +365,7 @@ export class GroupPage {
   async removeMember(group: Group, member: MemberView): Promise<void> {
     try {
       await this.groupsService.removeMember(group, member.uid);
-      await this.ui.toast(`${member.displayName || member.email || 'El miembro'} ya no está en el grupo`);
+      await this.ui.toast(`${member.displayName || 'El miembro'} ya no está en el grupo`);
     } catch (error) {
       console.error('Error quitando miembro', error);
       await this.ui.toast('No se pudo quitar al miembro');

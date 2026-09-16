@@ -138,7 +138,7 @@
 
     <ion-list>
       <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index; trackBy: trackByUid" [disabled]="!vm.isBoss || member.uid === vm.group.ownerUid">
-        <ion-item class="miembro">
+        <ion-item class="miembro" [button]="member.relation !== 'yo'" [detail]="false" (click)="memberActions(member)">
           <ion-avatar slot="start">
             <img [src]="member.photoURL || 'assets/icon-user.svg'" alt="" />
           </ion-avatar>
@@ -146,11 +146,13 @@
           <ion-label>
             <h2>
               <span *ngIf="member.uid === vm.championUid" class="corona-miembro" aria-label="Campeón del mes pasado">👑</span>
-              {{ member.displayName || member.email }}
+              {{ member.displayName || 'Sin nombre' }}
             </h2>
             <p *ngIf="member.uid === vm.group.ownerUid">Creador del grupo</p>
             <p *ngIf="member.uid !== vm.group.ownerUid && vm.admins.includes(member.uid)">Administra el grupo</p>
             <p *ngIf="!member.counts">No comparte sus números</p>
+            <p *ngIf="member.relation === 'ninguna'" class="pedir-amistad">Toca para pedirle amistad</p>
+            <p *ngIf="member.relation === 'recibida'" class="pedir-amistad">Te ha pedido amistad</p>
           </ion-label>
           <ng-container *ngIf="member.counts; else oculto">
             <ion-badge color="secondary" class="badge-compania" dato>{{ member.counts.compania }}</ion-badge>

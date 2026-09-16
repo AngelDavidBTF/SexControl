@@ -32,7 +32,7 @@ import { FiltroPipe } from '../../shared/filtro.pipe';
           <ion-avatar>
             <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
           </ion-avatar>
-          <ion-label>{{ user.displayName || user.email }}</ion-label>
+          <ion-label>{{ user.displayName || 'Sin nombre' }}</ion-label>
           <ion-icon name="close"></ion-icon>
         </ion-chip>
       </div>
@@ -45,7 +45,7 @@ import { FiltroPipe } from '../../shared/filtro.pipe';
             <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
           </ion-avatar>
           <ion-label>
-            <h2>{{ user.displayName || user.email }}</h2>
+            <h2>{{ user.displayName || 'Sin nombre' }}</h2>
           </ion-label>
           <ion-icon *ngIf="isSelected(user)" slot="end" name="checkmark-circle" color="secondary"></ion-icon>
         </ion-item>

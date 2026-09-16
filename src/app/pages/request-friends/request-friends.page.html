@@ -14,8 +14,7 @@
         <img [src]="request.photoURL || 'assets/icon-user.svg'" alt="" />
       </ion-avatar>
       <ion-label>
-        <h2>{{ request.displayName }}</h2>
-        <p class="ion-text-wrap">{{ request.email }}</p>
+        <h2>{{ request.displayName || 'Sin nombre' }}</h2>
       </ion-label>
       <ion-icon name="person-add" slot="end"></ion-icon>
     </ion-item>

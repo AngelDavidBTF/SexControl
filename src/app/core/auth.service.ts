@@ -20,7 +20,7 @@ import {
   updateProfile,
   UserCredential,
 } from '@angular/fire/auth';
-import { Firestore, doc, serverTimestamp, setDoc } from '@angular/fire/firestore';
+import { Firestore, deleteField, doc, serverTimestamp, setDoc } from '@angular/fire/firestore';
 import { UiService } from './ui.service';
 
 @Injectable({
@@ -176,21 +176,22 @@ export class AuthService {
     return user.emailVerified === true;
   }
 
-  // emailLower/displayNameLower permiten la búsqueda por prefijo de amigos (friends.service).
   // Se llama también en cada login para dar de alta a usuarios creados antes de existir users/{uid}.
-  // Escritura ciega con merge (sin leer antes): createdAt solo se fija al crear la cuenta.
+  // Escritura ciega con merge (sin leer antes): createdAt solo se fija al crear la cuenta. El email
+  // ya no se guarda aquí (se borra el de las cuentas antiguas): la búsqueda va por emailIndex y lo
+  // público por profiles (ProfileService).
   private async ensureUserDoc(user: FirebaseUser, isNewUser = false): Promise<void> {
     const ref = doc(this.firestore, `users/${user.uid}`);
     await setDoc(
       ref,
       {
         uid: user.uid,
-        email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
         emailVerified: user.emailVerified,
-        emailLower: user.email?.toLowerCase() ?? null,
-        displayNameLower: user.displayName?.toLowerCase() ?? null,
+        email: deleteField(),
+        emailLower: deleteField(),
+        displayNameLower: deleteField(),
         ...(isNewUser ? { createdAt: serverTimestamp() } : {}),
       },
       { merge: true }

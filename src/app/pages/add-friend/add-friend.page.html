@@ -1,38 +1,82 @@
 <app-header titulo="Añadir amigo"></app-header>
 
 <ion-content>
+  <div class="mi-usuario">
+    <ng-container *ngIf="miUsuario; else sinUsuario">
+      <span class="muted">Tu usuario</span>
+      <strong class="mi-handle">&#64;{{ miUsuario }}</strong>
+    </ng-container>
+    <ng-template #sinUsuario>
+      <span class="muted">Aún no tienes &#64;usuario: sin él no apareces en las búsquedas.</span>
+      <ion-button size="small" color="secondary" (click)="elegirUsuario()" class="elegir-mi-usuario">Elegir mi &#64;usuario</ion-button>
+    </ng-template>
+  </div>
+
   <ion-searchbar
-    placeholder="Buscar usuario"
+    placeholder="Nombre o @usuario"
     (ionInput)="onSearchChange($event)"
-    [debounce]="400"
-    inputmode="text"
+    [debounce]="300"
+    autocapitalize="off"
     animated
+    class="buscar-amigo"
   ></ion-searchbar>
 
-  <ng-container *ngIf="!tooShort; else ayuda">
-    <div *ngIf="buscando" class="ion-text-center ion-margin">
+  <!-- Sugerencias mientras se escribe -->
+  <ng-container *ngIf="escribiendo; else antesDeEscribir">
+    <ion-list lines="none" *ngIf="sugerencias.length > 0">
+      <ng-container *ngTemplateOutlet="filas; context: { $implicit: sugerencias }"></ng-container>
+    </ion-list>
+
+    <div *ngIf="buscando && sugerencias.length === 0" class="ion-text-center ion-margin">
       <ion-spinner name="circular" color="danger"></ion-spinner>
     </div>
 
-    <ion-item *ngFor="let user of users" button (click)="enviarPeticion(user)" class="resultado">
+    <p *ngIf="buscado && !buscando && sugerencias.length === 0" class="vacio">
+      No encontramos a nadie así. Puede que aún no use la app o que prefiera no aparecer en búsquedas: mándale tu enlace.
+    </p>
+  </ng-container>
+
+  <!-- Antes de escribir: gente de tus grupos -->
+  <ng-template #antesDeEscribir>
+    <ng-container *ngIf="genteDeGrupos.length > 0; else ayuda">
+      <h3 class="seccion">Personas de tus grupos</h3>
+      <ion-list lines="none">
+        <ng-container *ngTemplateOutlet="filas; context: { $implicit: genteDeGrupos.slice(0, 8) }"></ng-container>
+      </ion-list>
+    </ng-container>
+    <ng-template #ayuda>
+      <p class="vacio">Escribe el nombre o el &#64;usuario de tu amigo y te irán saliendo sugerencias.</p>
+    </ng-template>
+  </ng-template>
+
+  <ng-template #filas let-users>
+    <ion-item *ngFor="let user of users; trackBy: trackByUid" class="resultado">
       <ion-avatar slot="start">
         <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
       </ion-avatar>
       <ion-label>
-        <h2>{{ user.displayName }}</h2>
-        <p class="ion-text-wrap">{{ user.email }}</p>
+        <h2>{{ user.displayName || 'Sin nombre' }}</h2>
+        <p *ngIf="user.username">&#64;{{ user.username }}</p>
       </ion-label>
-      <ion-icon name="person-add" slot="end"></ion-icon>
+      <ion-button
+        slot="end"
+        size="small"
+        [fill]="enviados.has(user.uid) ? 'clear' : 'solid'"
+        color="secondary"
+        [disabled]="enviados.has(user.uid)"
+        (click)="enviarPeticion(user)"
+        class="anadir-amigo"
+      >
+        {{ enviados.has(user.uid) ? 'Enviada' : 'Añadir' }}
+      </ion-button>
     </ion-item>
-
-    <h5 *ngIf="!buscando && users.length === 0" class="textSearch">No se ha encontrado ningún usuario.</h5>
-  </ng-container>
-
-  <ng-template #ayuda>
-    <h5 class="textSearch">
-      Introduce al menos {{ minChars }} letras del nombre de usuario o del email para poder enviar una solicitud de
-      amistad. <br />
-      (Por motivos de privacidad no se muestran resultados hasta introducir texto).
-    </h5>
   </ng-template>
+
+  <div class="invitar">
+    <span class="muted">¿No lo encuentras? ¿Ya lo tienes en WhatsApp?</span>
+    <ion-button expand="block" fill="outline" color="tertiary" (click)="invitar()" class="invitar-enlace">
+      <ion-icon slot="start" name="share-social-outline"></ion-icon>
+      Mandarle mi enlace o QR
+    </ion-button>
+  </div>
 </ion-content>

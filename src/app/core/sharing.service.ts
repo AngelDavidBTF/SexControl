@@ -89,7 +89,8 @@ export class SharingService {
         const batch = writeBatch(this.firestore);
         for (const friend of friends.slice(i, i + BATCH_SIZE)) {
           const level: PrivacyLevel = social.paused ? 'nada' : (social.privacy[friend.uid] ?? 'todo');
-          const entry = { ...friendShare(level, stats, snapshot), ...profile };
+          // email: null borra el que copiaban las versiones anteriores en la lista del amigo.
+          const entry = { ...friendShare(level, stats, snapshot), ...profile, email: null };
           batch.set(doc(this.firestore, 'social', friend.uid), { friends: { [uid]: entry } }, { merge: true });
         }
         await batch.commit();

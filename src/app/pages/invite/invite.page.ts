@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import { doc, docData, Firestore } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
@@ -26,7 +25,8 @@ import { User } from '../../shared/user.model';
         <ion-avatar>
           <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
         </ion-avatar>
-        <h2>{{ user.displayName || user.email }}</h2>
+        <h2>{{ user.displayName || 'Alguien' }}</h2>
+        <p class="muted" *ngIf="user.username">&#64;{{ user.username }}</p>
         <p class="muted">quiere ser tu amigo en SexControl</p>
 
         <ion-button expand="block" (click)="accept()" [disabled]="sending" class="aceptar-invitacion">
@@ -71,7 +71,6 @@ import { User } from '../../shared/user.model';
 export class InvitePage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private firestore = inject(Firestore);
   private authService = inject(AuthService);
   private friendsService = inject(FriendsService);
   private profiles = inject(ProfileService);
@@ -94,9 +93,10 @@ export class InvitePage implements OnInit {
       return;
     }
     try {
-      const data = await firstValueFrom(docData(doc(this.firestore, 'users', uid)));
-      this.user = data ? ({ ...(data as User), uid }) : null;
-      this.error = this.user ? null : 'Esa cuenta ya no existe';
+      // Perfil público (nombre y foto). Si esa cuenta aún no lo ha publicado (no ha abierto la app
+      // desde que existe), la invitación sigue valiendo: solo falta el nombre.
+      this.user = (await this.friendsService.publicProfile(uid)) ?? { uid, email: null, displayName: null, photoURL: null };
+      this.error = null;
     } catch (error) {
       console.error('No se pudo leer la invitación', error);
       this.error = 'No se pudo abrir la invitación';

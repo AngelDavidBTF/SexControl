@@ -6,6 +6,7 @@ import { combineLatest, filter, of, switchMap, take } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { FapService } from './core/fap.service';
 import { LockService } from './core/lock.service';
+import { ProfileService } from './core/profile.service';
 import { RemindersService } from './core/reminders.service';
 import { SettingsService } from './core/settings.service';
 import { LockScreenComponent } from './components/lock-screen/lock-screen.component';
@@ -27,6 +28,7 @@ export class AppComponent {
     const fapService = inject(FapService);
     const reminders = inject(RemindersService);
     const auth = inject(AuthService);
+    const profiles = inject(ProfileService);
     const destroyRef = inject(DestroyRef);
     const rebuilt = new Set<string>();
 
@@ -54,6 +56,13 @@ export class AppComponent {
           console.error('No se pudieron reconstruir las estadísticas', error);
         });
       });
+
+    // Perfil público y búsqueda por email de las cuentas creadas antes de separarlos de users/{uid}.
+    auth.user$.pipe(takeUntilDestroyed(destroyRef)).subscribe((user) => {
+      if (user) {
+        profiles.ensurePublic(user).catch((error) => console.warn('No se pudo publicar el perfil público', error));
+      }
+    });
 
     // Recordatorio "llevas N días sin apuntar": se reprograma al cambiar datos o ajustes.
     combineLatest([

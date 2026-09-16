@@ -108,7 +108,7 @@
             <img [src]="friend.photoURL || 'assets/icon-user.svg'" alt="" />
           </ion-avatar>
           <ion-label>
-            <h2>{{ friend.displayName || friend.email }}</h2>
+            <h2>{{ friend.displayName || 'Sin nombre' }}</h2>
             <p *ngIf="privacyFor(friend.uid) !== 'todo'" class="ve-de-ti">Ve de ti: {{ privacyFor(friend.uid) === 'total' ? 'solo el total' : 'nada' }}</p>
           </ion-label>
           <ng-container [ngSwitch]="shareMode(friend)">

@@ -20,7 +20,12 @@
       [maxlength]="40"
       class="nombre"
     ></ion-input>
-    <p class="muted email">{{ email }}</p>
+    <div class="usuario">
+      <span class="muted">Usuario</span>
+      <strong class="mi-usuario">{{ username ? '@' + username : 'Sin elegir' }}</strong>
+      <ion-button fill="clear" size="small" (click)="chooseUsername()" class="cambiar-usuario">{{ username ? 'Cambiar' : 'Elegir' }}</ion-button>
+    </div>
+    <p class="muted email">{{ email }} · solo lo ves tú</p>
     <ion-button expand="block" color="secondary" (click)="saveProfile()" [disabled]="!profileDirty || savingProfile" class="guardar-perfil">
       Guardar perfil
     </ion-button>
@@ -48,8 +53,26 @@
         </ion-label>
       </ion-toggle>
     </ion-item>
+    <ion-item lines="none">
+      <ion-toggle [checked]="searchable" (ionChange)="onSearchableChange($event)" class="buscable">
+        <ion-label>
+          Aparecer en búsquedas
+          <p>Te pueden encontrar escribiendo tu nombre, tu &#64;usuario o tu email. Si lo apagas, solo podrán añadirte con tu enlace o desde un grupo.</p>
+        </ion-label>
+      </ion-toggle>
+    </ion-item>
     <p class="muted nota">Para elegir qué ve cada amigo, tócalo en la pestaña Amigos.</p>
   </section>
+
+  <ng-container *ngIf="blocked.length > 0">
+    <h3 class="seccion">Personas bloqueadas</h3>
+    <section class="tarjeta lista">
+      <ion-item lines="none" *ngFor="let person of blocked; trackBy: trackByUid" class="bloqueado">
+        <ion-label>{{ person.displayName || 'Sin nombre' }}</ion-label>
+        <ion-button slot="end" fill="clear" size="small" (click)="unblock(person)" class="desbloquear">Desbloquear</ion-button>
+      </ion-item>
+    </section>
+  </ng-container>
 
   <!-- Recordatorios -->
   <h3 class="seccion">🔔 Recordatorios</h3>

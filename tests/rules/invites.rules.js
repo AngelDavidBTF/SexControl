@@ -1,6 +1,6 @@
 // Reglas de las invitaciones a grupos: el código es el id del documento, y para entrar hay que
 // dejar antes una marca bajo su ruta (eso demuestra conocerlo).
-const { doc, setDoc, updateDoc, deleteDoc, getDoc, arrayUnion, serverTimestamp } = require('firebase/firestore');
+const { collection, doc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, limit, query, arrayUnion, serverTimestamp } = require('firebase/firestore');
 const { signIn } = require('../helpers/firebase');
 const { expectRule, title } = require('../helpers/report');
 
@@ -29,6 +29,11 @@ async function run() {
       throw new Error('la invitación no existe');
     }
   });
+  // El id de la invitación ES el código secreto: si se pudieran listar, cualquiera entraría en
+  // cualquier grupo con invitación activa.
+  await expectRule('nadie puede listar las invitaciones', false, () =>
+    getDocs(query(collection(c.db, 'groupInvites'), limit(5)))
+  );
   await expectRule('sin dejar la marca no se entra', false, () =>
     updateDoc(g(b.db), { memberUids: arrayUnion(b.uid), [`members.${b.uid}`]: member('B') })
   );

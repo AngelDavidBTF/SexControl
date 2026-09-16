@@ -14,7 +14,8 @@ export interface PeriodCount {
 // la compartición en pausa, `hidden` es true.
 export interface SocialEntry {
   displayName: string | null;
-  email: string | null;
+  // Ya no se guarda: las versiones anteriores copiaban aquí el email y la publicación lo borra.
+  email?: string | null;
   photoURL: string | null;
   solitario?: number | null;
   compania?: number | null;
@@ -123,6 +124,17 @@ export interface DuelRecord {
   losses: number;
 }
 
+// Alguien a quien he bloqueado: no puede mandarme solicitudes (lo impiden las reglas). Se guarda el
+// nombre que tenía para poder listarlo sin lecturas.
+export interface BlockedEntry {
+  displayName: string | null;
+  at: Timestamp | null;
+}
+
+export interface BlockedUser extends BlockedEntry {
+  uid: string;
+}
+
 // social/{uid}: un único documento por usuario.
 //  - friends:   amigos aceptados.
 //  - requests:  solicitudes recibidas (clave = remitente).
@@ -134,6 +146,7 @@ export interface DuelRecord {
 //  - challenges: duelos con cada amigo (clave = el otro).
 //  - record:     duelos ganados y perdidos con cada amigo. Solo lo escribe su dueño.
 //  - wins:       duelos ganados en total (se publica a los amigos).
+//  - blocked:    personas bloqueadas. Solo lo escribe su dueño.
 export interface SocialDoc {
   friends?: Record<string, SocialEntry>;
   requests?: Record<string, SocialEntry>;
@@ -147,6 +160,7 @@ export interface SocialDoc {
   // Qué comparto en cada grupo: "todo" (por defecto) o "nada" (mis números salen ocultos).
   groupPrivacy?: Record<string, GroupPrivacy>;
   paused?: boolean;
+  blocked?: Record<string, BlockedEntry>;
 }
 
 // Vista de una entrada con su uid, para listas en pantalla.
@@ -188,4 +202,5 @@ export interface Social {
   privacy: Record<string, PrivacyLevel>;
   groupPrivacy: Record<string, GroupPrivacy>;
   paused: boolean;
+  blocked: BlockedUser[];
 }

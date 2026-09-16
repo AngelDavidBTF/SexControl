@@ -29,12 +29,85 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------- users
-    // Perfil público mínimo, usado solo para la búsqueda por prefijo.
+    // Datos de la cuenta: solo los lee su dueño. Antes cualquiera con sesión podía LISTAR la
+    // colección entera y sacar el nombre y el email de todos los usuarios.
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isOwner(uid);
       allow create, update: if isOwner(uid);
       // Borrar la cuenta elimina también el perfil.
       allow delete: if isOwner(uid);
+    }
+
+    // Perfil público: nombre, foto y @usuario, sin email. Se lee de uno en uno conociendo el uid
+    // (enlace de invitación, resultado de búsqueda); nunca se puede listar. El @usuario que enseña
+    // tiene que ser de verdad suyo en usernames/, para que nadie se ponga el de otro.
+    match /profiles/{uid} {
+      allow get: if isSignedIn();
+      allow create, update: if isOwner(uid) &&
+        request.resource.data.keys().hasOnly(['displayName', 'photoURL', 'username']) &&
+        (request.resource.data.get('displayName', null) == null ||
+          (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 40)) &&
+        (request.resource.data.get('photoURL', null) == null ||
+          (request.resource.data.photoURL is string && request.resource.data.photoURL.size() < 100000)) &&
+        (request.resource.data.get('username', null) == null ||
+          getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == request.auth.uid);
+      allow delete: if isOwner(uid);
+    }
+
+    // @usuario único y buscador de personas. El id del documento es el @usuario (minúsculas,
+    // números y _, de 3 a 20) y guarda lo necesario para las sugerencias: uid, nombre (y su versión
+    // sin tildes para buscar) y foto. Se puede buscar por prefijo de @usuario o de nombre, pero solo
+    // entre quienes tienen `visible` (el ajuste "Aparecer en búsquedas") y de 10 en 10. Para que
+    // nadie acapare nombres, cada cuenta tiene uno solo: al crear uno nuevo, users/{uid}.username
+    // tiene que pasar a ser ese y el anterior tiene que borrarse en la misma escritura.
+    function usersDoc() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+    function previousUsername() {
+      return exists(usersDoc()) ? get(usersDoc()).data.get('username', null) : null;
+    }
+    function isValidDirectoryEntry(handle, data) {
+      return data.keys().hasOnly(['uid', 'handle', 'displayName', 'nameLower', 'photoURL', 'visible']) &&
+        data.uid == request.auth.uid &&
+        data.handle == handle &&
+        data.visible is bool &&
+        (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 40)) &&
+        (data.get('nameLower', null) == null || (data.nameLower is string && data.nameLower.size() <= 40)) &&
+        (data.get('photoURL', null) == null || (data.photoURL is string && data.photoURL.size() < 100000));
+    }
+
+    match /usernames/{handle} {
+      // Uno concreto: si existe y está oculto, solo lo ve su dueño (quien comprueba si un @usuario
+      // está libre recibe "sin permiso" y lo toma por cogido). Si no existe, se puede preguntar.
+      allow get: if isSignedIn() &&
+        (resource == null || resource.data.visible == true || resource.data.uid == request.auth.uid);
+      // Sugerencias: la consulta tiene que filtrar por visible == true y pedir 10 como mucho.
+      allow list: if isSignedIn() && request.query.limit <= 10 && resource.data.visible == true;
+      allow create: if isSignedIn() &&
+        handle.matches('^[a-z0-9_]{3,20}$') &&
+        isValidDirectoryEntry(handle, request.resource.data) &&
+        getAfter(usersDoc()).data.get('username', null) == handle &&
+        (previousUsername() == null || previousUsername() == handle ||
+          !existsAfter(/databases/$(database)/documents/usernames/$(previousUsername())));
+      // Su dueño actualiza nombre, foto y visibilidad.
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid &&
+        isValidDirectoryEntry(handle, request.resource.data);
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Búsqueda de amigos por email EXACTO: el id es el SHA-256 del email en minúsculas y solo
+    // guarda el uid. Solo se puede leer conociendo el email, nunca listar. Cada uno solo puede
+    // crear la entrada de su propio email verificado (las reglas recalculan el hash con el email
+    // del token), así nadie puede hacerse pasar por otro en la búsqueda.
+    match /emailIndex/{emailHash} {
+      allow get: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        emailHash == hashing.sha256(request.auth.token.email.lower()).toHexString().lower() &&
+        request.resource.data.keys().hasOnly(['uid']) &&
+        request.resource.data.uid == request.auth.uid;
+      // Borrar una entrada que no existe no hace nada, así "no aparecer en búsquedas" no falla.
+      allow delete: if isSignedIn() && (resource == null || resource.data.uid == request.auth.uid);
     }
 
     // ---------------------------------------------------------------- social
@@ -55,13 +128,19 @@ service cloud.firestore {
       return diffKeys == [request.auth.uid].toSet();
     }
 
+    // true si el dueño del documento ha bloqueado a quien hace la petición.
+    function isBlocked() {
+      return resource != null && request.auth.uid in mapField(resource.data, 'blocked');
+    }
+
     // Otro usuario (request.auth.uid) solo puede tocar su propia entrada en mi documento:
-    // 1) enviarme una solicitud,
+    // 1) enviarme una solicitud, si no le he bloqueado,
     function isIncomingRequest() {
       return topKeysOnly(['requests']) &&
         onlyMe(mapDiff('requests').affectedKeys()) &&
         onlyMe(mapDiff('requests').addedKeys()) &&
-        !(request.auth.uid in (resource == null ? {} : mapField(resource.data, 'friends')));
+        !(request.auth.uid in (resource == null ? {} : mapField(resource.data, 'friends'))) &&
+        !isBlocked();
     }
 
     // 2) aceptar la solicitud que yo le envié (sale de `sent` y entra en `friends`),
@@ -89,10 +168,18 @@ service cloud.firestore {
         topKeysOnly(['friends']) &&
         mapDiff('friends').affectedKeys().hasOnly([request.auth.uid]) &&
         request.auth.uid in mapField(request.resource.data, 'friends') &&
-        request.resource.data.friends[request.auth.uid]
-          .diff(resource.data.friends[request.auth.uid]).affectedKeys()
-          .hasOnly(['solitario', 'compania', 'total', 'hidden', 'week', 'month', 'prevWeek', 'prevMonth',
-                    'streak', 'lastDay', 'badges', 'wins', 'displayName', 'photoURL']);
+        isValidFanOutEntry(
+          request.resource.data.friends[request.auth.uid].diff(resource.data.friends[request.auth.uid]).affectedKeys(),
+          request.resource.data.friends[request.auth.uid]);
+    }
+
+    // Campos que un amigo puede cambiar en su entrada. Las versiones anteriores copiaban el email
+    // en la lista de amigos: se puede borrar, nunca poner uno nuevo. Si no se toca (versiones de la
+    // app aún en caché), se acepta igual, para no bloquearles la publicación entera.
+    function isValidFanOutEntry(changed, entry) {
+      return changed.hasOnly(['solitario', 'compania', 'total', 'hidden', 'week', 'month', 'prevWeek', 'prevMonth',
+                              'streak', 'lastDay', 'badges', 'wins', 'displayName', 'photoURL', 'email']) &&
+        (!('email' in changed) || entry.get('email', null) == null);
     }
 
     // 5) eliminar la amistad: quitarse de mi lista de amigos (al borrar la amistad o su cuenta),
@@ -280,8 +367,10 @@ service cloud.firestore {
     // groupInvites/{code}/joins/{uid}: eso demuestra conocer el código sin que las reglas
     // necesiten leerlo de la petición.
     match /groupInvites/{code} {
-      // Cualquiera con el enlace puede ver a qué grupo lleva (nombre e id, nada más).
-      allow read: if isSignedIn();
+      // Quien tiene el enlace puede ver a qué grupo lleva (nombre e id, nada más). Solo `get`: el
+      // id ES el código secreto, y con `list` cualquiera sacaba todos los códigos y se metía en
+      // cualquier grupo con invitación activa.
+      allow get: if isSignedIn();
       // Solo el dueño del grupo crea, renueva o retira sus invitaciones.
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isSignedIn() && resource.data.ownerUid == request.auth.uid &&

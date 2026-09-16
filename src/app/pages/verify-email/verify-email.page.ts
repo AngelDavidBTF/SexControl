@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { ProfileService } from '../../core/profile.service';
 import { UiService } from '../../core/ui.service';
 
 // La app exige email verificado (authGuard). Aquí se espera a que el usuario pulse el enlace.
@@ -16,6 +17,7 @@ import { UiService } from '../../core/ui.service';
 export class VerifyEmailPage {
   private authSvc = inject(AuthService);
   private router = inject(Router);
+  private profiles = inject(ProfileService);
   private ui = inject(UiService);
 
   readonly user$ = this.authSvc.user$;
@@ -35,6 +37,8 @@ export class VerifyEmailPage {
     try {
       const user = await this.authSvc.reloadUser();
       if (user?.emailVerified) {
+        // Ya se le puede encontrar por su email.
+        this.profiles.ensurePublic(user).catch((error) => console.warn('No se pudo publicar el perfil público', error));
         await this.router.navigate(['/tabs/sumar'], { replaceUrl: true });
       } else {
         await this.ui.toast('Todavía no está verificado. Revisa tu correo (y la carpeta de spam)');

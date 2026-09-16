@@ -86,6 +86,7 @@ const EMPTY_SOCIAL: Social = {
   privacy: {},
   groupPrivacy: {},
   paused: false,
+  blocked: [],
 };
 
 @Component({
@@ -270,7 +271,7 @@ export class AmigosPage {
 
   // Al tocar un amigo se abre su ficha; las acciones de siempre salen de ella.
   async friendActions(friend: Friend): Promise<void> {
-    const name = friend.displayName || friend.email || 'tu amigo';
+    const name = friend.displayName || 'tu amigo';
     const me = await firstValueFrom(this.me$);
     if (!me) {
       return;
@@ -299,6 +300,8 @@ export class AmigosPage {
       await this.choosePrivacy(friend, name);
     } else if (data === 'remove') {
       await this.confirmRemove(friend, name);
+    } else if (data === 'block') {
+      await this.confirmBlock(friend, name);
     }
   }
 
@@ -501,6 +504,31 @@ export class AmigosPage {
     } catch (error) {
       console.error('Error eliminando amistad', error);
       await this.ui.toast('No se pudo eliminar la amistad');
+    }
+  }
+
+  private async confirmBlock(friend: Friend, name: string): Promise<void> {
+    const alert = await this.alertController.create({
+      header: `Bloquear a ${name}`,
+      message: `Dejaréis de ser amigos y no podrá volver a mandarte solicitudes. Puedes desbloquearlo en Ajustes. Los grupos que compartáis no cambian.`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Bloquear', role: 'destructive' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    const uid = this.authService.currentUid();
+    if (role !== 'destructive' || !uid) {
+      return;
+    }
+    try {
+      const social = await firstValueFrom(this.friendsService.social$(uid));
+      await this.friendsService.blockUser(uid, friend, social);
+      await this.ui.toast(`Has bloqueado a ${name}`);
+    } catch (error) {
+      console.error('Error bloqueando', error);
+      await this.ui.toast('No se pudo bloquear');
     }
   }
 

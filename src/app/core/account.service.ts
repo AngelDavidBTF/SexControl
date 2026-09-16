@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { FapService } from './fap.service';
 import { FriendsService } from './friends.service';
 import { GroupsService } from './groups.service';
+import { ProfileService } from './profile.service';
 import { SharingService } from './sharing.service';
 
 const BATCH_SIZE = 450;
@@ -20,17 +21,20 @@ export class AccountService {
   private friendsService = inject(FriendsService);
   private groupsService = inject(GroupsService);
   private sharing = inject(SharingService);
+  private profiles = inject(ProfileService);
 
-  // Nombre y foto (data URL pequeña o URL de Google). Se actualiza el perfil de búsqueda y se
-  // propaga a las listas de amigos y a los grupos.
+  // Nombre y foto (data URL pequeña o URL de Google). Se actualiza el perfil público y se propaga
+  // a las listas de amigos y a los grupos.
   async updateProfile(uid: string, displayName: string, photoURL: string | null): Promise<void> {
     const name = displayName.trim().slice(0, 40);
     await this.auth.updateDisplayName(name);
     await setDoc(
       doc(this.firestore, 'users', uid),
-      { displayName: name, displayNameLower: name.toLowerCase(), photoURL },
+      { displayName: name, photoURL },
       { merge: true }
     );
+    await this.profiles.publishPublic(uid, name, photoURL);
+    await this.profiles.refreshDirectory(uid, { displayName: name, photoURL });
     const stats = await firstValueFrom(this.fapService.stats$(uid));
     await this.sharing.publish(uid, stats, { profile: { displayName: name, photoURL } });
   }
@@ -55,6 +59,11 @@ export class AccountService {
       const batch = writeBatch(this.firestore);
       faps.slice(i, i + BATCH_SIZE).forEach((ref) => batch.delete(ref));
       await batch.commit();
+    }
+
+    const user = this.auth.currentUser();
+    if (user) {
+      await this.profiles.deletePublic(user);
     }
 
     await Promise.all([

@@ -3,6 +3,7 @@
 const { serveWww } = require('../helpers/serve-www');
 const { summary } = require('../helpers/report');
 const { BASE_URL } = require('../helpers/config');
+const { ensureFixtureUsernames } = require('../helpers/fixtures');
 
 const SUITES = [require('./smoke.e2e'), require('./social.e2e'), require('./invites.e2e'), require('./pwa.e2e')];
 
@@ -17,6 +18,8 @@ const SUITES = [require('./smoke.e2e'), require('./social.e2e'), require('./invi
     console.log(`Probando contra ${BASE_URL}`);
   }
   try {
+    // Con @usuario, la app no abre al entrar la ventana de elegirlo.
+    await ensureFixtureUsernames();
     for (const suite of SUITES) {
       await suite.run();
     }

@@ -56,6 +56,15 @@ export class RequestFriendsPage {
           },
         },
         {
+          text: 'Bloquear',
+          icon: 'ban-outline',
+          role: 'destructive',
+          cssClass: 'bloquear-solicitud',
+          handler: () => {
+            this.bloquear(request);
+          },
+        },
+        {
           text: 'Cancelar',
           icon: 'arrow-back',
           role: 'cancel',
@@ -79,6 +88,22 @@ export class RequestFriendsPage {
     } catch (error) {
       console.error('Error aceptando solicitud', error);
       await this.ui.toast('No se pudo aceptar la solicitud');
+    }
+  }
+
+  // Rechaza y además impide que vuelva a mandar solicitudes.
+  private async bloquear(request: Friend): Promise<void> {
+    const me = this.authService.currentUser();
+    if (!me) {
+      return;
+    }
+    try {
+      const social = await firstValueFrom(this.friendsService.social$(me.uid));
+      await this.friendsService.blockUser(me.uid, request, social);
+      await this.ui.toast(`${request.displayName || 'Esa persona'} ya no podrá mandarte solicitudes`);
+    } catch (error) {
+      console.error('Error bloqueando', error);
+      await this.ui.toast('No se pudo bloquear');
     }
   }
 
