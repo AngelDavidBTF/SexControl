@@ -15,6 +15,7 @@ import { SharingService } from '../../core/sharing.service';
 import { UiService } from '../../core/ui.service';
 import { FriendAction, FriendDetailModal } from '../../components/friend-detail/friend-detail.modal';
 import { FriendsLeagueComponent } from '../../components/friends-league/friends-league.component';
+import { ShareInviteModal } from '../../components/share-invite/share-invite.modal';
 import { DatoDirective } from '../../shared/dato.directive';
 import {
   CHALLENGE_TARGETS,
@@ -291,6 +292,26 @@ export class AmigosPage {
     } else if (data === 'remove') {
       await this.confirmRemove(friend, name);
     }
+  }
+
+  // ---------------------------------------------------------------- invitaciones
+
+  // Mi enlace de invitación: quien lo abra puede mandarme una solicitud sin buscarme por email.
+  async shareMyInvite(): Promise<void> {
+    const uid = this.authService.currentUid();
+    if (!uid) {
+      return;
+    }
+    const modal = await this.modalController.create({
+      component: ShareInviteModal,
+      componentProps: {
+        url: `${location.origin}/invitar/${uid}`,
+        title: 'Invitar a un amigo',
+        subtitle: 'Quien abra el enlace o escanee el QR podrá mandarte una solicitud de amistad.',
+        warning: 'El enlace solo sirve para pedirte amistad: nadie ve tus números hasta que aceptas.',
+      },
+    });
+    await modal.present();
   }
 
   // ---------------------------------------------------------------- duelos

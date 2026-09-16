@@ -61,4 +61,13 @@ export interface Group {
   // Palmarés por mes ('yyyy-MM' → campeón) y objetivo colectivo en curso.
   seasons?: Record<string, Season>;
   goal?: GroupGoal | null;
+  // Código del enlace de invitación (el id del documento groupInvites/{code}). Se puede renovar.
+  inviteCode?: string | null;
+}
+
+// groupInvites/{code}: lo lee cualquiera que tenga el enlace, para saber a qué grupo lleva.
+export interface GroupInvite {
+  groupId: string;
+  groupName: string;
+  ownerUid: string;
 }

@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
+import { ShareInviteModal } from '../../components/share-invite/share-invite.modal';
 import { FapCounts } from '../../shared/fap.model';
 import { Group, GroupGoal, GroupMember, MAX_GROUP_GOAL } from '../../shared/group.model';
 import {
@@ -218,6 +219,13 @@ export class GroupPage {
           },
         },
         {
+          text: 'Invitar con enlace o QR',
+          icon: 'share-social-outline',
+          handler: () => {
+            this.shareInvite(group);
+          },
+        },
+        {
           text: group.goal ? 'Cambiar el objetivo del grupo' : 'Poner un objetivo al grupo',
           icon: 'checkmark-circle',
           handler: () => {
@@ -293,6 +301,32 @@ export class GroupPage {
     } catch (error) {
       console.error('Error guardando el objetivo del grupo', error);
       await this.ui.toast('No se pudo guardar el objetivo');
+    }
+  }
+
+  // Enlace de invitación al grupo (solo el dueño). Quien lo abra podrá entrar aunque no sea amigo
+  // suyo, así que la pantalla de destino avisa de lo que se comparte.
+  async shareInvite(group: Group): Promise<void> {
+    const loading = await this.ui.loading('Preparando la invitación…');
+    try {
+      const code = await this.groupsService.ensureInviteCode(group);
+      await loading.dismiss();
+      const modal = await this.modalController.create({
+        component: ShareInviteModal,
+        componentProps: {
+          url: `${location.origin}/unirse/${code}`,
+          title: `Invitar a ${group.name}`,
+          subtitle: 'Quien abra el enlace o escanee el QR podrá entrar en el grupo.',
+          warning: 'Cualquiera con el enlace puede entrar, aunque no sea amigo tuyo. Si se te va de las manos, genera uno nuevo.',
+          canRenew: true,
+          onRenew: async () => `${location.origin}/unirse/${await this.groupsService.renewInviteCode(group)}`,
+        },
+      });
+      await modal.present();
+    } catch (error) {
+      await loading.dismiss();
+      console.error('No se pudo preparar la invitación', error);
+      await this.ui.toast('No se pudo preparar la invitación');
     }
   }
 

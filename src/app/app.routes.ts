@@ -68,6 +68,17 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/verify-email/verify-email.page').then((m) => m.VerifyEmailPage),
     canActivate: [signedInGuard],
   },
+  // Invitaciones por enlace o QR (piden sesión: el guard lleva al login y se vuelve aquí).
+  {
+    path: 'invitar/:uid',
+    loadComponent: () => import('./pages/invite/invite.page').then((m) => m.InvitePage),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'unirse/:code',
+    loadComponent: () => import('./pages/join-group/join-group.page').then((m) => m.JoinGroupPage),
+    canActivate: [authGuard],
+  },
   {
     path: 'ajustes',
     loadComponent: () => import('./pages/ajustes/ajustes.page').then((m) => m.AjustesPage),

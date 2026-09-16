@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -14,6 +14,7 @@ import { AuthService } from '../../core/auth.service';
 export class LoginPage implements OnInit {
   private authSvc = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   // Si el login con Google tuvo que hacerse por redirección, al volver se termina aquí.
   async ngOnInit(): Promise<void> {
@@ -37,7 +38,13 @@ export class LoginPage implements OnInit {
     }
   }
 
+  // Tras entrar se vuelve a donde se iba (una invitación abierta desde un enlace, por ejemplo).
   private redirectUser(isVerified: boolean): void {
-    this.router.navigate([isVerified ? '/tabs/sumar' : '/verify-email']);
+    if (!isVerified) {
+      this.router.navigate(['/verify-email']);
+      return;
+    }
+    const volver = this.route.snapshot.queryParamMap.get('volver');
+    this.router.navigateByUrl(volver && volver.startsWith('/') ? volver : '/tabs/sumar');
   }
 }

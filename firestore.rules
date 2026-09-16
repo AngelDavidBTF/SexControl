@@ -259,6 +259,43 @@ service cloud.firestore {
         addedIsFriend(after.addedUids, 8);
     }
 
+    // ------------------------------------------------------- invitaciones a grupos
+    // groupInvites/{code}: el código es el id del documento, así que solo quien tiene el enlace
+    // puede escribir bajo su ruta. Para entrar en el grupo hay que dejar antes una marca en
+    // groupInvites/{code}/joins/{uid}: eso demuestra conocer el código sin que las reglas
+    // necesiten leerlo de la petición.
+    match /groupInvites/{code} {
+      // Cualquiera con el enlace puede ver a qué grupo lleva (nombre e id, nada más).
+      allow read: if isSignedIn();
+      // Solo el dueño del grupo crea, renueva o retira sus invitaciones.
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+
+      match /joins/{uid} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid);
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // Entrar en un grupo con una invitación: añadirse a uno mismo, con la marca ya escrita.
+    function hasInvite(group) {
+      return group.get('inviteCode', '') != '' &&
+        exists(/databases/$(database)/documents/groupInvites/$(group.inviteCode)/joins/$(request.auth.uid));
+    }
+    function isJoinWithInvite() {
+      return !(request.auth.uid in resource.data.memberUids) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids', 'members']) &&
+        request.resource.data.memberUids.toSet() == resource.data.memberUids.toSet().union([request.auth.uid].toSet()) &&
+        request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1 &&
+        request.resource.data.memberUids.size() <= 200 &&
+        onlyMe(request.resource.data.members.diff(resource.data.members).addedKeys()) &&
+        onlyMe(request.resource.data.members.diff(resource.data.members).affectedKeys()) &&
+        hasInvite(resource.data);
+    }
+
     match /groups/{groupId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.memberUids;
 
@@ -288,7 +325,9 @@ service cloud.firestore {
          onlyMe(request.resource.data.members.diff(resource.data.members).removedKeys()) &&
          onlyMe(request.resource.data.members.diff(resource.data.members).affectedKeys())) ||
         // Cualquier miembro: cerrar el mes que acaba de terminar (una sola vez).
-        isSeasonClose()
+        isSeasonClose() ||
+        // Cualquiera con una invitación válida: entrar en el grupo.
+        isJoinWithInvite()
       );
 
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;

@@ -11,6 +11,9 @@ import {
   checkmarkCircle,
   checkmarkOutline,
   chevronBack,
+  copyOutline,
+  flag,
+  handRight,
   chevronForward,
   close,
   documentText,
@@ -29,6 +32,7 @@ import {
   statsChart,
   timeOutline,
   trash,
+  trophy,
 } from 'ionicons/icons';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
@@ -43,6 +47,9 @@ addIcons({
   checkmark,
   'checkmark-circle': checkmarkCircle,
   'checkmark-outline': checkmarkOutline,
+  'copy-outline': copyOutline,
+  flag,
+  'hand-right': handRight,
   'chevron-back': chevronBack,
   'chevron-forward': chevronForward,
   close,
@@ -62,6 +69,7 @@ addIcons({
   'stats-chart': statsChart,
   'time-outline': timeOutline,
   trash,
+  trophy,
 });
 
 bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

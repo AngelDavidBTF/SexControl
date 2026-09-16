@@ -9,22 +9,30 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  docData,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { Observable, map } from 'rxjs';
+import { Observable, firstValueFrom, map } from 'rxjs';
 import { FapCounts } from '../shared/fap.model';
 import { Friend } from '../shared/friend.model';
-import { Group, GroupGoal, GroupMember } from '../shared/group.model';
+import { Group, GroupGoal, GroupInvite, GroupMember } from '../shared/group.model';
 import { SeasonToClose } from '../shared/group-awards';
 import { PerUserStreams } from './per-user-streams';
 
 // firestore.rules comprueba con un get() que cada miembro nuevo tiene al dueño como amigo, y
 // una petición admite como máximo 10: los miembros se añaden en tandas de este tamaño.
 const MEMBERS_PER_WRITE = 9;
+
+// Código de invitación: corto para caber en un enlace y suficientemente difícil de adivinar.
+const INVITE_ALPHABET = 'abcdefghijkmnopqrstuvwxyz23456789';
+function inviteCode(): string {
+  const values = crypto.getRandomValues(new Uint8Array(12));
+  return [...values].map((value) => INVITE_ALPHABET[value % INVITE_ALPHABET.length]).join('');
+}
 
 function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -176,6 +184,57 @@ export class GroupsService {
       return;
     }
     await updateDoc(doc(this.firestore, 'groups', group.id), { goal, addedUids: [] });
+  }
+
+  // ---------------------------------------------------------------- invitaciones
+
+  // Código de invitación del grupo (lo crea el dueño la primera vez). El código es el id del
+  // documento groupInvites/{code}: quien tiene el enlace puede escribir bajo esa ruta, y eso es
+  // lo que las reglas usan como prueba de que conoce el código.
+  async ensureInviteCode(group: Group): Promise<string> {
+    if (!group.id) {
+      throw new Error('Grupo sin id');
+    }
+    if (group.inviteCode) {
+      return group.inviteCode;
+    }
+    return this.renewInviteCode(group);
+  }
+
+  // Genera un código nuevo: el anterior deja de servir.
+  async renewInviteCode(group: Group): Promise<string> {
+    if (!group.id) {
+      throw new Error('Grupo sin id');
+    }
+    const code = inviteCode();
+    const invite: GroupInvite = { groupId: group.id, groupName: group.name, ownerUid: group.ownerUid };
+    await setDoc(doc(this.firestore, 'groupInvites', code), invite);
+    await updateDoc(doc(this.firestore, 'groups', group.id), { inviteCode: code, addedUids: [] });
+    if (group.inviteCode) {
+      await deleteDoc(doc(this.firestore, 'groupInvites', group.inviteCode)).catch(() => undefined);
+    }
+    return code;
+  }
+
+  invite$(code: string): Observable<GroupInvite | null> {
+    return (this.inContext(() => docData(doc(this.firestore, 'groupInvites', code))) as Observable<GroupInvite | undefined>).pipe(
+      map((invite) => invite ?? null)
+    );
+  }
+
+  // Entrar en un grupo con el enlace: primero la marca bajo el código (la prueba de conocerlo) y
+  // después añadirse a la lista de miembros.
+  async joinWithInvite(code: string, member: GroupOwner): Promise<string> {
+    const invite = await firstValueFrom(this.invite$(code));
+    if (!invite) {
+      throw new Error('La invitación ya no existe');
+    }
+    await setDoc(doc(this.firestore, 'groupInvites', code, 'joins', member.uid), { at: serverTimestamp() });
+    await updateDoc(doc(this.firestore, 'groups', invite.groupId), {
+      memberUids: arrayUnion(member.uid),
+      [`members.${member.uid}`]: memberFrom(member, member.counts),
+    });
+    return invite.groupId;
   }
 
   async deleteGroup(group: Group): Promise<void> {

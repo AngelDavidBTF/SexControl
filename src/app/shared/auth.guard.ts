@@ -3,8 +3,10 @@ import { CanActivateFn, Router } from '@angular/router';
 import { map, take } from 'rxjs/operators';
 import { AuthService } from '../core/auth.service';
 
-// Requiere sesión y email verificado (las cuentas de Google ya vienen verificadas).
-export const authGuard: CanActivateFn = () => {
+// Requiere sesión y email verificado (las cuentas de Google ya vienen verificadas). Si no hay
+// sesión, se guarda a dónde iba para volver después de entrar (importante en las invitaciones,
+// que se abren desde un enlace).
+export const authGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -12,7 +14,7 @@ export const authGuard: CanActivateFn = () => {
     take(1),
     map((user) => {
       if (!user) {
-        return router.parseUrl('/login');
+        return router.createUrlTree(['/login'], { queryParams: { volver: state.url } });
       }
       return user.emailVerified ? true : router.parseUrl('/verify-email');
     })
