@@ -8,7 +8,19 @@ import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
 import { FapCounts } from '../../shared/fap.model';
-import { Group, GroupMember } from '../../shared/group.model';
+import { Group, GroupGoal, GroupMember, MAX_GROUP_GOAL } from '../../shared/group.model';
+import {
+  GoalProgress,
+  SeasonEntry,
+  Title,
+  goalProgress,
+  reigningChampion,
+  seasonHistory,
+  seasonToClose,
+  weekSummary,
+  weeklyTitles,
+} from '../../shared/group-awards';
+import { drawWeekCard } from '../../shared/group-card';
 import { monthKey, weekKey } from '../../shared/stats';
 import { DatoDirective } from '../../shared/dato.directive';
 import { FiltroPipe } from '../../shared/filtro.pipe';
@@ -31,6 +43,11 @@ interface GroupView {
   mediaCompania: number;
   mediaSolitario: number;
   mediaGrupo: number;
+  // Novedades de grupo: campeón del mes pasado, palmarés, títulos de la semana y objetivo.
+  championUid: string | null;
+  seasons: SeasonEntry[];
+  titles: Title[];
+  goal: GoalProgress | null;
 }
 
 export type RankingPeriod = 'total' | 'mes' | 'semana';
@@ -68,7 +85,12 @@ export class GroupPage {
   private modalController = inject(ModalController);
 
   textoBuscar = '';
+  verPalmares = false;
+  // Vista previa de la tarjeta semanal cuando el navegador no admite compartir archivos.
+  previewCard: string | null = null;
   private readonly period$ = new BehaviorSubject<RankingPeriod>('total');
+  // Temporadas ya intentadas en esta sesión (el vm$ se recalcula con cada cambio del grupo).
+  private readonly closing = new Set<string>();
 
   get period(): RankingPeriod {
     return this.period$.value;
@@ -84,7 +106,14 @@ export class GroupPage {
       }
       return this.groupsService.group$(user.uid, groupId).pipe(
         catchError(() => of(null)),
-        map((group) => (group ? this.buildView(group, user.uid, period) : null))
+        map((group) => {
+          if (!group) {
+            return null;
+          }
+          // Si el mes pasado aún no está cerrado, lo cierra el primero que abra el grupo.
+          void this.closeSeasonIfNeeded(group);
+          return this.buildView(group, user.uid, period);
+        })
       );
     })
   );
@@ -120,7 +149,26 @@ export class GroupPage {
       mediaCompania: totalCompania / count,
       mediaSolitario: totalSolitario / count,
       mediaGrupo: (totalCompania + totalSolitario) / count,
+      championUid: reigningChampion(group, now),
+      seasons: seasonHistory(group),
+      titles: weeklyTitles(group, now),
+      goal: goalProgress(group, now),
     };
+  }
+
+  // 1 escritura al mes y por grupo. Si otro miembro se ha adelantado, las reglas rechazan la
+  // segunda escritura: se ignora, porque la temporada ya está cerrada.
+  private async closeSeasonIfNeeded(group: Group): Promise<void> {
+    const season = seasonToClose(group, new Date());
+    if (!season || this.closing.has(`${group.id}:${season.key}`)) {
+      return;
+    }
+    this.closing.add(`${group.id}:${season.key}`);
+    try {
+      await this.groupsService.closeSeason(group, season);
+    } catch (error) {
+      console.warn('No se pudo cerrar la temporada del grupo', error);
+    }
   }
 
   async confirmLeave(group: Group): Promise<void> {
@@ -170,6 +218,13 @@ export class GroupPage {
           },
         },
         {
+          text: group.goal ? 'Cambiar el objetivo del grupo' : 'Poner un objetivo al grupo',
+          icon: 'checkmark-circle',
+          handler: () => {
+            this.editGoal(group);
+          },
+        },
+        {
           text: 'Eliminar grupo',
           icon: 'close',
           role: 'destructive',
@@ -194,6 +249,76 @@ export class GroupPage {
     } catch (error) {
       console.error('Error quitando miembro', error);
       await this.ui.toast('No se pudo quitar al miembro');
+    }
+  }
+
+  // Objetivo colectivo: lo fija el dueño y cuenta lo de todos los miembros del periodo.
+  async editGoal(group: Group): Promise<void> {
+    const current = group.goal ?? null;
+    const alert = await this.alertController.create({
+      header: 'Objetivo del grupo',
+      message: 'Entre todos los miembros, ¿cuántas veces queréis llegar?',
+      inputs: [
+        { name: 'target', type: 'number', placeholder: 'Por ejemplo, 50', value: current?.target ?? null, min: 1, max: MAX_GROUP_GOAL },
+        { name: 'period', type: 'radio', label: 'Esta semana', value: 'semana', checked: (current?.period ?? 'mes') === 'semana' },
+        { name: 'period', type: 'radio', label: 'Este mes', value: 'mes', checked: (current?.period ?? 'mes') === 'mes' },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        ...(current ? [{ text: 'Quitar objetivo', role: 'destructive' }] : []),
+        { text: 'Guardar', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { data, role } = await alert.onDidDismiss<{ values: string | { target?: string; period?: string } }>();
+    if (role === 'cancel') {
+      return;
+    }
+    try {
+      if (role === 'destructive') {
+        await this.groupsService.setGoal(group, null);
+        await this.ui.toast('Objetivo quitado');
+        return;
+      }
+      // Con radios y campos mezclados, Ionic devuelve el valor del radio en `values`; el número
+      // hay que leerlo del propio input.
+      const target = Math.floor(Number(alert.querySelector<HTMLInputElement>('input[name="target"]')?.value ?? ''));
+      const period = (typeof data?.values === 'string' ? data.values : 'mes') as GroupGoal['period'];
+      if (!Number.isFinite(target) || target <= 0 || target > MAX_GROUP_GOAL) {
+        await this.ui.toast('Escribe un número entre 1 y ' + MAX_GROUP_GOAL);
+        return;
+      }
+      await this.groupsService.setGoal(group, { period, target });
+      await this.ui.toast(`Objetivo: ${target} ${period === 'semana' ? 'esta semana' : 'este mes'}`);
+    } catch (error) {
+      console.error('Error guardando el objetivo del grupo', error);
+      await this.ui.toast('No se pudo guardar el objetivo');
+    }
+  }
+
+  // Resumen de la semana como imagen: campeón, total, títulos y clasificación.
+  async shareWeek(group: Group): Promise<void> {
+    const loading = await this.ui.loading('Preparando el resumen…');
+    try {
+      const blob = await drawWeekCard(weekSummary(group, new Date()));
+      const file = new File([blob], `resumen-${group.name.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+      await loading.dismiss();
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: group.name }).catch(() => undefined);
+      } else {
+        this.previewCard = URL.createObjectURL(blob);
+      }
+    } catch (error) {
+      await loading.dismiss();
+      console.error('Error generando el resumen del grupo', error);
+      await this.ui.toast('No se pudo generar el resumen');
+    }
+  }
+
+  closePreview(): void {
+    if (this.previewCard) {
+      URL.revokeObjectURL(this.previewCard);
+      this.previewCard = null;
     }
   }
 

@@ -12,6 +12,52 @@
       <ion-button *ngIf="!vm.isOwner" size="small" fill="outline" color="medium" (click)="confirmLeave(vm.group)" class="salir-grupo">
         Salir del grupo
       </ion-button>
+      <ion-button size="small" fill="clear" (click)="shareWeek(vm.group)" class="compartir-semana">
+        <ion-icon slot="start" name="share-social-outline"></ion-icon>
+        Compartir semana
+      </ion-button>
+    </div>
+
+    <!-- Campeón del mes pasado y palmarés (se cierran solos al empezar el mes nuevo). -->
+    <div class="temporada" *ngIf="vm.seasons.length > 0">
+      <div class="campeon" *ngIf="vm.seasons[0] as ultima">
+        <span class="corona" aria-hidden="true">👑</span>
+        <span>
+          <strong>{{ ultima.winnerName || 'Nadie' }}</strong>
+          {{ ultima.winnerName ? 'ganó ' + ultima.label : 'se llevó ' + ultima.label }}
+          <span class="muted" *ngIf="ultima.winnerName" dato>({{ ultima.total }} en el grupo)</span>
+        </span>
+      </div>
+      <ion-button fill="clear" size="small" (click)="verPalmares = !verPalmares" class="ver-palmares" *ngIf="vm.seasons.length > 1">
+        {{ verPalmares ? 'Ocultar palmarés' : 'Ver palmarés' }}
+      </ion-button>
+      <ul class="palmares" *ngIf="verPalmares">
+        <li *ngFor="let season of vm.seasons">
+          <span class="muted">{{ season.label }}</span>
+          <strong>{{ season.winnerName || 'sin campeón' }}</strong>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Objetivo colectivo del grupo. -->
+    <div class="objetivo" *ngIf="vm.goal as goal" [class.cumplido]="goal.done">
+      <div class="objetivo-cabecera">
+        <strong>{{ goal.done ? '🎉 ¡Objetivo cumplido!' : '🤝 Objetivo del grupo' }}</strong>
+        <span dato>{{ goal.current }} / {{ goal.target }}</span>
+      </div>
+      <div class="objetivo-barra"><div class="relleno" [style.width.%]="goal.percent"></div></div>
+      <p class="muted">Entre todos, {{ goal.period === 'semana' ? 'esta semana' : 'este mes' }}</p>
+    </div>
+
+    <!-- Títulos de la semana, calculados en el dispositivo. -->
+    <div class="titulos" *ngIf="vm.titles.length > 0">
+      <div class="titulo" *ngFor="let titulo of vm.titles">
+        <span class="titulo-emoji" aria-hidden="true">{{ titulo.emoji }}</span>
+        <div class="titulo-texto">
+          <strong>{{ titulo.title }}</strong>
+          <span class="muted">{{ titulo.name }} · {{ titulo.detail }}</span>
+        </div>
+      </div>
     </div>
 
     <ion-segment [value]="period" (ionChange)="onPeriodChange($event)" class="periodo-ranking">
@@ -59,7 +105,10 @@
           </ion-avatar>
           <ion-img *ngIf="!textoBuscar && i < 3 && member.counts && member.counts.compania + member.counts.solitario > 0" class="podium" [src]="'assets/groups/' + (i + 1) + '.svg'"></ion-img>
           <ion-label>
-            <h2>{{ member.displayName || member.email }}</h2>
+            <h2>
+              <span *ngIf="member.uid === vm.championUid" class="corona-miembro" aria-label="Campeón del mes pasado">👑</span>
+              {{ member.displayName || member.email }}
+            </h2>
             <p *ngIf="member.uid === vm.group.ownerUid">Creador del grupo</p>
             <p *ngIf="!member.counts">No comparte sus números</p>
           </ion-label>
@@ -77,6 +126,12 @@
         </ion-item-options>
       </ion-item-sliding>
     </ion-list>
+
+    <!-- Si el navegador no admite compartir archivos, se muestra la tarjeta para guardarla. -->
+    <div class="preview-tarjeta" *ngIf="previewCard" (click)="closePreview()">
+      <img [src]="previewCard" alt="Resumen de la semana del grupo" />
+      <p class="muted">Mantén pulsada la imagen para guardarla. Toca fuera para cerrar.</p>
+    </div>
   </ion-content>
 </ng-container>
 

@@ -18,7 +18,8 @@ import {
 import { Observable, map } from 'rxjs';
 import { FapCounts } from '../shared/fap.model';
 import { Friend } from '../shared/friend.model';
-import { Group, GroupMember } from '../shared/group.model';
+import { Group, GroupGoal, GroupMember } from '../shared/group.model';
+import { SeasonToClose } from '../shared/group-awards';
 import { PerUserStreams } from './per-user-streams';
 
 // firestore.rules comprueba con un get() que cada miembro nuevo tiene al dueño como amigo, y
@@ -155,6 +156,26 @@ export class GroupsService {
       memberUids: arrayRemove(uid),
       [`members.${uid}`]: deleteField(),
     });
+  }
+
+  // Cierra el mes pasado si nadie lo ha hecho: 1 escritura al mes y por grupo, la hace el primer
+  // miembro que abre el grupo. Las reglas solo admiten crear una clave de `seasons` que no exista,
+  // así que si dos personas coinciden, la segunda falla sin estropear nada.
+  async closeSeason(group: Group, season: SeasonToClose): Promise<void> {
+    if (!group.id) {
+      return;
+    }
+    const { key, ...data } = season;
+    await updateDoc(doc(this.firestore, 'groups', group.id), { [`seasons.${key}`]: data });
+  }
+
+  // Objetivo colectivo (solo el dueño). addedUids vuelve a cero porque las reglas exigen que
+  // declare los miembros añadidos en cada escritura suya (aquí, ninguno).
+  async setGoal(group: Group, goal: GroupGoal | null): Promise<void> {
+    if (!group.id) {
+      return;
+    }
+    await updateDoc(doc(this.firestore, 'groups', group.id), { goal, addedUids: [] });
   }
 
   async deleteGroup(group: Group): Promise<void> {

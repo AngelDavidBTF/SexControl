@@ -179,7 +179,26 @@ service cloud.firestore {
         data.memberUids.toSet().size() == data.memberUids.size() &&
         data.ownerUid in data.memberUids &&
         data.members is map && data.members.keys().toSet() == data.memberUids.toSet() &&
-        (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() < 200000));
+        (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() < 200000)) &&
+        isValidGoal(data.get('goal', null));
+    }
+    // Objetivo colectivo del grupo: null, o un periodo válido con un tope razonable.
+    function isValidGoal(goal) {
+      return goal == null || (
+        goal is map && goal.keys().hasOnly(['period', 'target']) &&
+        (goal.period == 'semana' || goal.period == 'mes') &&
+        goal.target is int && goal.target > 0 && goal.target <= 9999
+      );
+    }
+    // Cerrar una temporada: cualquier miembro puede AÑADIR una clave de `seasons` que no exista
+    // (el mes que acaba de terminar). Nunca se pueden cambiar ni borrar las ya guardadas, así que
+    // el palmarés no se puede reescribir.
+    function isSeasonClose() {
+      return request.auth.uid in resource.data.memberUids &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seasons']) &&
+        request.resource.data.seasons.diff(resource.data.get('seasons', {})).addedKeys().size() == 1 &&
+        request.resource.data.seasons.diff(resource.data.get('seasons', {})).affectedKeys().size() == 1 &&
+        request.resource.data.seasons.size() <= 24;
     }
 
     // Cada escritura del dueño declara en addedUids los miembros nuevos (máx. 9, por el límite
@@ -225,7 +244,9 @@ service cloud.firestore {
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids', 'members']) &&
          request.resource.data.memberUids == resource.data.memberUids.removeAll([request.auth.uid]) &&
          onlyMe(request.resource.data.members.diff(resource.data.members).removedKeys()) &&
-         onlyMe(request.resource.data.members.diff(resource.data.members).affectedKeys()))
+         onlyMe(request.resource.data.members.diff(resource.data.members).affectedKeys())) ||
+        // Cualquier miembro: cerrar el mes que acaba de terminar (una sola vez).
+        isSeasonClose()
       );
 
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;

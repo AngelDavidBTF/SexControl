@@ -56,3 +56,127 @@
   font-size: 20px;
   margin-right: 8px;
 }
+
+/* ---------------------------------------------------------------- novedades de grupo (S2) */
+
+.muted {
+  color: var(--ion-color-medium);
+}
+
+.temporada {
+  margin: 4px 16px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+
+  .campeon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+
+  .corona {
+    font-size: 1.3rem;
+  }
+
+  .palmares {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 3px 0;
+    }
+  }
+}
+
+.objetivo {
+  margin: 4px 16px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+
+  &.cumplido {
+    background: rgba(45, 211, 111, 0.18);
+  }
+
+  .objetivo-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .objetivo-barra {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--ion-color-step-200, rgba(0, 0, 0, 0.1));
+    overflow: hidden;
+  }
+
+  .relleno {
+    height: 100%;
+    background: var(--ion-color-secondary);
+    transition: width 0.4s ease;
+  }
+
+  p {
+    margin: 6px 0 0;
+    font-size: 0.78rem;
+  }
+}
+
+.titulos {
+  margin: 4px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .titulo-emoji {
+    font-size: 1.5rem;
+  }
+
+  .titulo-texto {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+  }
+}
+
+.corona-miembro {
+  margin-right: 2px;
+}
+
+.preview-tarjeta {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  img {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 12px;
+  }
+
+  p {
+    color: #fff;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+}
