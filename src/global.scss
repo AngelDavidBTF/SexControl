@@ -1,7 +1,7 @@
 /*
  * App Global CSS
  * ----------------------------------------------------------------------------
- * Estilos globales de la app. Este fichero se importa desde styles.scss.
+ * Estilos globales de Follendario. Se importa desde styles.scss, después de los tokens.
  */
 
 /* Core CSS required for Ionic components to work properly */
@@ -20,19 +20,7 @@
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-ion-searchbar {
-    --box-shadow: none !important;
-}
-
-.red .sc-ion-action-sheet-md {
-    color: red !important;
-}
-
-/* Modo discreto: números difuminados hasta tocarlos (DatoDirective + SettingsService). */
-body.discreto-numeros .dato:not(.revelado),
-body.discreto-numeros app-bar-chart .plot,
-body.discreto-numeros app-heat-map .grid {
-  filter: blur(9px);
-  transition: filter 0.2s ease;
-  cursor: pointer;
-}
+/* Follendario: Ionic con la piel de la marca, piezas compartidas y movimiento */
+@import "theme/ionic";
+@import "theme/componentes";
+@import "theme/movimiento";
