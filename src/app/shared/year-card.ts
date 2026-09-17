@@ -81,12 +81,12 @@ export async function drawYearCard(summary: YearSummary, name: string | null): P
   if (!ctx) {
     throw new Error('Canvas 2D no disponible');
   }
-  const font = (size: number, weight = 400) => `${weight} ${size}px Roboto, "Helvetica Neue", Arial, sans-serif`;
+  const font = (size: number, weight = 400) => `${weight} ${size}px Geist, "Helvetica Neue", Arial, sans-serif`;
 
   const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  gradient.addColorStop(0, '#2b1055');
-  gradient.addColorStop(0.55, '#7a1f5c');
-  gradient.addColorStop(1, '#fc445f');
+  gradient.addColorStop(0, '#10081a');
+  gradient.addColorStop(0.55, '#4a1740');
+  gradient.addColorStop(1, '#fc2a6c');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -147,7 +147,7 @@ export async function drawYearCard(summary: YearSummary, name: string | null): P
 
   ctx.font = font(30, 500);
   ctx.globalAlpha = 0.75;
-  ctx.fillText('SexControl', 80, HEIGHT - 40);
+  ctx.fillText('Follendario', 80, HEIGHT - 40);
   ctx.globalAlpha = 1;
 
   return new Promise((resolve, reject) =>
