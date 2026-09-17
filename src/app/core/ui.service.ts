@@ -64,7 +64,7 @@ export class UiService {
 
 // Confeti en un canvas a pantalla completa, sin librerías: unas cuantas piezas que caen girando
 // durante poco más de un segundo y medio. El canvas se quita al terminar.
-const CONFETTI_COLORS = ['#fc445f', '#44c8fc', '#6c5ce7', '#ffd166', '#06d6a0'];
+const CONFETTI_COLORS = ['#fc2a6c', '#6fc8f1', '#fcf3ed', '#ffd166', '#6fdc95'];
 const CONFETTI_MS = 1600;
 
 function confetti(): void {

@@ -286,7 +286,7 @@
       "src/app/core/ui.service.ts",
       "tests/design/sumar.check.js"
     ],
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "id": "E2-T5",

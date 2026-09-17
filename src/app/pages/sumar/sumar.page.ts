@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { format } from 'date-fns';
+import { format, getISOWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AchievementsService } from '../../core/achievements.service';
 import { AuthService } from '../../core/auth.service';
@@ -11,6 +11,10 @@ import { FapRef, FapService } from '../../core/fap.service';
 import { SettingsService } from '../../core/settings.service';
 import { UiService } from '../../core/ui.service';
 import { FapDetailsModal } from '../../components/fap-details/fap-details.modal';
+import { CalendarioMesComponent, UltimoApunte } from '../../components/ui/calendario-mes.component';
+import { MarcaComponent } from '../../components/ui/marca.component';
+import { MarcadorComponent } from '../../components/ui/marcador.component';
+import { MesCalendario, mesCalendario } from '../../shared/calendario';
 import { DatoDirective } from '../../shared/dato.directive';
 import { FapDetails, FapStats } from '../../shared/fap.model';
 import { currentMonthTotals, currentWeekTotals } from '../../shared/stats';
@@ -26,7 +30,7 @@ interface GoalView {
 @Component({
   selector: 'app-sumar',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink, DatoDirective],
+  imports: [CommonModule, IonicModule, RouterLink, DatoDirective, MarcaComponent, MarcadorComponent, CalendarioMesComponent],
   templateUrl: './sumar.page.html',
   styleUrl: './sumar.page.scss',
 })
@@ -35,10 +39,12 @@ export class SumarPage implements OnInit, OnDestroy {
   private fapService = inject(FapService);
   private modalController = inject(ModalController);
   private ui = inject(UiService);
-  private settings = inject(SettingsService);
+  readonly settings = inject(SettingsService);
   private achievements = inject(AchievementsService);
 
-  readonly neutral = computed(() => this.settings.discreet().enabled && this.settings.discreet().neutralName);
+  readonly discreto = computed(() => this.settings.discreet().enabled);
+  // En modo discreto las etiquetas no dicen de qué va la cuenta.
+  readonly etiquetas = computed(() => (this.discreto() ? { c: 'con alguien', s: 'por mi cuenta' } : { c: 'compañía', s: 'solitario' }));
 
   displayName = '';
   numberC = 0;
@@ -46,6 +52,9 @@ export class SumarPage implements OnInit, OnDestroy {
   numberTotal = 0;
   goals: GoalView[] = [];
   showLoader = true;
+  mes: MesCalendario = mesCalendario({}, new Date(), new Date());
+  semana = getISOWeek(new Date());
+  ultimoApunte: UltimoApunte | null = null;
 
   private stats: FapStats | null = null;
   private authSub?: Subscription;
@@ -59,6 +68,7 @@ export class SumarPage implements OnInit, OnDestroy {
         this.displayName = '';
         this.numberC = this.numberS = this.numberTotal = 0;
         this.goals = [];
+        this.mes = mesCalendario({}, new Date(), new Date());
         this.showLoader = false;
         return;
       }
@@ -72,6 +82,9 @@ export class SumarPage implements OnInit, OnDestroy {
         this.numberS = stats.solitario;
         this.numberTotal = stats.compania + stats.solitario;
         this.goals = this.buildGoals(stats);
+        const now = new Date();
+        this.mes = mesCalendario(stats.days, now, now);
+        this.semana = getISOWeek(now);
         this.showLoader = false;
         this.celebrateGoals(previousGoals, this.goals);
       });
@@ -98,6 +111,7 @@ export class SumarPage implements OnInit, OnDestroy {
       return previous && previous.done < previous.target && goal.done >= goal.target;
     });
     if (reached) {
+      this.ui.celebrate();
       void this.ui.toast(`🎯 ¡${reached.label} cumplido!`);
     }
   }
@@ -107,6 +121,8 @@ export class SumarPage implements OnInit, OnDestroy {
     if (!uid) {
       return;
     }
+    // El sello cae en la casilla de hoy al instante; el número llega con la escucha de stats.
+    this.ultimoApunte = { tipo: solitario ? 's' : 'c', seq: (this.ultimoApunte?.seq ?? 0) + 1 };
     const fap = await this.fapService.addFap(uid, solitario);
     void this.achievements.announceNew(uid);
     await this.offerUndo(uid, fap, solitario ? 'Sumada en solitario' : 'Sumada en compañía');
@@ -177,6 +193,10 @@ export class SumarPage implements OnInit, OnDestroy {
       return;
     }
     await this.fapService.removeLastFap(uid);
+  }
+
+  pasos(total: number): number[] {
+    return Array.from({ length: total }, (_, i) => i);
   }
 
   ngOnDestroy(): void {

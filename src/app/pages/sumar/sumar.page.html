@@ -1,6 +1,8 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>Sumar</ion-title>
+    <ion-buttons slot="start">
+      <app-marca titulo="follendario"></app-marca>
+    </ion-buttons>
     <ion-buttons slot="end">
       <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes" class="ir-ajustes">
         <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
@@ -9,83 +11,79 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <h5 class="ion-margin">Hola, {{ displayName }}, este es tu resumen general.</h5>
+<ion-content>
+  <p class="su-hello">
+    {{ discreto() ? 'Hola' : 'Buenas' }}<ng-container *ngIf="displayName">, {{ displayName }}</ng-container>.
+    <span>{{ discreto() ? 'Tu resumen.' : '¿Qué ha caído?' }}</span>
+  </p>
 
-  <ion-img *ngIf="!neutral()" src="assets/logo-sexcontrol.svg"></ion-img>
+  <div class="ion-text-center su-cargando" *ngIf="showLoader">
+    <ion-spinner name="circular" aria-label="Cargando"></ion-spinner>
+  </div>
 
-  <ng-container *ngIf="showLoader">
-    <div class="ion-text-center">
-      <ion-spinner name="circular" color="danger"></ion-spinner>
+  <section class="f-cal su-cal" *ngIf="!showLoader" [attr.aria-label]="mes.nombre + ' de ' + mes.anio">
+    <div class="f-cal-rings" aria-hidden="true"><i></i><i></i></div>
+    <div class="f-cal-head">
+      <strong>{{ mes.nombre }}</strong>
+      <span>sem {{ semana }} · {{ mes.anio }}</span>
     </div>
-  </ng-container>
-
-  <ng-container *ngIf="!showLoader">
-    <div class="contenedorNumeros">
-      <ion-text color="secondary">
-        <p class="letras">En compañía</p>
-        <h1 class="numero" dato>{{ numberC }}</h1>
-      </ion-text>
-      <ion-text color="primary">
-        <p class="letras">En solitario</p>
-        <h1 class="numero" dato>{{ numberS }}</h1>
-      </ion-text>
-    </div>
-    <div class="contenedorTotal">
-      <ion-text color="tertiary">
-        <p class="letras">Total</p>
-        <h1 class="total" dato>{{ numberTotal }}</h1>
-      </ion-text>
-    </div>
-
-    <div class="objetivos" *ngIf="goals.length">
-      <div class="objetivo" *ngFor="let goal of goals">
-        <div class="objetivo-texto">
-          <span>{{ goal.label }}</span>
-          <strong dato class="objetivo-valor">{{ goal.done }} / {{ goal.target }}{{ goal.done >= goal.target ? ' 🎯' : '' }}</strong>
+    <div class="f-cal-body">
+      <div class="su-marcador">
+        <div class="su-marcador-main">
+          <span class="f-label">en total</span>
+          <app-marcador class="su-tiles-big total" dato [valor]="numberTotal" [minDigitos]="3" etiqueta="En total"></app-marcador>
         </div>
-        <ion-progress-bar [value]="goal.progress" [color]="goal.done >= goal.target ? 'success' : 'tertiary'"></ion-progress-bar>
+        <div class="su-marcador-side">
+          <div>
+            <span class="f-label">{{ etiquetas().c }}</span>
+            <app-marcador class="su-tiles" dato [valor]="numberC" tono="c" [etiqueta]="etiquetas().c"></app-marcador>
+          </div>
+          <div>
+            <span class="f-label">{{ etiquetas().s }}</span>
+            <app-marcador class="su-tiles" dato [valor]="numberS" tono="s" [etiqueta]="etiquetas().s"></app-marcador>
+          </div>
+        </div>
+      </div>
+
+      <app-calendario-mes class="su-mes" [mes]="mes" [ultimoApunte]="ultimoApunte" [discreto]="settings.discreet().enabled"></app-calendario-mes>
+
+      <div class="su-goals" *ngIf="goals.length">
+        <div class="su-goal" *ngFor="let goal of goals">
+          <div class="su-goal-text">
+            <span>{{ goal.label }}</span>
+            <strong dato class="mono objetivo-valor">{{ goal.done }}/{{ goal.target }}</strong>
+          </div>
+          <div *ngIf="goal.target <= 10; else barra" class="su-segs" [class.done]="goal.done >= goal.target" [style.grid-template-columns]="'repeat(' + goal.target + ', 1fr)'">
+            <i *ngFor="let paso of pasos(goal.target); let i = index" [class.on]="i < goal.done"></i>
+          </div>
+          <ng-template #barra>
+            <div class="su-bar" [class.done]="goal.done >= goal.target"><i [style.transform]="'scaleX(' + goal.progress + ')'"></i></div>
+          </ng-template>
+        </div>
       </div>
     </div>
-  </ng-container>
+  </section>
 
-  <div class="contenedorBoton">
-    <ion-grid fixed>
-      <ion-row>
-        <ion-col size="6">
-          <div class="boton">
-            <ion-button size="default" color="secondary" (click)="sumar(false)">
-              <ion-icon slot="start" name="people"></ion-icon>
-              En compañía</ion-button
-            >
-          </div>
-        </ion-col>
-        <ion-col size="6">
-          <div class="boton">
-            <ion-button size="default" color="primary" (click)="sumar(true)">
-              <ion-icon name="person" slot="start"></ion-icon>
-              En solitario</ion-button
-            >
-          </div>
-        </ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col size="12">
-          <div class="boton">
-            <ion-button size="default" fill="outline" color="medium" (click)="sumarOlvidada()" class="sumar-olvidada">
-              <ion-icon slot="start" name="time-outline"></ion-icon>
-              Añadir una olvidada
-            </ion-button>
-          </div>
-        </ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col size="12">
-          <div class="boton">
-            <ion-button size="default" color="tertiary" (click)="borrar()">Borrar último</ion-button>
-          </div>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+  <div class="su-keys">
+    <ion-button class="f-key pink f-key-big sumar-compania" (click)="sumar(false)">
+      <span class="f-key-body">
+        <span class="f-key-top"><span class="f-led" aria-hidden="true"></span><span>+1</span></span>
+        <span>{{ discreto() ? 'CON ALGUIEN' : 'EN COMPAÑÍA' }}</span>
+      </span>
+    </ion-button>
+    <ion-button class="f-key solo f-key-big sumar-solitario" (click)="sumar(true)">
+      <span class="f-key-body">
+        <span class="f-key-top"><span class="f-led" aria-hidden="true"></span><span>+1</span></span>
+        <span>{{ discreto() ? 'POR MI CUENTA' : 'EN SOLITARIO' }}</span>
+      </span>
+    </ion-button>
+  </div>
+
+  <div class="su-more">
+    <ion-button expand="block" class="f-btn sumar-olvidada" (click)="sumarOlvidada()">
+      <ion-icon slot="start" name="time-outline" aria-hidden="true"></ion-icon>
+      ¿Se te olvidó apuntar una?
+    </ion-button>
+    <ion-button expand="block" fill="clear" class="f-ghost borrar-ultima" (click)="borrar()">borrar la última</ion-button>
   </div>
 </ion-content>

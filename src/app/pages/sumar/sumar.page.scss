@@ -1,89 +1,160 @@
-.numero {
-  padding: 10px;
-  margin: 10px;
-  margin-top: 1px;
-  font-size: 50px;
-  font-weight: bold;
-}
+// Sumar: la firma de Follendario. Calendario del logo con el marcador dentro y las dos teclas debajo.
+// Piezas globales (.f-cal, .f-key, .f-tiles, .f-mcell) en src/theme/_componentes.scss.
 
-.total {
-  padding: 10px;
-  margin: 10px;
-  margin-top: 1px;
-  font-size: 40px;
-  font-weight: bold;
-}
-
-.contenedorNumeros {
-  display: flex;
-  justify-content: center;
-  flex-direction: row;
-  align-items: flex-end;
-  text-align: center;
-}
-
-.contenedorTotal {
-  display: flex;
-  justify-content: center;
-  flex-direction: row;
-  align-items: flex-end;
-  text-align: center;
-  margin-top: -30px;
-  margin-bottom: -10px;
-}
-
-.contenedorBoton {
-  display: flex;
-  justify-content: center;
-  flex-direction: row;
-  align-items: flex-end;
-  text-align: center;
-}
-
-.boton {
-  padding: 10px;
-  margin: 10px;
-}
-
-.letras {
-  margin-bottom: -10px;
+.su-hello {
+  margin: 12px 16px 0;
+  font-size: 21px;
   font-weight: 600;
-  margin-top: 10px;
-  margin-right: 10px;
-  margin-left: 10px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+
+  span {
+    color: var(--f-muted);
+    font-weight: 500;
+  }
 }
 
-ion-img {
-  display: inline-block;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 190px;
-  padding-left: 38px;
+.su-cargando {
+  padding: 48px 0;
 }
 
-ion-spinner {
+.su-cal {
+  margin-top: 26px;
+}
+
+.su-marcador {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: end;
+
+  .f-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 11px;
+  }
+}
+
+.su-marcador-main {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100px;
-  height: 100px;
-  margin-left: 38%;
-  margin-right: 50%;
-  margin-top: 80px;
 }
 
-.objetivos {
-  margin: 8px 24px 0;
+.su-tiles-big {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.su-marcador-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  justify-items: end;
+  text-align: right;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+.su-tiles {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.su-mes {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--f-cal-line);
 }
 
-.objetivo-texto {
+.su-goals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--f-cal-line);
+}
+
+.su-goal {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.su-goal-text {
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  margin-bottom: 4px;
+}
+
+.su-segs {
+  display: grid;
+  gap: 4px;
+
+  i {
+    height: 7px;
+    border-radius: 2px;
+    background: var(--f-cal-cell);
+    transition: background-color 300ms ease;
+  }
+
+  i.on {
+    background: var(--f-pink);
+  }
+
+  &.done i.on {
+    background: var(--f-up);
+  }
+}
+
+.su-bar {
+  height: 7px;
+  border-radius: 4px;
+  background: var(--f-cal-cell);
+  overflow: hidden;
+
+  i {
+    display: block;
+    height: 100%;
+    background: var(--f-pink);
+    border-radius: 4px;
+    transform-origin: left;
+    transition: transform 520ms var(--f-spring);
+  }
+
+  &.done i {
+    background: var(--f-up);
+  }
+}
+
+:host-context(body.discreto) {
+  .su-segs i.on,
+  .su-segs.done i.on,
+  .su-bar i {
+    background: var(--f-cal-ink);
+  }
+}
+
+.su-keys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 4px 16px 0;
+
+  ion-button {
+    margin: 0;
+  }
+}
+
+.su-more {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px));
 }
