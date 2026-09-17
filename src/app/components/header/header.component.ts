@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 
+// Cabecera de las pantallas apiladas (ajustes, crear grupo…): atrás + título centrado.
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -9,7 +10,7 @@ import { IonicModule } from '@ionic/angular';
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button defaultHref="/" text="" color="primary"></ion-back-button>
+          <ion-back-button defaultHref="/" text="" aria-label="Volver"></ion-back-button>
         </ion-buttons>
         <ion-title>{{ titulo }}</ion-title>
       </ion-toolbar>

@@ -254,7 +254,7 @@
       "src/app/components/header/header.component.ts",
       "tests/design/pestanas.check.js"
     ],
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "id": "E2-T4",
