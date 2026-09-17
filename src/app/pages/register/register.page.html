@@ -1,61 +1,32 @@
-<app-header titulo="Registrarse"></app-header>
+<app-header titulo="Crear cuenta"></app-header>
 
 <ion-content>
-  <ion-item lines="full">
-    <ion-img src="assets/logo-sexcontrol.svg"></ion-img>
-  </ion-item>
-
-  <form [formGroup]="registerForm">
-    <ion-item lines="full">
-      <ion-label position="floating">Nombre de usuario *</ion-label>
-      <ion-input type="text" formControlName="name" required></ion-input>
-    </ion-item>
-    <div class="validator-error" *ngIf="registerForm.controls['name'].dirty && registerForm.controls['name'].invalid">
-      El nombre es obligatorio
+  <div class="reg-contenido">
+    <div class="reg-marca">
+      <img src="assets/follendario/simbolo.png" alt="" width="72" height="68" />
+      <p class="f-lead">Crea tu cuenta y empieza a llevar la cuenta.</p>
+    </div>
+    <div class="reg-notas">
+      <p class="f-lead">Crea tu cuenta.</p>
     </div>
 
-    <ion-item lines="full">
-      <ion-label position="floating">Email *</ion-label>
-      <ion-input type="email" formControlName="email" required></ion-input>
-    </ion-item>
-    <div class="validator-error" *ngIf="registerForm.controls['email'].dirty && registerForm.controls['email'].invalid">
-      Escribe un correo válido
-    </div>
+    <form [formGroup]="registerForm" class="reg-form">
+      <ion-input type="text" formControlName="name" label="Nombre" labelPlacement="stacked" fill="outline" autocomplete="nickname" placeholder="Cómo te verán tus amigos…" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.controls['name'].dirty && registerForm.controls['name'].invalid">El nombre es obligatorio.</p>
 
-    <ion-item lines="full">
-      <ion-label position="floating">Contraseña *</ion-label>
-      <ion-input type="password" formControlName="pass" required></ion-input>
-    </ion-item>
-    <div class="validator-error" *ngIf="registerForm.controls['pass'].dirty && registerForm.controls['pass'].invalid">
-      La contraseña debe tener al menos 6 caracteres.
-    </div>
+      <ion-input type="email" formControlName="email" label="Email" labelPlacement="stacked" fill="outline" autocomplete="email" inputmode="email" [spellcheck]="false" placeholder="tu@correo.es" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.controls['email'].dirty && registerForm.controls['email'].invalid">Escribe un correo válido.</p>
 
-    <ion-item lines="full">
-      <ion-label position="floating">Repite la contraseña *</ion-label>
-      <ion-input type="password" formControlName="repeatPass" required></ion-input>
-    </ion-item>
-    <div *ngIf="registerForm.hasError('notSame') && registerForm.controls['repeatPass'].dirty" class="validator-error">
-      Las contraseñas no coinciden.
-    </div>
+      <ion-input type="password" formControlName="pass" label="Contraseña" labelPlacement="stacked" fill="outline" autocomplete="new-password" placeholder="Al menos 6 caracteres…" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.controls['pass'].dirty && registerForm.controls['pass'].invalid">La contraseña debe tener al menos 6 caracteres.</p>
 
-    <ion-row>
-      <ion-col>
-        <ion-button type="button" (click)="onRegister()" color="tertiary" expand="block" [disabled]="!registerForm.valid">
-          <ion-icon name="document-text" slot="start"></ion-icon>Registrarse
-        </ion-button>
-      </ion-col>
-    </ion-row>
-  </form>
+      <ion-input type="password" formControlName="repeatPass" label="Repite la contraseña" labelPlacement="stacked" fill="outline" autocomplete="new-password" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.hasError('notSame') && registerForm.controls['repeatPass'].dirty">Las contraseñas no coinciden.</p>
 
-  <ion-item-divider class="divider">
-    <ion-label> ¿Ya tienes una cuenta? </ion-label>
-  </ion-item-divider>
+      <ion-button type="button" expand="block" class="f-key pink" (click)="onRegister()" [disabled]="!registerForm.valid">Crear cuenta</ion-button>
+    </form>
 
-  <ion-row>
-    <ion-col>
-      <ion-button color="secondary" expand="block" routerLink="/login">
-        <ion-icon name="arrow-back-circle" slot="start"></ion-icon> Volver
-      </ion-button>
-    </ion-col>
-  </ion-row>
+    <p class="reg-separador"><span>¿Ya tienes cuenta?</span></p>
+    <ion-button expand="block" class="f-btn" routerLink="/login">Entrar</ion-button>
+  </div>
 </ion-content>
