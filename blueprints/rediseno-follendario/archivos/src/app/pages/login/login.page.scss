@@ -1,0 +1,91 @@
+// Login: símbolo y logotipo de Follendario sobre el fondo del tema. El logotipo «Follen» cambia
+// de color con el tema (crema en oscuro, tinta en claro).
+
+.lo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: calc(28px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.lo-marca,
+.lo-notas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.lo-simbolo {
+  width: 112px;
+  height: auto;
+}
+
+.lo-logotipo {
+  width: 220px;
+  height: auto;
+}
+
+.lo-tagline {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  color: var(--f-muted);
+}
+
+.lo-notas {
+  display: none;
+
+  ion-icon {
+    font-size: 56px;
+    color: var(--f-muted);
+  }
+}
+
+.lo-oscuro {
+  display: none;
+}
+
+:host-context(body.dark) {
+  .lo-oscuro {
+    display: block;
+  }
+
+  .lo-claro {
+    display: none;
+  }
+}
+
+:host-context(body.neutro) {
+  .lo-marca {
+    display: none;
+  }
+
+  .lo-notas {
+    display: flex;
+  }
+}
+
+.lo-olvido {
+  align-self: flex-end;
+}
+
+.lo-separador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--f-muted);
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-top: 1px dashed var(--f-line);
+  }
+}

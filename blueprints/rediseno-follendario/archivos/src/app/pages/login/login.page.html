@@ -1,0 +1,29 @@
+<ion-content>
+  <form class="lo-form">
+    <!-- Marca: con «Nombre e icono neutros» (body.neutro) se ve «Notas» en su lugar. -->
+    <div class="lo-marca">
+      <img class="lo-simbolo" src="assets/follendario/simbolo.png" alt="" width="112" height="106" fetchpriority="high" />
+      <img class="lo-logotipo lo-oscuro" src="assets/follendario/logotipo.png" alt="Follendario" translate="no" width="220" height="35" />
+      <img class="lo-logotipo lo-claro" src="assets/follendario/logotipo-tinta.png" alt="Follendario" translate="no" width="220" height="35" />
+      <p class="lo-tagline">Lleva la cuenta. Pícate con tus amigos.</p>
+    </div>
+    <div class="lo-notas">
+      <ion-icon name="document-text-outline" aria-hidden="true"></ion-icon>
+      <h1 class="f-title">Notas</h1>
+    </div>
+
+    <ion-input #email type="email" label="Email" labelPlacement="stacked" fill="outline" autocomplete="email" inputmode="email" [spellcheck]="false" placeholder="tu@correo.es" required></ion-input>
+    <ion-input #password type="password" label="Contraseña" labelPlacement="stacked" fill="outline" autocomplete="current-password" placeholder="Tu contraseña…" required></ion-input>
+
+    <ion-button fill="clear" class="f-ghost lo-olvido" routerLink="/forgot-password">¿has olvidado tu contraseña?</ion-button>
+
+    <ion-button type="button" expand="block" color="primary" class="f-key pink lo-entrar" (click)="onLogin(email.value, password.value)">Entrar</ion-button>
+    <ion-button type="button" expand="block" class="f-btn" (click)="onLoginGoogle()">
+      <ion-icon name="logo-google" slot="start" aria-hidden="true"></ion-icon>
+      Entrar con Google
+    </ion-button>
+
+    <p class="lo-separador"><span>¿Aún no tienes cuenta?</span></p>
+    <ion-button expand="block" class="f-btn" routerLink="/register">Registrarse</ion-button>
+  </form>
+</ion-content>

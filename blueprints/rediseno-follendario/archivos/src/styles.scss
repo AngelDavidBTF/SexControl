@@ -1,0 +1,6 @@
+/* Estilos globales de Follendario. El orden importa: fuentes → tokens → variables de Ionic → estilos globales. */
+
+@import "theme/fonts";
+@import "theme/tokens";
+@import "theme/variables.scss";
+@import "global.scss";

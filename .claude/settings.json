@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm ci)",
+      "Bash(npm run build:*)",
+      "Bash(npm install --save-exact @fontsource/geist@5.3.0 @fontsource/geist-mono@5.3.0)",
+      "Bash(npx playwright install chromium)",
+      "Bash(node tests/ci/build-smoke.js)",
+      "Bash(node scripts/iconos-follendario.js)",
+      "Bash(node -e:*)",
+      "Bash(node tests/design/contraste.check.js)",
+      "Bash(node tests/design/estilos.check.js)",
+      "Bash(node tests/design/marca.check.js)",
+      "Bash(node tests/design/nombre.check.js)",
+      "Bash(node tests/design/pestanas.check.js)",
+      "Bash(node tests/design/sumar.check.js)",
+      "Bash(node tests/design/amigos.check.js)",
+      "Bash(node tests/design/grupo.check.js)",
+      "Bash(node tests/design/estadisticas.check.js)",
+      "Bash(node tests/design/modales.check.js)",
+      "Bash(node tests/design/apunte.check.js)",
+      "Bash(node tests/design/acceso.check.js)",
+      "Bash(node tests/design/enlaces.check.js)",
+      "Bash(node tests/design/final.check.js)",
+      "Bash(grep -q:*)",
+      "Bash(cp blueprints/rediseno-follendario/archivos/:*)",
+      "Bash(cp diseno-follendario/assets/:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(git show:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(firebase:*)",
+      "Bash(npx firebase:*)",
+      "Read(./tests/app-check.local.json)",
+      "Bash(git reset --hard:*)"
+    ]
+  }
+}

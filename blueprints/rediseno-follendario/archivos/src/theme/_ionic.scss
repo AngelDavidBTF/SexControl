@@ -1,0 +1,66 @@
+// Componentes de Ionic con el aspecto de Follendario. Solo variables CSS y ::part, nunca el marcado:
+// las pruebas E2E seleccionan por clases y textos que no cambian.
+
+html, body { font-family: var(--f-font); -webkit-font-smoothing: antialiased; }
+:where(ion-app) :where(button, a, ion-button, ion-item, ion-tab-button, input, textarea, select) { touch-action: manipulation; }
+
+ion-content { --background: var(--f-bg); --color: var(--f-text); }
+ion-content::part(scroll) { overscroll-behavior: contain; }
+
+// Barra superior
+ion-header.header-md { box-shadow: none; }
+ion-toolbar { --background: var(--f-bg); --color: var(--f-text); --border-width: 0; --min-height: 52px; }
+ion-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+ion-back-button { --color: var(--f-text); }
+ion-buttons ion-button { --color: var(--f-text); }
+
+// Pestañas
+ion-tab-bar { --background: var(--f-deep); --border: 1px solid var(--f-line); height: calc(66px + env(safe-area-inset-bottom, 0px)); }
+ion-tab-button { --color: var(--f-muted); --color-selected: var(--f-text); font-family: var(--f-mono); position: relative; }
+ion-tab-button ion-label { font-size: 11px; }
+ion-tab-button::before { content: ""; position: absolute; top: 4px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: transparent; transition: background-color 160ms ease, box-shadow 160ms ease; }
+ion-tab-button.tab-selected::before { background: var(--f-pink); box-shadow: 0 0 8px var(--f-pink); }
+.f-tab-key { width: 52px; height: 34px; border-radius: 11px; background: var(--f-pink); color: var(--f-on-pink); display: grid; place-items: center; box-shadow: inset 0 -3px 0 rgba(16, 8, 26, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.4); transition: transform 120ms var(--f-ease-out); }
+.f-tab-key ion-icon { font-size: 22px; color: var(--f-on-pink); }
+ion-tab-button:active .f-tab-key { transform: translateY(2px); }
+
+// Segmentos (usar mode="ios" en la plantilla para la píldora)
+ion-segment { --background: var(--f-deep); border: 1px solid var(--f-line); border-radius: 12px; padding: 3px; }
+ion-segment-button { --indicator-color: var(--f-surface-2); --color: var(--f-muted); --color-checked: var(--f-text); --border-radius: 9px; --indicator-box-shadow: none; min-height: 34px; font-family: var(--f-mono); font-size: 12.5px; text-transform: none; letter-spacing: 0; }
+
+// Filas de lista: <ion-item class="f-row">
+ion-item.f-row { --background: var(--f-surface); --border-color: var(--f-line); --inner-border-width: 0; --padding-start: 12px; --inner-padding-end: 12px; --min-height: 58px; border: 1px solid var(--f-line); border-radius: 14px; margin: 0 16px 6px; }
+ion-item.f-row h2 { font-size: 16px; font-weight: 500; }
+ion-item.f-row p { font-size: 13px; color: var(--f-muted); }
+ion-avatar { width: 40px; height: 40px; }
+
+// Buscador
+ion-searchbar { --background: var(--f-deep); --border-radius: 12px; --box-shadow: none; --color: var(--f-text); --placeholder-color: var(--f-muted); --icon-color: var(--f-muted); --clear-button-color: var(--f-muted); padding: 0 16px 8px; }
+ion-searchbar .searchbar-input-container { border: 1px solid var(--f-line); border-radius: 12px; }
+
+// Interruptores, campos y chips
+ion-toggle { --track-background: var(--f-line); --track-background-checked: var(--f-pink); --handle-background: var(--f-cream); --handle-background-checked: var(--f-cream); }
+// Ionic pone la clase *-fill-outline en el host (fill llega como propiedad, no como atributo). La clase
+// va dos veces para ganar a la regla con ámbito de Ionic (.sc-ion-input-md-h.input-fill-outline).
+ion-input.input-fill-outline.input-fill-outline, ion-textarea.textarea-fill-outline.textarea-fill-outline, ion-select.select-fill-outline.select-fill-outline { --border-color: var(--f-line); --highlight-color-focused: var(--f-pink); --background: var(--f-deep); --border-radius: 14px; --color: var(--f-text); --placeholder-color: var(--f-muted); font-size: 16px; }
+ion-chip { --background: var(--f-deep); --color: var(--f-text); border: 1px solid var(--f-line); border-radius: 10px; font-family: var(--f-mono); font-size: 13px; }
+ion-chip.seleccionada, ion-chip.on { --background: var(--f-text); --color: var(--f-bg); border-color: var(--f-text); }
+
+// Avisos
+ion-toast { --background: var(--f-toast); --color: var(--f-toast-ink); --button-color: var(--f-toast-ink); --border-radius: 14px; --box-shadow: var(--f-shadow); font-family: var(--f-mono); }
+ion-toast::part(button) { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-transform: none; letter-spacing: 0; }
+
+// Hojas de acciones y diálogos
+ion-action-sheet { --background: var(--f-surface); --button-color: var(--f-text); --button-background-selected: var(--f-surface-2); --color: var(--f-muted); }
+ion-action-sheet .action-sheet-title { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+ion-action-sheet .action-sheet-destructive { --button-color: var(--f-pink-text); color: var(--f-pink-text); }
+ion-alert { --background: var(--f-surface); }
+ion-alert .alert-title { color: var(--f-text); }
+ion-alert .alert-message { color: var(--f-muted); }
+ion-alert .alert-button { color: var(--f-pink-text); }
+ion-modal { --background: var(--f-bg); --border-radius: 22px; }
+ion-loading { --background: var(--f-surface); --spinner-color: var(--f-pink); }
+ion-spinner { color: var(--f-pink); }
+
+// Selector de fecha y hora sobre papel
+ion-datetime { --background: var(--f-cal-paper); --background-rgb: 252, 243, 237; --title-color: var(--f-cal-ink); color: var(--f-cal-ink); border-radius: var(--f-radius); }

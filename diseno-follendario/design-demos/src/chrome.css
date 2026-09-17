@@ -1,0 +1,66 @@
+/* Página que presenta las direcciones (no forma parte del diseño de la app). */
+:root {
+  --page: #f6f1ee;
+  --page-ink: #1b1320;
+  --page-muted: #5d5166;
+  --page-line: #e2d7d3;
+  --page-card: #fffaf7;
+  --page-accent: #c8164f;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #120c16;
+    --page-ink: #f4ecef;
+    --page-muted: #b3a5b8;
+    --page-line: #2c2233;
+    --page-card: #1a1320;
+    --page-accent: #ff5c8d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #120c16;
+  --page-ink: #f4ecef;
+  --page-muted: #b3a5b8;
+  --page-line: #2c2233;
+  --page-card: #1a1320;
+  --page-accent: #ff5c8d;
+  color-scheme: dark;
+}
+body { background: var(--page); color: var(--page-ink); font-family: 'Schibsted Grotesk', system-ui, sans-serif; font-size: 16px; line-height: 1.55; }
+.pg { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 80px; }
+.pg-head { display: grid; gap: 14px; max-width: 760px; }
+.pg-eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--page-muted); display: flex; align-items: center; gap: 10px; }
+.pg-eyebrow img { width: 28px; height: auto; }
+.pg h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.02; letter-spacing: -0.03em; margin: 0; text-wrap: balance; font-weight: 700; }
+.pg-lead { font-size: 18px; color: var(--page-muted); margin: 0; max-width: 64ch; }
+.pg-nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 0; margin-top: 18px; background: var(--page); border-bottom: 1px solid var(--page-line); }
+.pg-nav a { text-decoration: none; color: var(--page-ink); border: 1px solid var(--page-line); background: var(--page-card); border-radius: 999px; padding: 8px 14px; font-size: 14px; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; }
+.pg-nav a b { color: var(--page-accent); }
+.pg-nav a:focus-visible { outline: 2px solid var(--page-accent); outline-offset: 2px; }
+.pg-dir { padding-top: 56px; display: grid; gap: 22px; scroll-margin-top: 70px; }
+.pg-dir + .pg-dir { border-top: 1px solid var(--page-line); margin-top: 56px; }
+.pg-dir-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 40px; align-items: start; }
+.pg-dir-head h2 { margin: 0; font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.025em; line-height: 1.05; }
+.pg-dir-head h2 span { color: var(--page-accent); }
+.pg-logic { font-size: 13px; color: var(--page-muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
+.pg-dir-head p { margin: 0 0 10px; max-width: 60ch; }
+.pg-try { margin: 0; padding-left: 18px; color: var(--page-muted); font-size: 15px; }
+.pg-try li + li { margin-top: 4px; }
+.pg-phones { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+.pg-phone { flex: 1 1 300px; min-width: 0; max-width: 417px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.phone-slot { min-width: 0; }
+.pg-phone figcaption { font-size: 14px; color: var(--page-muted); }
+.pg-foot { margin-top: 64px; padding: 22px; border: 1px solid var(--page-line); border-radius: 18px; background: var(--page-card); max-width: 760px; }
+.pg-foot h2 { margin: 0 0 6px; font-size: 22px; }
+.pg-foot p { margin: 0; color: var(--page-muted); }
+.pg-loading { font-size: 14px; color: var(--page-muted); }
+@media (max-width: 760px) { .pg-dir-head { grid-template-columns: 1fr; } }
+
+/* Número rodante (compartido por los teléfonos) */
+.roll { display: inline-flex; font-variant-numeric: tabular-nums; }
+.roll-col { display: inline-block; height: 1em; overflow: hidden; line-height: 1; }
+.roll-strip { display: flex; flex-direction: column; transition: transform 560ms cubic-bezier(0.34, 1.36, 0.64, 1); }
+.roll-strip > span { height: 1em; line-height: 1; display: block; }
+@media (prefers-reduced-motion: reduce) { .roll-strip { transition: none; } }

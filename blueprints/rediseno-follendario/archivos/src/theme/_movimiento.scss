@@ -1,0 +1,31 @@
+// Animaciones de Follendario. Solo transform y opacity. Todas se apagan con movimiento reducido.
+
+@keyframes f-pulse { 50% { opacity: 0.35; } }
+@keyframes f-print { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+@keyframes f-cell-drop {
+  0% { transform: translateY(-70px); opacity: 0; animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  40% { transform: translateY(4px); opacity: 1; animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  55% { transform: translateY(-3px); }
+  70% { transform: translateY(4px); opacity: 1; }
+  100% { transform: translateY(4px) scale(0.6); opacity: 0; }
+}
+@keyframes f-stamp {
+  0% { transform: scale(2.6) rotate(-28deg); opacity: 0; }
+  30% { transform: scale(0.9) rotate(4deg); opacity: 1; }
+  50% { transform: scale(1.05) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 0; }
+}
+@keyframes f-ripple { from { transform: scale(0.8); opacity: 0.9; } to { transform: scale(2.1); opacity: 0; } }
+@keyframes f-grow { from { transform: scaleY(0); } }
+@keyframes f-pop { from { transform: scale(0.6); opacity: 0; } }
+
+@media (hover: hover) and (pointer: fine) {
+  ion-button.f-key:hover { filter: brightness(1.06); }
+  ion-button.f-ghost:hover { --color: var(--f-text); }
+  .f-mcell:not(:disabled):hover { box-shadow: 0 0 0 2px var(--f-cal-paper), 0 0 0 3.5px var(--f-muted); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 1ms !important; }
+  .f-stamp, .f-ripple, .f-cellcube { display: none; }
+}

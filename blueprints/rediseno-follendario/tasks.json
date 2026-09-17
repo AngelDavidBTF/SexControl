@@ -1,0 +1,553 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Instalar Geist y cachearla sin conexión",
+    "epic": "01-base",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `npm run build -- --configuration production` runs THE SYSTEM SHALL exit 0 and emit a `.woff2` in `www/media/` for each face imported by `src/theme/_fonts.scss` (geist-latin 400, 500, 600 and geist-mono-latin 400, 500, 700).",
+      "WHEN the production build finishes THE SYSTEM SHALL list the Geist `.woff2` files under `/media/` in `www/ngsw.json`, so the service worker keeps them offline.",
+      "WHEN `package.json` is read THE SYSTEM SHALL pin `@fontsource/geist` and `@fontsource/geist-mono` to exactly `5.3.0` in `dependencies`.",
+      "WHEN `node tests/ci/build-smoke.js` serves the build THE SYSTEM SHALL exit 0 with the login screen visible and no JavaScript errors."
+    ],
+    "verify": [
+      "npm run build -- --configuration production",
+      "node -e \"const fs=require('fs');const media=fs.readdirSync('www/media');const caras=['geist-latin-400','geist-latin-500','geist-latin-600','geist-mono-latin-400','geist-mono-latin-500','geist-mono-latin-700'];const faltan=caras.filter(c=>!media.some(f=>f.startsWith(c+'-normal-')&&f.endsWith('.woff2')));const ngsw=fs.readFileSync('www/ngsw.json','utf8');if(faltan.length||!ngsw.includes('/media/geist-latin-400-normal-')){console.error('faltan fuentes',faltan);process.exit(1)}\"",
+      "node -e \"const p=require('./package.json');if(p.dependencies['@fontsource/geist']!=='5.3.0'||p.dependencies['@fontsource/geist-mono']!=='5.3.0'){console.error('versiones de fontsource');process.exit(1)}\"",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-01-fuentes",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "src/theme/_fonts.scss",
+      "src/styles.scss",
+      "ngsw-config.json"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Añadir tokens de color y las cuatro pieles",
+    "epic": "01-base",
+    "dependencies": [
+      "E1-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `node tests/design/contraste.check.js` runs THE SYSTEM SHALL exit 0 after asserting a contrast ratio of at least 4.5:1 for each of its 15 colour pairs in each of the 4 skins (claro, oscuro, discreto claro, discreto oscuro) read from `src/theme/_tokens.scss`.",
+      "WHEN `src/styles.scss` is compiled THE SYSTEM SHALL import, in this order, `theme/fonts`, `theme/tokens`, `theme/variables.scss` and `global.scss`.",
+      "WHEN `npm run build -- --configuration production` runs THE SYSTEM SHALL exit 0.",
+      "WHEN `node tests/ci/build-smoke.js` serves the build THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "node tests/design/contraste.check.js",
+      "node -e \"const s=require('fs').readFileSync('src/styles.scss','utf8');const o=['theme/fonts','theme/tokens','theme/variables.scss','global.scss'].map(x=>s.indexOf(x));if(o.some((v,i)=>v<0||(i&&v<o[i-1]))){process.exit(1)}\"",
+      "npm run build -- --configuration production",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-02-tokens",
+    "files": [
+      "src/theme/_tokens.scss",
+      "src/theme/variables.scss",
+      "tests/design/contraste.check.js",
+      "src/styles.scss"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Aplicar piel discreta, theme-color y nombre en ajustes",
+    "epic": "01-base",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the discreet mode is enabled or disabled THE SYSTEM SHALL add or remove the `discreto` class on `body`, as asserted by `src/app/core/settings.service.spec.ts`.",
+      "WHEN the discreet mode and `neutralName` are both on THE SYSTEM SHALL add `neutro` to `body` and set `document.title` to `Notas`, and otherwise remove `neutro` and set it to `Follendario`.",
+      "WHEN the theme or the discreet mode changes THE SYSTEM SHALL set `meta[name=\"theme-color\"]` to `#f4e6de` (claro), `#10081a` (oscuro), `#f2f1ee` (discreto claro) or `#151618` (discreto oscuro).",
+      "WHEN `src/app/core/reminders.service.ts` is read THE SYSTEM SHALL title the reminder `'Notas' : 'Follendario'`.",
+      "WHEN `npm test` runs THE SYSTEM SHALL exit 0 with 0 failed specs."
+    ],
+    "verify": [
+      "npm test",
+      "node -e \"const t=require('fs').readFileSync('src/app/core/reminders.service.ts','utf8');if(!t.includes(\\\"'Notas' : 'Follendario'\\\")){process.exit(1)}\""
+    ],
+    "checkpoint": "step-03-piel",
+    "files": [
+      "src/app/core/settings.service.ts",
+      "src/app/core/settings.service.spec.ts",
+      "src/app/core/reminders.service.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Añadir piezas globales, Ionic y movimiento",
+    "epic": "01-base",
+    "dependencies": [
+      "E1-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `npm run build -- --configuration production` runs THE SYSTEM SHALL exit 0 and produce exactly one `www/styles-*.css`.",
+      "WHEN `node tests/design/estilos.check.js` reads that stylesheet THE SYSTEM SHALL find `--f-bg:`, `body.dark`, `body.discreto`, `--f-cal-paper`, `.f-key`, `.f-console`, `.f-ticket`, `.roll-tile`, `.f-mcell`, `@keyframes f-stamp`, `prefers-reduced-motion` and `font-family:Geist`, and exit 0.",
+      "WHEN `node tests/ci/build-smoke.js` serves the build THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "npm run build -- --configuration production",
+      "node tests/design/estilos.check.js",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-04-estilos",
+    "files": [
+      "src/theme/_componentes.scss",
+      "src/theme/_ionic.scss",
+      "src/theme/_movimiento.scss",
+      "src/global.scss",
+      "tests/design/estilos.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Poner logos, iconos y manifiesto de Follendario",
+    "epic": "01-base",
+    "dependencies": [
+      "E1-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `node tests/design/marca.check.js` runs THE SYSTEM SHALL find `simbolo.png`, `logotipo.png` and `logotipo-tinta.png` in `src/assets/follendario/` as valid PNG files and exit 0.",
+      "WHEN the generated icons are read THE SYSTEM SHALL measure 192×192 for `public/icon-192.png` and 512×512 for `public/icon-512.png`, `public/icon-512-maskable.png` and `src/assets/icon/favicon.png`, with `public/favicon.ico` a valid icon file.",
+      "WHEN `public/manifest.webmanifest` is parsed THE SYSTEM SHALL have `name` and `short_name` `Follendario`, `theme_color` `#10081a` and an icon `icon-512-maskable.png` with purpose `maskable`.",
+      "WHEN `npm run build -- --configuration production` runs THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "node tests/design/marca.check.js",
+      "npm run build -- --configuration production",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-05-marca",
+    "files": [
+      "scripts/iconos-follendario.js",
+      "src/assets/follendario/*.png",
+      "src/assets/icon/favicon.png",
+      "public/*",
+      "tests/design/marca.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "Cambiar el nombre visible a Follendario",
+    "epic": "01-base",
+    "dependencies": [
+      "E1-T5"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `src/index.html` is read THE SYSTEM SHALL contain `<title>Follendario</title>`, `<meta name=\"theme-color\" content=\"#10081a\">`, `<meta name=\"color-scheme\" content=\"light dark\">` and the noscript text `usar Follendario.`",
+      "WHEN `capacitor.config.ts` is read THE SYSTEM SHALL declare `appName: 'Follendario'` and keep `appId: 'online.sexcontrol.app'`.",
+      "WHEN the week and year share cards are drawn THE SYSTEM SHALL sign them `Follendario` in Geist over a gradient that starts at `#10081a`.",
+      "WHEN `node tests/design/nombre.check.js` runs THE SYSTEM SHALL find no `SexControl` in the five files it reads and keep the `sexcontrol.settings.v1` storage key, and exit 0.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/nombre.check.js",
+      "npm test",
+      "npm run build -- --configuration production",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-06-nombre",
+    "files": [
+      "src/index.html",
+      "src/app/shared/group-card.ts",
+      "src/app/shared/year-card.ts",
+      "capacitor.config.ts",
+      "tests/design/nombre.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Crear datos del calendario y el marcador",
+    "epic": "02-firma",
+    "dependencies": [
+      "E1-T6"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `mesCalendario(days, new Date(2026, 8, 1), hoy)` is called THE SYSTEM SHALL return `hueco` 1 and 30 cells, because September 2026 starts on a Tuesday in a Monday-first week.",
+      "WHEN a day has companion and solo entries THE SYSTEM SHALL mark its cell `tipo` `b`, and days after `hoy` SHALL be `futuro` with the label `aún no ha llegado`.",
+      "WHEN `ultimosMeses(days, hoy, 6)` is called THE SYSTEM SHALL return 6 months, the current one first.",
+      "WHEN `<app-marcador>` renders `valor` 7 with `minDigitos` 3 THE SYSTEM SHALL draw three `.roll-tile` keys showing 0, 0 and 7 and an accessible label with the value.",
+      "WHEN `npm test` runs THE SYSTEM SHALL exit 0 with 0 failed specs."
+    ],
+    "verify": [
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-07-calendario",
+    "files": [
+      "src/app/shared/calendario.ts",
+      "src/app/shared/calendario.spec.ts",
+      "src/app/components/ui/marcador.component.ts",
+      "src/app/components/ui/marcador.component.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Crear el calendario del mes y el ticket",
+    "epic": "02-firma",
+    "dependencies": [
+      "E2-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `<app-calendario-mes>` renders a month THE SYSTEM SHALL draw one empty span per `hueco` and one `button.f-mcell` per day with the day type as class and the day label as `aria-label`.",
+      "WHEN `ultimoApunte` is set THE SYSTEM SHALL draw `.f-cellcube`, `.f-stamp` and `.f-ripple` only inside the cell marked `today`, with a neutral circle stamp when `discreto` is true.",
+      "WHEN a day cell is clicked THE SYSTEM SHALL emit that `CeldaDia` through `diaElegido` and mark the cell `sel`.",
+      "WHEN `<app-ticket>` renders rows THE SYSTEM SHALL print one `.f-tline` per row in upper case, the subtitle `grupo · sem N` in lower case, and omit `.foot` when `pie` is empty.",
+      "WHEN `npm test` runs THE SYSTEM SHALL exit 0 with 0 failed specs."
+    ],
+    "verify": [
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-08-calendario-mes",
+    "files": [
+      "src/app/components/ui/calendario-mes.component.ts",
+      "src/app/components/ui/calendario-mes.component.spec.ts",
+      "src/app/components/ui/ticket.component.ts",
+      "src/app/components/ui/ticket.component.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Rediseñar pestañas, cabecera y marca superior",
+    "epic": "02-firma",
+    "dependencies": [
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `node tests/design/pestanas.check.js` runs THE SYSTEM SHALL find exactly three `ion-tab-button` (amigos, sumar, estadisticas with their `/tabs/…` hrefs) and the Sumar tab wrapped in `.f-tab-key`, and exit 0.",
+      "WHEN `<app-marca titulo=\"follendario\">` renders without neutral name THE SYSTEM SHALL show `assets/follendario/simbolo.png` and the text `follendario` with `translate=\"no\"`.",
+      "WHEN the discreet mode and neutral name are on THE SYSTEM SHALL render no image in `<app-marca>`, an svg notes icon, and `notas` instead of `follendario`.",
+      "WHEN `npm test` runs THE SYSTEM SHALL exit 0 with 0 failed specs."
+    ],
+    "verify": [
+      "node tests/design/pestanas.check.js",
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-09-pestanas",
+    "files": [
+      "src/app/components/ui/marca.component.ts",
+      "src/app/components/ui/marca.component.spec.ts",
+      "src/app/tabs/tabs.page.html",
+      "src/app/components/header/header.component.ts",
+      "tests/design/pestanas.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Rediseñar Sumar con calendario y marcador",
+    "epic": "02-firma",
+    "dependencies": [
+      "E2-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `node tests/design/sumar.check.js` runs THE SYSTEM SHALL find in `sumar.page.html` the `f-cal` calendar with rings, head and body, `<app-calendario-mes>`, three `<app-marcador>` and the keys `f-key pink f-key-big sumar-compania` and `f-key solo f-key-big sumar-solitario`, and exit 0.",
+      "WHEN Sumar renders THE SYSTEM SHALL keep a visible `.total` element (`<app-marcador class=\"su-tiles-big total\" dato>`), the selector `tests/e2e/smoke.e2e.js` waits for.",
+      "WHEN a key is pressed THE SYSTEM SHALL assign `ultimoApunte` before awaiting `fapService.addFap`, as `sumar.check.js` asserts by source order.",
+      "WHEN a goal is crossed during the session THE SYSTEM SHALL call `this.ui.celebrate()` and show the goal toast.",
+      "WHEN `sumar.page.ts` is read THE SYSTEM SHALL build the month with `mesCalendario(stats.days, now, now)` and call no Firestore `getDoc`/`getDocs`.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/sumar.check.js",
+      "npm test",
+      "npm run build -- --configuration production",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-10-sumar",
+    "files": [
+      "src/app/pages/sumar/sumar.page.html",
+      "src/app/pages/sumar/sumar.page.scss",
+      "src/app/pages/sumar/sumar.page.ts",
+      "src/app/core/ui.service.ts",
+      "tests/design/sumar.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Rediseñar Amigos y la liga",
+    "epic": "02-firma",
+    "dependencies": [
+      "E2-T4"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/amigos.check.js` runs THE SYSTEM SHALL find in `amigos.page.html` the E2E hooks `invitar-amigo`, `ion-searchbar`, `duelo-aviso`, `aceptar-reto`, `duelo-vivo`, `duelo-marcador`, `reaccion-texto`, `solicitudes-badge`, `<ion-item … class=\"… amigo\">` and `<ion-item … class=\"… grupo\">`, and exit 0.",
+      "WHEN a live duel renders THE SYSTEM SHALL print its score as `{{ duelo.mine }}`, then `–`, then `{{ duelo.theirs }}` inside `.duelo-marcador`, so the E2E reads `1 – 4`.",
+      "WHEN `amigos.page.html` is read THE SYSTEM SHALL use `<app-marca titulo=\"amigos\">`, `mode=\"ios\"`, `f-console` with `~/novedades` and `~/te-han-escrito`, `f-line`, `f-row`, `f-badge c`, `f-badge s`, `f-badge t`, `f-key pink` and `f-section`, and contain no `color=\"secondary\"`, `color=\"tertiary\"`, `color=\"warning\"`, `color=\"light\"`, `ion-item-divider` or `mode=\"md\"`.",
+      "WHEN `amigos.page.scss` is read THE SYSTEM SHALL contain no hex colour and no `--ion-color-` reference, and weigh under 4000 bytes.",
+      "WHEN `friends-league.component.ts` is read THE SYSTEM SHALL use `f-card`, `f-label` and `mode=\"ios\"`, keep `ver-liga`, `periodo-liga` and `dato`, and reference no `--ion-color-`.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/amigos.check.js",
+      "npm test",
+      "npm run build -- --configuration production",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-11-amigos",
+    "files": [
+      "src/app/pages/amigos/amigos.page.html",
+      "src/app/pages/amigos/amigos.page.scss",
+      "src/app/pages/amigos/amigos.page.ts",
+      "src/app/components/friends-league/friends-league.component.ts",
+      "tests/design/amigos.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Rediseñar el grupo con el ticket de la semana",
+    "epic": "02-firma",
+    "dependencies": [
+      "E2-T5"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/grupo.check.js` runs THE SYSTEM SHALL find in `group.page.html` the hooks `editar-grupo`, `salir-grupo`, `compartir-semana`, `ver-palmares`, `periodo-ranking`, `total-grupo`, `total-compania`, `total-solitario`, `escribir-muro`, `quitar-muro`, `toggle-privacidad-grupo`, `hacer-admin`, `quitar-miembro` and `<ion-item … class=\"… miembro\">`, and exit 0.",
+      "WHEN the group renders its weekly titles THE SYSTEM SHALL use `<app-ticket>` fed by `filasTicket()` declared in `group.page.ts` next to `TicketComponent`.",
+      "WHEN `group.page.html` is read THE SYSTEM SHALL use `f-console` with `~/muro`, `f-row`, `f-badge c`, `f-badge s`, `f-big`, `f-num-c`, `f-num-s`, `mode=\"ios\"` and `f-key neutral`, and contain no `<ion-text`, `contenedorNumeros`, `assets/groups/1.svg` or old `color=\"secondary|tertiary|warning|light\"` attributes.",
+      "WHEN `group.page.scss` is read THE SYSTEM SHALL contain no hex colour and no `--ion-color-` reference, and weigh under 4000 bytes.",
+      "WHEN `add-members.modal.ts` is read THE SYSTEM SHALL keep `confirmar-miembros`, use `f-row`, and contain no old colour attributes.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/grupo.check.js",
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-12-grupo",
+    "files": [
+      "src/app/pages/group/group.page.html",
+      "src/app/pages/group/group.page.scss",
+      "src/app/pages/group/group.page.ts",
+      "src/app/pages/group/add-members.modal.ts",
+      "tests/design/grupo.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T1",
+    "title": "Rediseñar Estadísticas con el calendario de 6 meses",
+    "epic": "03-pantallas",
+    "dependencies": [
+      "E2-T6"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/estadisticas.check.js` runs THE SYSTEM SHALL find in `estadisticas.page.html` the hooks `nav-prev`, `nav-next`, `rango-desde`, `rango-hasta`, `total-periodo`, `reparto-compania`, `reparto-solitario`, `racha-actual`, `racha-mejor`, `dias-ultimo`, `compartir-anio`, `ver-historial`, `borrar-registro`, `cargar-mas` and `<ion-item … class=\"… registro\">`, and exit 0.",
+      "WHEN Estadísticas renders THE SYSTEM SHALL show `<app-calendario-mes>` inside an `f-paper` card with an `f-legend`, and contain no `<app-heat-map`.",
+      "WHEN `estadisticas.page.ts` is read THE SYSTEM SHALL import `CalendarioMesComponent` and `MarcaComponent`, compute `ultimosMeses(stats.days, now, 6)`, and not reference `HeatMapComponent` or `heatMap(`.",
+      "WHEN `estadisticas.page.scss` is read THE SYSTEM SHALL contain no hex colour and no `--ion-color-` reference, and weigh under 4000 bytes.",
+      "WHEN `bar-chart.component.ts` is read THE SYSTEM SHALL declare `--compania: var(--f-pink)` and `--solitario: var(--f-solo)` and contain no `#fc445f`, `#1e94cf` or `--ion-color-`.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0 with no budget warning for `estadisticas.page.scss`."
+    ],
+    "verify": [
+      "node tests/design/estadisticas.check.js",
+      "npm test",
+      "npm run build -- --configuration production > /tmp/follendario-build-13.log 2>&1",
+      "grep -q 'estadisticas.page.scss exceeded maximum budget' /tmp/follendario-build-13.log; test $? -eq 1"
+    ],
+    "checkpoint": "step-13-estadisticas",
+    "files": [
+      "src/app/pages/estadisticas/estadisticas.page.html",
+      "src/app/pages/estadisticas/estadisticas.page.scss",
+      "src/app/pages/estadisticas/estadisticas.page.ts",
+      "src/app/components/stats/bar-chart.component.ts",
+      "tests/design/estadisticas.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T2",
+    "title": "Rediseñar ficha, QR, usuario y crear grupo",
+    "epic": "03-pantallas",
+    "dependencies": [
+      "E3-T1"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/modales.check.js` runs THE SYSTEM SHALL find in `friend-detail.modal.ts` the hooks `accion-duelo`, `accion-pulla`, `accion-reaccion`, `accion-privacidad`, `accion-eliminar`, `accion-bloquear`, `aceptar-duelo`, `rechazar-duelo`, `duelo-marcador` and `ve-de-ti`, with `f-key pink` on `accion-duelo` and `f-key solo` on `accion-pulla`, and exit 0.",
+      "WHEN the invite modal renders THE SYSTEM SHALL draw the QR as an `<img>` inside `.qr`, the link as `<code>` inside `.enlace`, and start its header with the `ion-button` that calls `close()`.",
+      "WHEN the invite modal renders THE SYSTEM SHALL show `assets/follendario/simbolo.png` over the QR and use `f-key pink` on `compartir-invitacion`.",
+      "WHEN `username.modal.ts` and `create-group.page.html` are read THE SYSTEM SHALL use `f-key pink` and keep `guardar-usuario`, `usuario-mas-tarde`, `campo-usuario`, `crear-grupo`, `nombre-grupo` and `amigo-seleccionable`, with no `<ion-fab`.",
+      "WHEN the four files are read THE SYSTEM SHALL contain no `color=\"secondary\"`, `color=\"tertiary\"`, `color=\"warning\"` or `color=\"light\"`.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/modales.check.js",
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-14-modales-sociales",
+    "files": [
+      "src/app/components/friend-detail/friend-detail.modal.ts",
+      "src/app/components/share-invite/share-invite.modal.ts",
+      "src/app/components/username/username.modal.ts",
+      "src/app/pages/create-group/create-group.page.html",
+      "tests/design/modales.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T3",
+    "title": "Rediseñar detalles, apunte olvidado y bloqueo",
+    "epic": "03-pantallas",
+    "dependencies": [
+      "E3-T2"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/apunte.check.js` runs THE SYSTEM SHALL find in `fap-details.modal.ts` the hooks `guardar-detalles`, `estrella`, `etiqueta`, `nueva-etiqueta`, `nota` and `seleccionada` plus `f-label` and `fill=\"outline\"`, with no `--ion-color-step-250`, and exit 0.",
+      "WHEN the forgotten-entry modal renders THE SYSTEM SHALL title it `¿Se te olvidó apuntar una?`, use `mode=\"ios\"` and `f-paper`, and keep `atajos`, `fecha`, `resumen`, `resumen-fecha`, `tipo-compania`, `tipo-solitario` and `confirmar`.",
+      "WHEN the entry type changes THE SYSTEM SHALL switch the `f-key confirmar` button between `[class.pink]` and `[class.solo]`.",
+      "WHEN the lock screen renders THE SYSTEM SHALL show `'Notas' : 'Follendario'` with `translate=\"no\"`, announce the PIN state in an `aria-live=\"polite\"` element and offer `¿has olvidado el PIN?`.",
+      "WHEN `lock-screen.component.ts` is read THE SYSTEM SHALL use `var(--f-` tokens and contain no hex colour, `SexControl`, `--ion-text-color`, `--ion-background-color`, `--ion-color-step` or `🔒`.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/apunte.check.js",
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-15-apunte-y-bloqueo",
+    "files": [
+      "src/app/components/fap-details/fap-details.modal.ts",
+      "src/app/pages/sumar/add-past-fap.modal.ts",
+      "src/app/components/lock-screen/lock-screen.component.ts",
+      "tests/design/apunte.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T4",
+    "title": "Rediseñar login y registro",
+    "epic": "03-pantallas",
+    "dependencies": [
+      "E3-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `node tests/design/acceso.check.js` opens `/login` on the served production build with a light colour scheme THE SYSTEM SHALL compute a `Geist` body font, body background `rgb(244, 230, 222)`, an Entrar button background `rgb(252, 42, 108)` and an email field `--border-color` of `#e2c5c9`.",
+      "WHEN the same page opens with a dark colour scheme THE SYSTEM SHALL compute body background `rgb(16, 8, 26)` and show the cream logotype (`.lo-oscuro`) instead of the ink one.",
+      "WHEN the stored settings enable the discreet mode with neutral name THE SYSTEM SHALL show `.lo-notas` and hide `.lo-marca`, over body background `rgb(242, 241, 238)`.",
+      "WHEN the login template is read THE SYSTEM SHALL keep `type=\"email\"`, `type=\"password\"`, `color=\"primary\"` and `>Entrar</ion-button>` and contain no `logo-sexcontrol`.",
+      "WHEN the page loads in any of the three cases THE SYSTEM SHALL raise no JavaScript error.",
+      "WHEN `node tests/ci/build-smoke.js` serves the build THE SYSTEM SHALL exit 0."
+    ],
+    "verify": [
+      "npm run build -- --configuration production",
+      "node tests/design/acceso.check.js",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-16-acceso",
+    "files": [
+      "src/app/pages/login/login.page.html",
+      "src/app/pages/login/login.page.scss",
+      "src/app/pages/register/register.page.html",
+      "src/app/pages/register/register.page.scss",
+      "tests/design/acceso.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T5",
+    "title": "Rediseñar recuperar, verificar e invitaciones",
+    "epic": "03-pantallas",
+    "dependencies": [
+      "E3-T4"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/enlaces.check.js` runs THE SYSTEM SHALL find `fill=\"outline\"`, `type=\"email\"` and `f-key pink` in `forgot-password.page.html`, and `ya-verificado`, `f-key pink` and `f-title` in `verify-email.page.html`, and exit 0.",
+      "WHEN the friend invite renders THE SYSTEM SHALL say `quiere picarse contigo en <span translate=\"no\">Follendario</span>` and put `f-key pink` on `aceptar-invitacion`, with no `SexControl`.",
+      "WHEN the group invite renders THE SYSTEM SHALL keep `entrar-grupo` with `f-key pink` (the E2E presses it) and `aviso-privacidad` inside an `f-card` with an `f-label`, with no `👥`.",
+      "WHEN the four files are read THE SYSTEM SHALL contain no `color=\"secondary\"`, `color=\"tertiary\"`, `color=\"warning\"` or `color=\"light\"`.",
+      "WHEN `npm test` and the production build run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/enlaces.check.js",
+      "npm test",
+      "npm run build -- --configuration production"
+    ],
+    "checkpoint": "step-17-enlaces",
+    "files": [
+      "src/app/pages/forgot-password/forgot-password.page.html",
+      "src/app/pages/verify-email/verify-email.page.html",
+      "src/app/pages/invite/invite.page.ts",
+      "src/app/pages/join-group/join-group.page.ts",
+      "tests/design/enlaces.check.js"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T6",
+    "title": "Rediseñar ajustes y añadir amigo; barrido final",
+    "epic": "03-pantallas",
+    "dependencies": [
+      "E3-T5"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `node tests/design/final.check.js` runs THE SYSTEM SHALL find in `ajustes.page.html` every existing settings hook plus `f-card`, `f-section`, `f-label`, `mode=\"ios\"`, `f-ghost danger` and `f-key pink` on `guardar-perfil`, and exit 0.",
+      "WHEN `add-friend.page.html` is read THE SYSTEM SHALL keep `anadir-amigo`, `buscar-amigo`, `elegir-mi-usuario`, `invitar-enlace` and `mi-handle` and use `f-row` and `f-card`.",
+      "WHEN `ajustes.page.scss` and `add-friend.page.scss` are read THE SYSTEM SHALL contain no hex colour and no `--ion-color-` reference.",
+      "WHEN every `.html`, `.ts` (except `.spec.ts`) and `.scss` under `src/app` is scanned THE SYSTEM SHALL find no `SexControl`, `logo-sexcontrol`, `<app-heat-map` or old palette colour (`#fc445f`, `#44c8fc`, `#6c5ce7`, `#5260ff`, `#1e94cf`, `#12233f`, `#1f5c7a`, `#2b1055`, `#7a1f5c`, `#06d6a0`; `heat-map.component.ts` excepted), and in templates no `color=\"secondary|tertiary|warning|light\"` or `mode=\"md\"`.",
+      "WHEN every design check from steps 2–17 runs again after the production build THE SYSTEM SHALL exit 0 for each.",
+      "WHEN `npm test` and `node tests/ci/build-smoke.js` run THE SYSTEM SHALL both exit 0."
+    ],
+    "verify": [
+      "node tests/design/final.check.js",
+      "npm test",
+      "npm run build -- --configuration production",
+      "node tests/design/contraste.check.js",
+      "node tests/design/estilos.check.js",
+      "node tests/design/marca.check.js",
+      "node tests/design/nombre.check.js",
+      "node tests/design/pestanas.check.js",
+      "node tests/design/sumar.check.js",
+      "node tests/design/amigos.check.js",
+      "node tests/design/grupo.check.js",
+      "node tests/design/estadisticas.check.js",
+      "node tests/design/modales.check.js",
+      "node tests/design/apunte.check.js",
+      "node tests/design/acceso.check.js",
+      "node tests/design/enlaces.check.js",
+      "node tests/ci/build-smoke.js"
+    ],
+    "checkpoint": "step-18-ajustes-y-cierre",
+    "files": [
+      "src/app/pages/ajustes/ajustes.page.html",
+      "src/app/pages/ajustes/ajustes.page.scss",
+      "src/app/pages/add-friend/add-friend.page.html",
+      "src/app/pages/add-friend/add-friend.page.scss",
+      "tests/design/final.check.js"
+    ],
+    "status": "pending"
+  }
+]

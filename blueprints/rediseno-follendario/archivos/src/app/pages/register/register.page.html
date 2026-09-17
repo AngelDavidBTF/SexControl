@@ -1,0 +1,32 @@
+<app-header titulo="Crear cuenta"></app-header>
+
+<ion-content>
+  <div class="reg-contenido">
+    <div class="reg-marca">
+      <img src="assets/follendario/simbolo.png" alt="" width="72" height="68" />
+      <p class="f-lead">Crea tu cuenta y empieza a llevar la cuenta.</p>
+    </div>
+    <div class="reg-notas">
+      <p class="f-lead">Crea tu cuenta.</p>
+    </div>
+
+    <form [formGroup]="registerForm" class="reg-form">
+      <ion-input type="text" formControlName="name" label="Nombre" labelPlacement="stacked" fill="outline" autocomplete="nickname" placeholder="Cómo te verán tus amigos…" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.controls['name'].dirty && registerForm.controls['name'].invalid">El nombre es obligatorio.</p>
+
+      <ion-input type="email" formControlName="email" label="Email" labelPlacement="stacked" fill="outline" autocomplete="email" inputmode="email" [spellcheck]="false" placeholder="tu@correo.es" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.controls['email'].dirty && registerForm.controls['email'].invalid">Escribe un correo válido.</p>
+
+      <ion-input type="password" formControlName="pass" label="Contraseña" labelPlacement="stacked" fill="outline" autocomplete="new-password" placeholder="Al menos 6 caracteres…" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.controls['pass'].dirty && registerForm.controls['pass'].invalid">La contraseña debe tener al menos 6 caracteres.</p>
+
+      <ion-input type="password" formControlName="repeatPass" label="Repite la contraseña" labelPlacement="stacked" fill="outline" autocomplete="new-password" required></ion-input>
+      <p class="reg-error" *ngIf="registerForm.hasError('notSame') && registerForm.controls['repeatPass'].dirty">Las contraseñas no coinciden.</p>
+
+      <ion-button type="button" expand="block" class="f-key pink" (click)="onRegister()" [disabled]="!registerForm.valid">Crear cuenta</ion-button>
+    </form>
+
+    <p class="reg-separador"><span>¿Ya tienes cuenta?</span></p>
+    <ion-button expand="block" class="f-btn" routerLink="/login">Entrar</ion-button>
+  </div>
+</ion-content>

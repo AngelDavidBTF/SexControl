@@ -41,3 +41,6 @@ npm-debug.log*
 # Secretos y salidas de las pruebas
 /tests/app-check.local.json
 /tests/.out
+
+# Permisos locales de Claude Code
+.claude/settings.local.json

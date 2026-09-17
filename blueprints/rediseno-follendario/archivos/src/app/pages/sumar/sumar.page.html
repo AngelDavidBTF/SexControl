@@ -1,0 +1,89 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <app-marca titulo="follendario"></app-marca>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes" class="ir-ajustes">
+        <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <p class="su-hello">
+    {{ discreto() ? 'Hola' : 'Buenas' }}<ng-container *ngIf="displayName">, {{ displayName }}</ng-container>.
+    <span>{{ discreto() ? 'Tu resumen.' : '¿Qué ha caído?' }}</span>
+  </p>
+
+  <div class="ion-text-center su-cargando" *ngIf="showLoader">
+    <ion-spinner name="circular" aria-label="Cargando"></ion-spinner>
+  </div>
+
+  <section class="f-cal su-cal" *ngIf="!showLoader" [attr.aria-label]="mes.nombre + ' de ' + mes.anio">
+    <div class="f-cal-rings" aria-hidden="true"><i></i><i></i></div>
+    <div class="f-cal-head">
+      <strong>{{ mes.nombre }}</strong>
+      <span>sem {{ semana }} · {{ mes.anio }}</span>
+    </div>
+    <div class="f-cal-body">
+      <div class="su-marcador">
+        <div class="su-marcador-main">
+          <span class="f-label">en total</span>
+          <app-marcador class="su-tiles-big total" dato [valor]="numberTotal" [minDigitos]="3" etiqueta="En total"></app-marcador>
+        </div>
+        <div class="su-marcador-side">
+          <div>
+            <span class="f-label">{{ etiquetas().c }}</span>
+            <app-marcador class="su-tiles" dato [valor]="numberC" tono="c" [etiqueta]="etiquetas().c"></app-marcador>
+          </div>
+          <div>
+            <span class="f-label">{{ etiquetas().s }}</span>
+            <app-marcador class="su-tiles" dato [valor]="numberS" tono="s" [etiqueta]="etiquetas().s"></app-marcador>
+          </div>
+        </div>
+      </div>
+
+      <app-calendario-mes class="su-mes" [mes]="mes" [ultimoApunte]="ultimoApunte" [discreto]="settings.discreet().enabled"></app-calendario-mes>
+
+      <div class="su-goals" *ngIf="goals.length">
+        <div class="su-goal" *ngFor="let goal of goals">
+          <div class="su-goal-text">
+            <span>{{ goal.label }}</span>
+            <strong dato class="mono objetivo-valor">{{ goal.done }}/{{ goal.target }}</strong>
+          </div>
+          <div *ngIf="goal.target <= 10; else barra" class="su-segs" [class.done]="goal.done >= goal.target" [style.grid-template-columns]="'repeat(' + goal.target + ', 1fr)'">
+            <i *ngFor="let paso of pasos(goal.target); let i = index" [class.on]="i < goal.done"></i>
+          </div>
+          <ng-template #barra>
+            <div class="su-bar" [class.done]="goal.done >= goal.target"><i [style.transform]="'scaleX(' + goal.progress + ')'"></i></div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="su-keys">
+    <ion-button class="f-key pink f-key-big sumar-compania" (click)="sumar(false)">
+      <span class="f-key-body">
+        <span class="f-key-top"><span class="f-led" aria-hidden="true"></span><span>+1</span></span>
+        <span>{{ discreto() ? 'CON ALGUIEN' : 'EN COMPAÑÍA' }}</span>
+      </span>
+    </ion-button>
+    <ion-button class="f-key solo f-key-big sumar-solitario" (click)="sumar(true)">
+      <span class="f-key-body">
+        <span class="f-key-top"><span class="f-led" aria-hidden="true"></span><span>+1</span></span>
+        <span>{{ discreto() ? 'POR MI CUENTA' : 'EN SOLITARIO' }}</span>
+      </span>
+    </ion-button>
+  </div>
+
+  <div class="su-more">
+    <ion-button expand="block" class="f-btn sumar-olvidada" (click)="sumarOlvidada()">
+      <ion-icon slot="start" name="time-outline" aria-hidden="true"></ion-icon>
+      ¿Se te olvidó apuntar una?
+    </ion-button>
+    <ion-button expand="block" fill="clear" class="f-ghost borrar-ultima" (click)="borrar()">borrar la última</ion-button>
+  </div>
+</ion-content>
