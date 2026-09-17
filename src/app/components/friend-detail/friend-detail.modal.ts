@@ -30,35 +30,35 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
         <ion-avatar>
           <img [src]="friend.photoURL || 'assets/icon-user.svg'" alt="" />
         </ion-avatar>
-        <h2>{{ name }}</h2>
-        <p *ngIf="privacyNote" class="muted ve-de-ti">{{ privacyNote }}</p>
+        <h2 class="f-title">{{ name }}</h2>
+        <p *ngIf="privacyNote" class="f-muted ve-de-ti">{{ privacyNote }}</p>
       </div>
 
-      <div class="insignias">
+      <section class="f-card insignias">
         <div class="insignia" *ngIf="friend.streak != null">
-          <span class="emoji" aria-hidden="true">🔥</span>
-          <strong dato>{{ friend.streak }}</strong>
-          <span class="muted">{{ friend.streak === 1 ? 'día de racha' : 'días de racha' }}</span>
+          <ion-icon name="flame-outline" aria-hidden="true"></ion-icon>
+          <strong class="f-mid" dato>{{ friend.streak }}</strong>
+          <span class="f-muted">{{ friend.streak === 1 ? 'día de racha' : 'días de racha' }}</span>
         </div>
         <div class="insignia" *ngIf="friend.badges != null">
-          <span class="emoji" aria-hidden="true">🏅</span>
-          <strong>{{ friend.badges }}</strong>
-          <span class="muted">{{ friend.badges === 1 ? 'logro' : 'logros' }}</span>
+          <ion-icon name="ribbon-outline" aria-hidden="true"></ion-icon>
+          <strong class="f-mid">{{ friend.badges }}</strong>
+          <span class="f-muted">{{ friend.badges === 1 ? 'logro' : 'logros' }}</span>
         </div>
         <div class="insignia" *ngIf="lastActivity">
-          <span class="emoji" aria-hidden="true">🕒</span>
-          <strong>{{ lastActivity }}</strong>
-          <span class="muted">última vez</span>
+          <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+          <strong class="f-mid">{{ lastActivity }}</strong>
+          <span class="f-muted">última vez</span>
         </div>
-      </div>
+      </section>
 
       <ng-container *ngIf="rows.length > 0; else sinDatos">
-        <h4>Tú vs {{ name }}</h4>
-        <div class="comparativa">
+        <section class="f-card comparativa">
+          <span class="f-label">tú vs {{ name }}</span>
           <div class="fila" *ngFor="let row of rows">
             <div class="etiqueta">
               <span>{{ row.label }}</span>
-              <span class="resultado" [class.gano]="row.mine > row.theirs" [class.pierdo]="row.mine < row.theirs">{{ verdict(row) }}</span>
+              <span class="resultado" [class.f-up]="row.mine > row.theirs" [class.f-down]="row.mine < row.theirs">{{ verdict(row) }}</span>
             </div>
             <div class="barras">
               <span class="valor mio" dato>{{ row.mine }}</span>
@@ -69,61 +69,61 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
               <span class="valor suyo" dato>{{ row.theirs }}</span>
             </div>
           </div>
-        </div>
-        <p class="leyenda">
-          <span class="punto mia"></span> Tú
-          <span class="punto suya"></span> {{ name }}
-        </p>
+          <div class="f-legend">
+            <span><i class="c"></i>Tú</span>
+            <span><i class="s"></i>{{ name }}</span>
+          </div>
+        </section>
       </ng-container>
       <ng-template #sinDatos>
-        <p class="ion-text-center muted sin-datos">
+        <p class="ion-text-center f-muted sin-datos">
           {{ friend.hidden ? name + ' no comparte sus números.' : name + ' solo comparte su total.' }}
         </p>
       </ng-template>
 
       <!-- Duelo en curso o marcador histórico. -->
-      <div class="duelo" *ngIf="challenge as duelo">
+      <section class="f-card duelo" *ngIf="challenge as duelo">
         <div class="duelo-cabecera">
-          <strong>⚔️ {{ label(duelo) }}</strong>
-          <span class="muted">{{ estado(duelo) }}</span>
+          <strong><ion-icon name="flash-outline" aria-hidden="true"></ion-icon> {{ label(duelo) }}</strong>
+          <span class="f-muted">{{ estado(duelo) }}</span>
         </div>
-        <div class="duelo-marcador" *ngIf="score as marcador">
+        <div class="duelo-marcador mono" *ngIf="score as marcador">
           <span class="valor mio" dato>{{ marcador.mine }}</span>
-          <span class="muted">–</span>
+          <span class="f-muted">–</span>
           <span class="valor suyo" dato>{{ marcador.theirs }}</span>
         </div>
-        <p class="muted" *ngIf="!score">No se puede seguir: {{ name }} ha dejado de compartir su semana.</p>
+        <p class="f-muted" *ngIf="!score">No se puede seguir: {{ name }} ha dejado de compartir su semana.</p>
         <div class="duelo-acciones" *ngIf="duelo.status === 'pendiente' && duelo.from !== me.uid">
-          <ion-button size="small" color="secondary" (click)="act('accept')" class="aceptar-duelo">Aceptar</ion-button>
-          <ion-button size="small" fill="outline" color="medium" (click)="act('reject')" class="rechazar-duelo">Rechazar</ion-button>
+          <ion-button size="small" class="f-key pink aceptar-duelo" (click)="act('accept')">Aceptar</ion-button>
+          <ion-button size="small" fill="clear" class="f-ghost rechazar-duelo" (click)="act('reject')">Rechazar</ion-button>
         </div>
-      </div>
-      <p class="marcador-historico muted" *ngIf="record && record.wins + record.losses > 0">
+      </section>
+      <p class="marcador-historico f-muted" *ngIf="record && record.wins + record.losses > 0">
         Duelos: ganas {{ record.wins }} – {{ record.losses }} {{ name }}
       </p>
 
       <div class="acciones">
-        <ion-button *ngIf="!challenge" expand="block" color="primary" (click)="act('challenge')" class="accion-duelo">
-          <ion-icon slot="start" name="trophy"></ion-icon>
+        <ion-button *ngIf="!challenge" expand="block" class="f-key pink accion-duelo" (click)="act('challenge')">
+          <ion-icon slot="start" name="trophy-outline"></ion-icon>
           Retar a un duelo
         </ion-button>
-        <ion-button expand="block" color="secondary" (click)="act('poke')" class="accion-pulla">
-          <ion-icon slot="start" name="hand-right"></ion-icon>
+        <ion-button expand="block" class="f-key solo accion-pulla" (click)="act('poke')">
+          <ion-icon slot="start" name="hand-right-outline"></ion-icon>
           Mandar una pulla
         </ion-button>
-        <ion-button expand="block" fill="outline" color="secondary" (click)="act('react')" class="accion-reaccion">
+        <ion-button expand="block" class="f-btn accion-reaccion" (click)="act('react')">
           <ion-icon slot="start" name="happy-outline"></ion-icon>
           Mandar una reacción
         </ion-button>
-        <ion-button expand="block" fill="outline" (click)="act('privacy')" class="accion-privacidad">
+        <ion-button expand="block" class="f-btn accion-privacidad" (click)="act('privacy')">
           <ion-icon slot="start" name="eye-outline"></ion-icon>
           Qué ve de ti: {{ privacyLabel }}
         </ion-button>
-        <ion-button expand="block" fill="clear" color="danger" (click)="act('remove')" class="accion-eliminar">
+        <ion-button expand="block" fill="clear" class="f-ghost danger accion-eliminar" (click)="act('remove')">
           <ion-icon slot="start" name="person-remove-outline"></ion-icon>
           Eliminar amistad
         </ion-button>
-        <ion-button expand="block" fill="clear" color="medium" (click)="act('block')" class="accion-bloquear">
+        <ion-button expand="block" fill="clear" class="f-ghost accion-bloquear" (click)="act('block')">
           <ion-icon slot="start" name="ban-outline"></ion-icon>
           Bloquear
         </ion-button>
@@ -141,13 +141,10 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
         margin: 0 auto 8px;
       }
       .perfil h2 {
-        margin: 0;
-      }
-      .muted {
-        color: var(--ion-color-medium);
+        margin: 2px 0 0;
       }
       .insignias {
-        display: flex;
+        flex-direction: row;
         justify-content: center;
         gap: 20px;
         margin: 16px 0 8px;
@@ -157,14 +154,9 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
         display: flex;
         flex-direction: column;
         align-items: center;
+        gap: 2px;
         font-size: 0.8rem;
         min-width: 72px;
-      }
-      .insignia .emoji {
-        font-size: 1.4rem;
-      }
-      .insignia strong {
-        font-size: 1.1rem;
       }
       .comparativa .fila {
         margin-bottom: 14px;
@@ -174,15 +166,6 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
         justify-content: space-between;
         font-size: 0.85rem;
         margin-bottom: 4px;
-      }
-      .resultado {
-        color: var(--ion-color-medium);
-      }
-      .resultado.gano {
-        color: var(--ion-color-success);
-      }
-      .resultado.pierdo {
-        color: var(--ion-color-danger);
       }
       .barras {
         display: flex;
@@ -195,13 +178,13 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
         height: 14px;
         border-radius: 7px;
         overflow: hidden;
-        background: var(--ion-color-step-100, #eee);
+        background: var(--f-surface-2);
       }
       .barra .mia {
-        background: var(--ion-color-primary);
+        background: var(--f-pink);
       }
       .barra .suya {
-        background: var(--ion-color-secondary);
+        background: var(--f-solo);
       }
       .valor {
         min-width: 28px;
@@ -209,39 +192,19 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
         font-weight: 600;
       }
       .valor.mio {
-        color: var(--ion-color-primary);
+        color: var(--f-pink-text);
       }
       .valor.suyo {
-        color: var(--ion-color-secondary);
+        color: var(--f-solo-text);
       }
-      .leyenda {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.8rem;
-        color: var(--ion-color-medium);
+      .f-legend i.c {
+        background: var(--f-pink);
       }
-      .punto {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-      }
-      .punto.mia {
-        background: var(--ion-color-primary);
-      }
-      .punto.suya {
-        background: var(--ion-color-secondary);
-        margin-left: 10px;
+      .f-legend i.s {
+        background: var(--f-solo);
       }
       .sin-datos {
         margin: 24px 0;
-      }
-      .duelo {
-        margin-top: 18px;
-        padding: 12px;
-        border-radius: 12px;
-        background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
       }
       .duelo-cabecera {
         display: flex;
@@ -272,6 +235,9 @@ export type FriendAction = 'react' | 'privacy' | 'remove' | 'block' | 'poke' | '
       }
       .acciones {
         margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
     `,
   ],

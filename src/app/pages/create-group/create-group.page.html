@@ -10,16 +10,15 @@
     <input #fileInput type="file" accept="image/*" hidden (change)="onImageSelected($event)" />
   </ion-item>
 
-  <ion-item class="ion-padding-horizontal">
-    <ion-input
-      label="Nombre del grupo *"
-      labelPlacement="floating"
-      [(ngModel)]="nameGroup"
-      [maxlength]="50"
-      name="nameGroup"
-      class="nombre-grupo"
-    ></ion-input>
-  </ion-item>
+  <ion-input
+    fill="outline"
+    label="Nombre del grupo *"
+    labelPlacement="stacked"
+    [(ngModel)]="nameGroup"
+    [maxlength]="50"
+    name="nameGroup"
+    class="nombre-grupo"
+  ></ion-input>
 
   <div class="ion-padding-horizontal">
     <ion-chip *ngFor="let user of selectedUsers" (click)="toggle(user)">
@@ -31,21 +30,19 @@
     </ion-chip>
   </div>
 
-  <ion-item-divider>
-    <ion-label>Elige los amigos del grupo</ion-label>
-  </ion-item-divider>
+  <div class="f-section"><span class="f-label">elige los amigos del grupo</span></div>
 
   <ion-searchbar placeholder="Buscar amigo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
   <ng-container *ngIf="friends$ | async as friends">
-    <ion-item *ngFor="let user of friends | filtro: textoBuscar" button (click)="toggle(user)" class="amigo-seleccionable">
+    <ion-item *ngFor="let user of friends | filtro: textoBuscar" button (click)="toggle(user)" class="f-row amigo-seleccionable">
       <ion-avatar slot="start">
         <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
       </ion-avatar>
       <ion-label>
         <h2>{{ user.displayName || 'Sin nombre' }}</h2>
       </ion-label>
-      <ion-icon *ngIf="isSelected(user)" slot="end" name="checkmark-circle" color="secondary"></ion-icon>
+      <ion-icon *ngIf="isSelected(user)" slot="end" name="checkmark-circle" color="primary"></ion-icon>
     </ion-item>
 
     <div *ngIf="friends.length === 0" class="ion-padding ion-text-center">
@@ -53,9 +50,7 @@
     </div>
   </ng-container>
 
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="canCreate">
-    <ion-fab-button color="secondary" (click)="createGroup()" class="crear-grupo">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+  <ion-button expand="block" class="f-key pink crear-grupo" *ngIf="canCreate" (click)="createGroup()">
+    Crear grupo
+  </ion-button>
 </ion-content>

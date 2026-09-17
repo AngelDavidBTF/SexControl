@@ -21,10 +21,11 @@ import { UiService } from '../../core/ui.service';
     </ion-header>
 
     <ion-content class="ion-padding">
-      <p class="muted">{{ subtitle }}</p>
+      <p class="f-muted">{{ subtitle }}</p>
 
       <div class="qr" *ngIf="qr; else generando">
         <img [src]="qr" alt="Código QR de la invitación" />
+        <img class="qr-logo" src="assets/follendario/simbolo.png" alt="" width="48" height="46" />
       </div>
       <ng-template #generando>
         <div class="ion-text-center ion-margin"><ion-spinner name="circular"></ion-spinner></div>
@@ -34,39 +35,46 @@ import { UiService } from '../../core/ui.service';
         <code>{{ url }}</code>
       </div>
 
-      <ion-button expand="block" (click)="share()" class="compartir-invitacion">
+      <ion-button expand="block" class="f-key pink compartir-invitacion" (click)="share()">
         <ion-icon slot="start" name="share-social-outline"></ion-icon>
         Compartir enlace
       </ion-button>
-      <ion-button expand="block" fill="outline" (click)="copy()" class="copiar-invitacion">
+      <ion-button expand="block" class="f-btn copiar-invitacion" (click)="copy()">
         <ion-icon slot="start" name="copy-outline"></ion-icon>
         Copiar enlace
       </ion-button>
-      <ion-button *ngIf="canRenew" expand="block" fill="clear" color="medium" (click)="renew()" class="renovar-invitacion">
+      <ion-button *ngIf="canRenew" expand="block" fill="clear" class="f-ghost renovar-invitacion" (click)="renew()">
         Generar un enlace nuevo
       </ion-button>
-      <p class="muted aviso">{{ warning }}</p>
+      <p class="f-muted aviso">{{ warning }}</p>
     </ion-content>
   `,
   styles: [
     `
-      .muted {
-        color: var(--ion-color-medium);
-      }
       .qr {
+        position: relative;
         display: flex;
         justify-content: center;
         margin: 8px 0 16px;
       }
-      .qr img {
+      .qr img:first-child {
         width: 220px;
         height: 220px;
         border-radius: 12px;
         background: #fff;
         padding: 8px;
       }
+      .qr-logo {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin: -23px 0 0 -24px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 3px;
+      }
       .enlace {
-        background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+        background: var(--f-surface-2);
         border-radius: 10px;
         padding: 10px;
         margin-bottom: 16px;

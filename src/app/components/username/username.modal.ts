@@ -17,7 +17,7 @@ type Status = 'invalido' | 'comprobando' | 'libre' | 'tuyo' | 'cogido' | 'error'
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start" *ngIf="allowLater">
-          <ion-button (click)="later()" class="usuario-mas-tarde">{{ current ? 'Cancelar' : 'Más tarde' }}</ion-button>
+          <ion-button (click)="later()" class="f-ghost usuario-mas-tarde">{{ current ? 'Cancelar' : 'Más tarde' }}</ion-button>
         </ion-buttons>
         <ion-title>{{ current ? 'Cambiar @usuario' : 'Elige tu @usuario' }}</ion-title>
       </ion-toolbar>
@@ -54,9 +54,9 @@ type Status = 'invalido' | 'comprobando' | 'libre' | 'tuyo' | 'cogido' | 'error'
           <span *ngSwitchDefault>{{ problem }}</span>
         </ng-container>
       </p>
-      <p class="muted">Letras sin tilde, números y _, de 3 a 20. Podrás cambiarlo en Ajustes.</p>
+      <p class="f-muted">Letras sin tilde, números y _, de 3 a 20. Podrás cambiarlo en Ajustes.</p>
 
-      <ion-button expand="block" color="secondary" (click)="save()" [disabled]="!canSave || saving" class="guardar-usuario">
+      <ion-button expand="block" class="f-key pink guardar-usuario" (click)="save()" [disabled]="!canSave || saving">
         {{ saving ? 'Guardando…' : 'Guardar' }}
       </ion-button>
     </ion-content>
@@ -68,7 +68,7 @@ type Status = 'invalido' | 'comprobando' | 'libre' | 'tuyo' | 'cogido' | 'error'
     }
     .arroba {
       font-weight: 600;
-      color: var(--ion-color-medium);
+      color: var(--f-muted);
       margin-right: 2px;
     }
     .estado {
@@ -78,15 +78,10 @@ type Status = 'invalido' | 'comprobando' | 'libre' | 'tuyo' | 'cogido' | 'error'
       font-weight: 500;
     }
     .estado.bien {
-      color: var(--ion-color-success);
+      color: var(--f-up);
     }
     .estado.mal {
-      color: var(--ion-color-danger);
-    }
-    .muted {
-      color: var(--ion-color-medium);
-      font-size: 13px;
-      margin: 4px 2px 20px;
+      color: var(--f-down);
     }
   `,
 })
