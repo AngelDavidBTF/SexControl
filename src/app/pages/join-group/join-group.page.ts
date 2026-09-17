@@ -22,21 +22,21 @@ import { GroupInvite } from '../../shared/group.model';
 
     <ion-content class="ion-padding">
       <div class="invitacion" *ngIf="invite; else cargando">
-        <span class="icono" aria-hidden="true">👥</span>
-        <h2>{{ invite.groupName }}</h2>
-        <p class="muted">Te han invitado a este grupo</p>
+        <span class="icono" aria-hidden="true">{{ invite.groupName.slice(0, 1) }}</span>
+        <h2 class="f-title">{{ invite.groupName }}</h2>
+        <p class="f-muted">Te han invitado a este grupo</p>
 
-        <div class="aviso-privacidad">
-          <strong>Antes de entrar</strong>
+        <section class="f-card aviso-privacidad">
+          <span class="f-label">antes de entrar</span>
           <p>
             Los miembros del grupo verán tu nombre, tu foto y tus números (total, mes y semana),
             aunque no sean amigos tuyos. Puedes dejar de compartirlos desde Ajustes o salir del
             grupo cuando quieras.
           </p>
-        </div>
+        </section>
 
-        <ion-button expand="block" (click)="join()" [disabled]="joining" class="entrar-grupo">Entrar en el grupo</ion-button>
-        <ion-button expand="block" fill="clear" color="medium" routerLink="/tabs/amigos">Ahora no</ion-button>
+        <ion-button expand="block" class="f-key pink entrar-grupo" (click)="join()" [disabled]="joining">Entrar en el grupo</ion-button>
+        <ion-button expand="block" fill="clear" class="f-ghost" routerLink="/tabs/amigos">Ahora no</ion-button>
       </div>
 
       <ng-template #cargando>
@@ -54,24 +54,26 @@ import { GroupInvite } from '../../shared/group.model';
         text-align: center;
       }
       .icono {
-        font-size: 3rem;
-        display: block;
-        margin: 24px 0 8px;
-      }
-      .muted {
-        color: var(--ion-color-medium);
+        font-family: var(--f-mono);
+        font-weight: 700;
+        font-size: 1.5rem;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--f-pink);
+        color: var(--f-on-pink);
+        display: grid;
+        place-items: center;
+        margin: 24px auto 8px;
       }
       .aviso-privacidad {
         text-align: left;
-        background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
-        border-radius: 12px;
-        padding: 12px;
         margin: 20px 0;
         font-size: 0.85rem;
       }
       .aviso-privacidad p {
         margin: 6px 0 0;
-        color: var(--ion-color-medium);
+        color: var(--f-muted);
       }
     `,
   ],

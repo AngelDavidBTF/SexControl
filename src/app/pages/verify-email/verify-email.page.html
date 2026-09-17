@@ -5,15 +5,15 @@
 </ion-header>
 
 <ion-content class="ion-padding" *ngIf="user$ | async as user">
-  <div class="icono" aria-hidden="true">📬</div>
-  <h2>Confirma tu correo</h2>
+  <ion-icon name="mail-outline" class="icono" aria-hidden="true"></ion-icon>
+  <h2 class="f-title">Confirma tu correo</h2>
   <p>Te hemos enviado un email a <strong>{{ user.email }}</strong>.</p>
   <p>Pulsa el enlace del email y después vuelve aquí. Si no lo encuentras, revisa la carpeta de spam.</p>
 
-  <ion-button expand="block" color="secondary" (click)="onCheck()" [disabled]="checking" class="ya-verificado">
+  <ion-button expand="block" class="f-key pink ya-verificado" (click)="onCheck()" [disabled]="checking">
     <ion-spinner *ngIf="checking" name="dots" slot="start"></ion-spinner>
     Ya lo he verificado
   </ion-button>
-  <ion-button expand="block" fill="outline" color="primary" (click)="onSendEmail()">Reenviar email</ion-button>
-  <ion-button expand="block" fill="clear" color="medium" (click)="onLogout()">Usar otra cuenta</ion-button>
+  <ion-button expand="block" class="f-btn" (click)="onSendEmail()">Reenviar email</ion-button>
+  <ion-button expand="block" fill="clear" class="f-ghost" (click)="onLogout()">Usar otra cuenta</ion-button>
 </ion-content>

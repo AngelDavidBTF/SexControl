@@ -25,16 +25,16 @@ import { User } from '../../shared/user.model';
         <ion-avatar>
           <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
         </ion-avatar>
-        <h2>{{ user.displayName || 'Alguien' }}</h2>
-        <p class="muted" *ngIf="user.username">&#64;{{ user.username }}</p>
-        <p class="muted">quiere ser tu amigo en SexControl</p>
+        <h2 class="f-title">{{ user.displayName || 'Alguien' }}</h2>
+        <p class="f-lead mono" *ngIf="user.username">&#64;{{ user.username }}</p>
+        <p class="f-muted">quiere picarse contigo en <span translate="no">Follendario</span></p>
 
-        <ion-button expand="block" (click)="accept()" [disabled]="sending" class="aceptar-invitacion">
+        <ion-button expand="block" class="f-key pink aceptar-invitacion" (click)="accept()" [disabled]="sending">
           Enviar solicitud de amistad
         </ion-button>
-        <ion-button expand="block" fill="clear" color="medium" routerLink="/tabs/amigos">Ahora no</ion-button>
+        <ion-button expand="block" fill="clear" class="f-ghost" routerLink="/tabs/amigos">Ahora no</ion-button>
 
-        <p class="muted aviso">
+        <p class="f-muted aviso">
           Solo compartirás tus números cuando acepte la solicitud, y puedes elegir qué ve de ti en cualquier momento.
         </p>
       </div>
@@ -57,9 +57,6 @@ import { User } from '../../shared/user.model';
         width: 96px;
         height: 96px;
         margin: 24px auto 12px;
-      }
-      .muted {
-        color: var(--ion-color-medium);
       }
       .aviso {
         font-size: 0.8rem;
