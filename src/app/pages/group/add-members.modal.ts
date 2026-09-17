@@ -40,14 +40,14 @@ import { FiltroPipe } from '../../shared/filtro.pipe';
       <ion-searchbar placeholder="Buscar amigo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
       <ng-container *ngIf="candidates$ | async as candidates">
-        <ion-item *ngFor="let user of candidates | filtro: textoBuscar" button (click)="toggle(user)" class="candidato">
+        <ion-item *ngFor="let user of candidates | filtro: textoBuscar" button (click)="toggle(user)" class="f-row candidato">
           <ion-avatar slot="start">
-            <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
+            <img [src]="user.photoURL || 'assets/icon-user.svg'" width="40" height="40" alt="" />
           </ion-avatar>
           <ion-label>
             <h2>{{ user.displayName || 'Sin nombre' }}</h2>
           </ion-label>
-          <ion-icon *ngIf="isSelected(user)" slot="end" name="checkmark-circle" color="secondary"></ion-icon>
+          <ion-icon *ngIf="isSelected(user)" slot="end" name="checkmark-circle"></ion-icon>
         </ion-item>
 
         <div class="ion-padding ion-text-center" *ngIf="candidates.length === 0">
@@ -56,11 +56,9 @@ import { FiltroPipe } from '../../shared/filtro.pipe';
         </div>
       </ng-container>
 
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="selectedUsers.length > 0 && !guardando">
-        <ion-fab-button color="secondary" (click)="addMembers()" class="confirmar-miembros">
-          <ion-icon name="add"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
+      <ion-button expand="block" class="f-key pink confirmar-miembros" *ngIf="selectedUsers.length > 0 && !guardando" (click)="addMembers()">
+        Añadir al grupo
+      </ion-button>
     </ion-content>
   `,
 })

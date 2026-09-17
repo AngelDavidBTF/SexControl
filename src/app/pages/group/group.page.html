@@ -2,147 +2,132 @@
   <app-header [titulo]="vm.group.name"></app-header>
 
   <ion-content>
-    <div class="cabecera">
-      <ion-avatar>
-        <img [src]="vm.group.imageUrl || 'assets/groups/icon-group.svg'" alt="" />
-      </ion-avatar>
-      <ion-button *ngIf="vm.isOwner" size="small" color="primary" (click)="presentActionSheet(vm.group)" class="editar-grupo">
+    <div class="gr-head">
+      <span class="gr-tile" aria-hidden="true">{{ vm.group.name.split(' ').pop()?.slice(0, 1) }}</span>
+      <div>
+        <h1 class="f-title">{{ vm.group.name }}</h1>
+        <p class="f-lead">{{ vm.group.memberUids.length }} {{ vm.group.memberUids.length === 1 ? 'miembro' : 'miembros' }}</p>
+      </div>
+    </div>
+
+    <div class="gr-acts">
+      <ion-button *ngIf="vm.isOwner" size="small" class="f-key neutral editar-grupo" (click)="presentActionSheet(vm.group)">
         Editar grupo
       </ion-button>
-      <ion-button *ngIf="!vm.isOwner" size="small" fill="outline" color="medium" (click)="confirmLeave(vm.group)" class="salir-grupo">
+      <ion-button *ngIf="!vm.isOwner" size="small" fill="clear" class="f-ghost danger salir-grupo" (click)="confirmLeave(vm.group)">
         Salir del grupo
       </ion-button>
-      <ion-button size="small" fill="clear" (click)="shareWeek(vm.group)" class="compartir-semana">
+      <ion-button size="small" class="f-btn compartir-semana" (click)="shareWeek(vm.group)">
         <ion-icon slot="start" name="share-social-outline"></ion-icon>
         Compartir semana
       </ion-button>
     </div>
 
     <!-- Campeón del mes pasado y palmarés (se cierran solos al empezar el mes nuevo). -->
-    <div class="temporada" *ngIf="vm.seasons.length > 0">
-      <div class="campeon" *ngIf="vm.seasons[0] as ultima">
-        <span class="corona" aria-hidden="true">👑</span>
+    <section class="f-card" *ngIf="vm.seasons.length > 0">
+      <div class="gr-season" *ngIf="vm.seasons[0] as ultima">
+        <span aria-hidden="true">👑</span>
         <span>
           <strong>{{ ultima.winnerName || 'Nadie' }}</strong>
           {{ ultima.winnerName ? 'ganó ' + ultima.label : 'se llevó ' + ultima.label }}
-          <span class="muted" *ngIf="ultima.winnerName" dato>({{ ultima.total }} en el grupo)</span>
+          <span class="f-muted" *ngIf="ultima.winnerName" dato>({{ ultima.total }} en el grupo)</span>
         </span>
       </div>
-      <ion-button fill="clear" size="small" (click)="verPalmares = !verPalmares" class="ver-palmares" *ngIf="vm.seasons.length > 1">
+      <ion-button fill="clear" size="small" class="f-ghost ver-palmares" (click)="verPalmares = !verPalmares" *ngIf="vm.seasons.length > 1">
         {{ verPalmares ? 'Ocultar palmarés' : 'Ver palmarés' }}
       </ion-button>
       <ul class="palmares" *ngIf="verPalmares">
         <li *ngFor="let season of vm.seasons">
-          <span class="muted">{{ season.label }}</span>
+          <span class="f-muted">{{ season.label }}</span>
           <strong>{{ season.winnerName || 'sin campeón' }}</strong>
         </li>
       </ul>
-    </div>
+    </section>
 
     <!-- Objetivo colectivo del grupo. -->
-    <div class="objetivo" *ngIf="vm.goal as goal" [class.cumplido]="goal.done">
-      <div class="objetivo-cabecera">
-        <strong>{{ goal.done ? '🎉 ¡Objetivo cumplido!' : '🤝 Objetivo del grupo' }}</strong>
+    <section class="f-card" *ngIf="vm.goal as goal" [class.cumplido]="goal.done">
+      <div class="f-card-head">
+        <span class="f-label">{{ goal.done ? '🎉 ¡Objetivo cumplido!' : '🤝 Objetivo del grupo' }}</span>
         <span dato>{{ goal.current }} / {{ goal.target }}</span>
       </div>
-      <div class="objetivo-barra"><div class="relleno" [style.width.%]="goal.percent"></div></div>
-      <p class="muted">Entre todos, {{ goal.period === 'semana' ? 'esta semana' : 'este mes' }}</p>
-    </div>
+      <div class="gr-bar"><i [style.width.%]="goal.percent"></i></div>
+      <p class="f-muted">Entre todos, {{ goal.period === 'semana' ? 'esta semana' : 'este mes' }}</p>
+    </section>
 
     <!-- Títulos de la semana, calculados en el dispositivo. -->
-    <div class="titulos" *ngIf="vm.titles.length > 0">
-      <div class="titulo" *ngFor="let titulo of vm.titles">
-        <span class="titulo-emoji" aria-hidden="true">{{ titulo.emoji }}</span>
-        <div class="titulo-texto">
-          <strong>{{ titulo.title }}</strong>
-          <span class="muted">{{ titulo.name }} · {{ titulo.detail }}</span>
-        </div>
-      </div>
-    </div>
+    <app-ticket *ngIf="vm.titles.length > 0" [grupo]="vm.group.name" [semana]="semana" [filas]="filasTicket(vm.titles)"></app-ticket>
 
-    <ion-segment [value]="period" (ionChange)="onPeriodChange($event)" class="periodo-ranking">
+    <ion-segment [value]="period" mode="ios" (ionChange)="onPeriodChange($event)" class="periodo-ranking">
       <ion-segment-button value="total"><ion-label>Total</ion-label></ion-segment-button>
       <ion-segment-button value="mes"><ion-label>Este mes</ion-label></ion-segment-button>
       <ion-segment-button value="semana"><ion-label>Esta semana</ion-label></ion-segment-button>
     </ion-segment>
 
-    <div class="contenedorNumeros contenedorTotal">
-      <ion-text color="warning">
-        <p class="letrasTotal">Total Grupo</p>
-        <h1 class="numeroTotal total-grupo" dato>{{ vm.totalCompania + vm.totalSolitario }}</h1>
-      </ion-text>
-      <ion-text color="warning">
-        <p class="letrasTotal">Media Total Grupo</p>
-        <h1 class="numeroTotal" dato>{{ vm.mediaGrupo | number: '1.0-0' }}</h1>
-      </ion-text>
-    </div>
-    <div class="contenedorNumeros">
-      <ion-text color="secondary">
-        <p class="letras">Total Compañía</p>
-        <h1 class="numero total-compania" dato>{{ vm.totalCompania }}</h1>
-      </ion-text>
-      <ion-text color="primary">
-        <p class="letras">Total Solitario</p>
-        <h1 class="numero total-solitario" dato>{{ vm.totalSolitario }}</h1>
-      </ion-text>
-      <ion-text color="secondary">
-        <p class="letras">Media Compañía</p>
-        <h1 class="numero" dato>{{ vm.mediaCompania | number: '1.0-0' }}</h1>
-      </ion-text>
-      <ion-text color="primary">
-        <p class="letras">Media Solitario</p>
-        <h1 class="numero" dato>{{ vm.mediaSolitario | number: '1.0-0' }}</h1>
-      </ion-text>
-    </div>
+    <section class="f-card gr-totals">
+      <div class="gr-total-hero">
+        <span class="f-label">total grupo</span>
+        <span class="f-big total-grupo" dato>{{ vm.totalCompania + vm.totalSolitario }}</span>
+        <span class="f-muted">media {{ vm.mediaGrupo | number: '1.0-0' }}</span>
+      </div>
+      <div>
+        <span class="f-label">compañía</span>
+        <span class="f-mid f-num-c total-compania" dato>{{ vm.totalCompania }}</span>
+        <span class="f-muted">media {{ vm.mediaCompania | number: '1.0-0' }}</span>
+      </div>
+      <div>
+        <span class="f-label">solitario</span>
+        <span class="f-mid f-num-s total-solitario" dato>{{ vm.totalSolitario }}</span>
+        <span class="f-muted">media {{ vm.mediaSolitario | number: '1.0-0' }}</span>
+      </div>
+    </section>
 
     <!-- Muro del grupo: una entrada por miembro, 1 lectura al abrir el grupo. -->
-    <div class="muro">
-      <div class="muro-cabecera">
-        <strong>Muro</strong>
-        <ion-button size="small" fill="clear" (click)="postToWall(vm.group)" class="escribir-muro">Escribir</ion-button>
+    <section class="f-console">
+      <div class="f-console-head">
+        <span>~/muro</span>
+        <ion-button size="small" fill="clear" class="f-ghost escribir-muro" (click)="postToWall(vm.group)">Escribir</ion-button>
       </div>
-      <p class="muted sin-muro" *ngIf="vm.feed.length === 0">Todavía no hay nada por aquí. Estrénalo tú.</p>
-      <div class="muro-entrada" *ngFor="let entrada of vm.feed; trackBy: trackByUid">
-        <ion-avatar>
-          <img [src]="entrada.photoURL || 'assets/icon-user.svg'" alt="" />
-        </ion-avatar>
-        <span class="muro-texto">{{ discreto ? entrada.discreto : entrada.text }}</span>
+      <p class="f-muted sin-muro" *ngIf="vm.feed.length === 0">Todavía no hay nada por aquí. Estrénalo tú.</p>
+      <div class="f-line" *ngFor="let entrada of vm.feed; trackBy: trackByUid">
+        <span class="glyph" aria-hidden="true">›</span>
+        <span>{{ discreto ? entrada.discreto : entrada.text }}</span>
         <ion-button
           *ngIf="vm.isBoss || entrada.uid === miUid"
           size="small"
           fill="clear"
-          color="medium"
+          class="f-ghost quitar-muro"
           (click)="removeFromWall(vm.group, entrada, vm.isBoss)"
-          class="quitar-muro"
           aria-label="Retirar del muro"
         >
           <ion-icon slot="icon-only" name="close"></ion-icon>
         </ion-button>
       </div>
-    </div>
+    </section>
 
-    <ion-item lines="none" class="privacidad-grupo">
-      <ion-label>
-        <h3>Ocultar mis números aquí</h3>
-        <p class="muted">Sigues en el grupo, pero nadie ve tus cifras.</p>
-      </ion-label>
-      <ion-toggle
-        slot="end"
-        [checked]="vm.hiddenHere"
-        (ionChange)="toggleGroupPrivacy(vm.group, $event.detail.checked)"
-        class="toggle-privacidad-grupo"
-      ></ion-toggle>
-    </ion-item>
+    <section class="f-card privacidad-grupo">
+      <ion-item lines="none">
+        <ion-label>
+          <h3>Ocultar mis números aquí</h3>
+          <p class="f-muted">Sigues en el grupo, pero nadie ve tus cifras.</p>
+        </ion-label>
+        <ion-toggle
+          slot="end"
+          [checked]="vm.hiddenHere"
+          (ionChange)="toggleGroupPrivacy(vm.group, $event.detail.checked)"
+          class="toggle-privacidad-grupo"
+        ></ion-toggle>
+      </ion-item>
+    </section>
 
     <ion-searchbar placeholder="Buscar miembro" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
     <ion-list>
       <ion-item-sliding *ngFor="let member of vm.members | filtro: textoBuscar; let i = index; trackBy: trackByUid" [disabled]="!vm.isBoss || member.uid === vm.group.ownerUid">
-        <ion-item class="miembro" [button]="member.relation !== 'yo'" [detail]="false" (click)="memberActions(member)">
+        <ion-item class="f-row miembro" [button]="member.relation !== 'yo'" [detail]="false" (click)="memberActions(member)">
+          <span *ngIf="!textoBuscar && i < 3 && member.counts && member.counts.compania + member.counts.solitario > 0" class="gr-medal mono" [class.p1]="i === 0" [class.p2]="i === 1" [class.p3]="i === 2" aria-hidden="true">{{ i + 1 }}</span>
           <ion-avatar slot="start">
-            <img [src]="member.photoURL || 'assets/icon-user.svg'" alt="" />
+            <img [src]="member.photoURL || 'assets/icon-user.svg'" width="40" height="40" alt="" />
           </ion-avatar>
-          <ion-img *ngIf="!textoBuscar && i < 3 && member.counts && member.counts.compania + member.counts.solitario > 0" class="podium" [src]="'assets/groups/' + (i + 1) + '.svg'"></ion-img>
           <ion-label>
             <h2>
               <span *ngIf="member.uid === vm.championUid" class="corona-miembro" aria-label="Campeón del mes pasado">👑</span>
@@ -155,14 +140,14 @@
             <p *ngIf="member.relation === 'recibida'" class="pedir-amistad">Te ha pedido amistad</p>
           </ion-label>
           <ng-container *ngIf="member.counts; else oculto">
-            <ion-badge color="secondary" class="badge-compania" dato>{{ member.counts.compania }}</ion-badge>
-            <ion-badge color="primary" class="ion-margin-horizontal badge-solitario" dato>{{ member.counts.solitario }}</ion-badge>
+            <ion-badge class="f-badge c" dato>{{ member.counts.compania }}</ion-badge>
+            <ion-badge class="f-badge s" dato>{{ member.counts.solitario }}</ion-badge>
           </ng-container>
-          <ng-template #oculto><ion-note class="oculto">🙈</ion-note></ng-template>
+          <ng-template #oculto><span aria-label="No comparte sus números">🙈</span></ng-template>
         </ion-item>
 
         <ion-item-options side="end">
-          <ion-item-option *ngIf="vm.isOwner" color="secondary" (click)="toggleAdmin(vm.group, member)" class="hacer-admin">
+          <ion-item-option *ngIf="vm.isOwner" color="medium" (click)="toggleAdmin(vm.group, member)" class="hacer-admin">
             <ion-icon slot="icon-only" name="checkmark-circle"></ion-icon>
           </ion-item-option>
           <ion-item-option color="danger" (click)="removeMember(vm.group, member)" class="quitar-miembro">
@@ -175,7 +160,7 @@
     <!-- Si el navegador no admite compartir archivos, se muestra la tarjeta para guardarla. -->
     <div class="preview-tarjeta" *ngIf="previewCard" (click)="closePreview()">
       <img [src]="previewCard" alt="Resumen de la semana del grupo" />
-      <p class="muted">Mantén pulsada la imagen para guardarla. Toca fuera para cerrar.</p>
+      <p class="f-muted">Mantén pulsada la imagen para guardarla. Toca fuera para cerrar.</p>
     </div>
   </ion-content>
 </ng-container>

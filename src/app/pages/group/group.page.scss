@@ -1,167 +1,128 @@
-.cabecera {
+.gr-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 14px;
   margin: 16px;
 }
 
-.numero {
-  padding: 10px;
-  margin: 10px;
-  margin-top: 1px;
-  font-size: 30px;
-  font-weight: bold;
+.gr-tile {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: var(--f-pink);
+  color: var(--f-on-pink);
+  display: grid;
+  place-items: center;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 26px;
+  flex: none;
+  box-shadow: inset 0 -4px 0 rgba(16, 8, 26, 0.25);
 }
 
-.numeroTotal {
-  padding: 10px;
-  margin: 10px 40px;
-  margin-top: 1px;
-  font-size: 30px;
-  font-weight: bold;
-}
-
-.contenedorNumeros {
+.gr-acts {
   display: flex;
-  justify-content: center;
-  flex-direction: row;
-  align-items: flex-end;
-  text-align: center;
-  margin-top: 12px;
-}
+  gap: 8px;
+  margin: 0 16px 12px;
 
-.letras {
-  margin: 10px 10px -10px;
-  font-weight: 600;
-  font-size: 10px;
-}
-
-.letrasTotal {
-  margin: 10px 23px -10px;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.podium {
-  width: 30px;
-  padding-right: 8px;
-}
-
-.periodo-ranking {
-  margin: 0 16px 8px;
-  width: auto;
-}
-
-.oculto {
-  font-size: 20px;
-  margin-right: 8px;
-}
-
-/* ---------------------------------------------------------------- novedades de grupo (S2) */
-
-.muted {
-  color: var(--ion-color-medium);
-}
-
-.temporada {
-  margin: 4px 16px 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
-
-  .campeon {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-  }
-
-  .corona {
-    font-size: 1.3rem;
-  }
-
-  .palmares {
-    list-style: none;
-    margin: 8px 0 0;
-    padding: 0;
-
-    li {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      padding: 3px 0;
-    }
+  > * {
+    flex: 1;
   }
 }
 
-.objetivo {
-  margin: 4px 16px 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
+.gr-season {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
 
-  &.cumplido {
-    background: rgba(45, 211, 111, 0.18);
-  }
+.palmares {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
 
-  .objetivo-cabecera {
+  li {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 6px;
-  }
-
-  .objetivo-barra {
-    height: 12px;
-    border-radius: 6px;
-    background: var(--ion-color-step-200, rgba(0, 0, 0, 0.1));
-    overflow: hidden;
-  }
-
-  .relleno {
-    height: 100%;
-    background: var(--ion-color-secondary);
-    transition: width 0.4s ease;
-  }
-
-  p {
-    margin: 6px 0 0;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
+    padding: 3px 0;
   }
 }
 
-.titulos {
-  margin: 4px 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.gr-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--f-surface-2);
+  overflow: hidden;
 
-  .titulo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  i {
+    display: block;
+    height: 100%;
+    background: var(--f-pink);
+    transition: width 0.4s ease;
   }
+}
 
-  .titulo-emoji {
-    font-size: 1.5rem;
-  }
+.gr-totals {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 12px;
 
-  .titulo-texto {
+  > div {
     display: flex;
     flex-direction: column;
-    font-size: 0.85rem;
+    gap: 2px;
   }
+}
+
+.gr-total-hero {
+  justify-content: space-between;
+}
+
+.gr-medal {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+
+  &.p1 {
+    background: var(--f-pink);
+    color: var(--f-on-pink);
+  }
+  &.p2 {
+    background: var(--f-solo);
+    color: var(--f-on-solo);
+  }
+  &.p3 {
+    background: var(--f-surface-2);
+    color: var(--f-text);
+  }
+}
+
+.sin-muro {
+  font-size: 0.82rem;
+  margin: 4px 0 0;
 }
 
 .corona-miembro {
   margin-right: 2px;
 }
 
+.pedir-amistad {
+  color: var(--f-pink-text);
+  font-size: 12px;
+}
+
 .preview-tarjeta {
   position: fixed;
   inset: 0;
   z-index: 20;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--f-overlay);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -175,61 +136,8 @@
   }
 
   p {
-    color: #fff;
+    color: var(--f-toast-ink);
     font-size: 0.8rem;
     text-align: center;
   }
-}
-
-/* Muro del grupo y privacidad propia (S4). */
-.muro {
-  margin: 4px 16px 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
-
-  .muro-cabecera {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .sin-muro {
-    font-size: 0.82rem;
-    margin: 4px 0 0;
-  }
-
-  .muro-entrada {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    font-size: 0.85rem;
-  }
-
-  ion-avatar {
-    width: 28px;
-    height: 28px;
-  }
-
-  .muro-texto {
-    flex: 1;
-  }
-}
-
-.privacidad-grupo {
-  --background: transparent;
-
-  h3 {
-    font-size: 0.95rem;
-  }
-
-  p {
-    font-size: 0.78rem;
-  }
-}
-
-.pedir-amistad {
-  color: var(--ion-color-secondary) !important;
-  font-size: 12px;
 }

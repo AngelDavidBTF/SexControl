@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActionSheetController, AlertController, IonicModule, ModalController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, Observable, catchError, combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
+import { getISOWeek } from 'date-fns';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
@@ -13,6 +14,7 @@ import { SharingService } from '../../core/sharing.service';
 import { GroupsService } from '../../core/groups.service';
 import { UiService } from '../../core/ui.service';
 import { HeaderComponent } from '../../components/header/header.component';
+import { TicketComponent, FilaTicket } from '../../components/ui/ticket.component';
 import { ShareInviteModal } from '../../components/share-invite/share-invite.modal';
 import { FapCounts } from '../../shared/fap.model';
 import { FeedEntry, Group, GroupGoal, GroupMember, MAX_GROUP_GOAL } from '../../shared/group.model';
@@ -108,7 +110,7 @@ function countsFor(member: GroupMember, period: RankingPeriod, now: Date): FapCo
 @Component({
   selector: 'app-group',
   standalone: true,
-  imports: [CommonModule, IonicModule, HeaderComponent, FiltroPipe, DatoDirective],
+  imports: [CommonModule, IonicModule, HeaderComponent, FiltroPipe, DatoDirective, TicketComponent],
   templateUrl: './group.page.html',
   styleUrl: './group.page.scss',
 })
@@ -582,5 +584,15 @@ export class GroupPage {
       console.error('Error eliminando grupo', error);
       await this.ui.toast('No se pudo eliminar el grupo');
     }
+  }
+
+  // Semana ISO actual, para el ticket de títulos.
+  get semana(): number {
+    return getISOWeek(new Date());
+  }
+
+  // Los títulos de la semana como filas del ticket.
+  filasTicket(titles: Title[]): FilaTicket[] {
+    return titles.map((t) => ({ titulo: t.title, valor: `${t.name} · ${t.detail}` }));
   }
 }
