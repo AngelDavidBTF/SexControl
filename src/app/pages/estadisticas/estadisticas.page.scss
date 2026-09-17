@@ -1,48 +1,11 @@
-.stats {
-  --compania: #fc445f;
-  --solitario: #1e94cf;
-  --tarjeta-fondo: var(--ion-background-color, #fff);
-  --background: var(--ion-color-step-50, #f4f5f8);
+.periodos {
+  margin: 8px 16px;
 }
-
-// En oscuro las tarjetas van un paso más claras que el fondo para que se distingan.
-:host-context(body.dark) {
-  .stats {
-    --tarjeta-fondo: var(--ion-color-step-100, #2a2a2a);
-    --background: var(--ion-background-color, #121212);
-  }
-}
-
-// Cinco periodos caben a 390 px sin desplazamiento si se quita el ancho mínimo de Ionic.
 .periodos ion-segment-button {
   min-width: 0;
   --padding-start: 2px;
   --padding-end: 2px;
   font-size: 13px;
-}
-
-.muted {
-  color: var(--ion-color-medium);
-}
-
-.tarjeta {
-  background: var(--tarjeta-fondo);
-  border-radius: 16px;
-  padding: 16px;
-  margin: 12px 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-
-  h3 {
-    margin: 0 0 8px;
-    font-size: 15px;
-    font-weight: 600;
-  }
-}
-
-h3.seccion {
-  margin: 20px 16px 0;
-  font-size: 15px;
-  font-weight: 600;
 }
 
 .navegacion {
@@ -70,39 +33,24 @@ h3.seccion {
   }
 }
 
-// ---------------------------------------------------------------- resumen
-.resumen {
-  .hero {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  .hero-numero {
-    font-size: 56px;
-    font-weight: 700;
-    line-height: 1;
-    font-variant-numeric: proportional-nums;
-  }
+.hero-texto {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+}
 
-  .hero-texto {
-    display: flex;
-    flex-direction: column;
-    font-size: 15px;
-  }
-
-  .delta {
-    margin-top: 10px;
-    font-size: 13px;
-    display: flex;
-    gap: 6px;
-    align-items: baseline;
-  }
-
-  .flecha {
-    font-size: 11px;
-    color: var(--ion-color-medium);
-  }
+.delta {
+  margin-top: 10px;
+  font-size: 13px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
 }
 
 .reparto {
@@ -116,41 +64,18 @@ h3.seccion {
     overflow: hidden;
 
     .compania {
-      background: var(--compania);
+      background: var(--f-pink);
     }
-
     .solitario {
-      background: var(--solitario);
+      background: var(--f-solo);
     }
   }
-
-  .reparto-leyenda {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    margin-top: 8px;
-    font-size: 13px;
-  }
 }
 
-.swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  margin-right: 6px;
+.f-legend i.c { background: var(--f-pink); }
+.f-legend i.s { background: var(--f-solo); }
+.f-legend i.b { background: linear-gradient(135deg, var(--f-pink) 50%, var(--f-solo) 50%); }
 
-  &.compania {
-    background: var(--compania);
-  }
-
-  &.solitario {
-    background: var(--solitario);
-  }
-}
-
-// ---------------------------------------------------------------- rachas y curiosidades
 .rachas {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -161,17 +86,8 @@ h3.seccion {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 4px;
     font-size: 12px;
-  }
-
-  .racha-emoji {
-    font-size: 22px;
-  }
-
-  .racha-numero {
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1.2;
   }
 }
 
@@ -179,41 +95,12 @@ h3.seccion {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin: 8px 16px 0;
+  margin: 0 16px 12px;
 
   .curiosidad {
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
     font-size: 12px;
     min-width: 0;
-  }
-
-  .curiosidad-icono {
-    font-size: 22px;
-  }
-
-  .curiosidad-valor {
-    font-size: 20px;
-    font-weight: 700;
-    overflow-wrap: anywhere;
-  }
-
-  .curiosidad-detalle {
-    font-size: 11px;
-  }
-}
-
-// ---------------------------------------------------------------- historial y vacío
-.historial {
-  ion-list {
-    margin: 0 -16px;
-  }
-
-  .ayuda {
-    font-size: 12px;
-    text-align: center;
   }
 }
 
@@ -224,15 +111,10 @@ h3.seccion {
   .vacio-emoji {
     font-size: 56px;
   }
-
-  h2 {
-    font-weight: 700;
-  }
 }
 
-// ---------------------------------------------------------------- compartir, logros, etiquetas
 .compartir {
-  display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
 
@@ -248,48 +130,30 @@ h3.seccion {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin: 8px 16px 0;
+  margin: 0 16px 12px;
 }
 
 .logro {
-  background: var(--tarjeta-fondo);
-  border-radius: 14px;
-  padding: 10px 8px;
+  margin: 0;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   font-size: 12px;
   min-width: 0;
 
-  strong {
-    font-size: 12px;
+  &.bloqueado {
+    opacity: 0.5;
   }
-
-  .muted {
-    font-size: 10px;
-  }
-
-  &.bloqueado .logro-emoji {
-    filter: grayscale(1);
-    opacity: 0.35;
-  }
-}
-
-.logro-emoji {
-  font-size: 28px;
 }
 
 .logro-progreso {
   height: 4px;
   border-radius: 2px;
-  background: var(--ion-color-step-150, #e6e6e6);
+  background: var(--f-line);
   overflow: hidden;
   margin-top: 4px;
 
   div {
     height: 100%;
-    background: var(--ion-color-tertiary);
+    background: var(--f-pink);
   }
 }
 
@@ -298,20 +162,6 @@ h3.seccion {
   align-items: baseline;
   gap: 6px;
   margin-bottom: 8px;
-
-  .valoracion-media {
-    font-size: 34px;
-    font-weight: 700;
-  }
-
-  .valoracion-estrellas {
-    font-size: 26px;
-    color: var(--ion-color-warning);
-  }
-}
-
-h3.separado {
-  margin-top: 18px !important;
 }
 
 .fila-barra {
@@ -332,13 +182,13 @@ h3.separado {
     flex: 1;
     height: 10px;
     border-radius: 5px;
-    background: var(--ion-color-step-100, #eee);
+    background: var(--f-line);
     overflow: hidden;
 
     div {
       height: 100%;
       border-radius: 5px;
-      background: var(--ion-color-tertiary);
+      background: var(--f-pink);
     }
   }
 
@@ -349,19 +199,11 @@ h3.separado {
   }
 }
 
-.estrellas-mini {
-  color: var(--ion-color-warning);
-}
-
 .detalles-registro {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 8px;
   font-size: 12px;
-
-  .etiqueta-mini {
-    color: var(--ion-color-tertiary);
-  }
 
   .nota-mini {
     font-style: italic;
@@ -372,11 +214,27 @@ h3.separado {
   }
 }
 
+.es-detalle { margin: 0; min-height: 20px; font-size: 13px; }
+.es-meses {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 0 -14px;
+  padding: 0 14px;
+}
+.es-mes {
+  flex: none;
+  width: 240px;
+  scroll-snap-align: start;
+}
+.f-month-head { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 12px; margin-bottom: 6px; }
+
 .vista-previa {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--f-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -10,25 +10,26 @@ import { AuthService } from '../../core/auth.service';
 import { FapEntry, FapService } from '../../core/fap.service';
 import { UiService } from '../../core/ui.service';
 import { BarChartComponent } from '../../components/stats/bar-chart.component';
-import { HeatMapComponent } from '../../components/stats/heat-map.component';
+import { CalendarioMesComponent } from '../../components/ui/calendario-mes.component';
+import { MarcaComponent } from '../../components/ui/marca.component';
 import { FapDetails, FapStats } from '../../shared/fap.model';
 import { Achievement } from '../../shared/achievements';
 import { drawYearCard, yearSummary } from '../../shared/year-card';
 import { DatoDirective } from '../../shared/dato.directive';
+import { MesCalendario, ultimosMeses } from '../../shared/calendario';
 import { FapDetailsModal } from '../../components/fap-details/fap-details.modal';
 import { AchievementsService } from '../../core/achievements.service';
 import { ProfileService } from '../../core/profile.service';
+import { SettingsService } from '../../core/settings.service';
 import {
   Bar,
   DateRange,
-  HeatMap,
   Period,
   Streaks,
   TIME_SLOTS,
   Totals,
   WEEKDAY_LABELS,
   WEEKDAY_NAMES,
-  heatMap,
   indexOfMax,
   periodBars,
   periodRange,
@@ -75,7 +76,7 @@ interface StatsView {
   insights: Insight[];
   weekdayBars: Bar[];
   timeSlotBars: Bar[];
-  heat: HeatMap;
+  meses: MesCalendario[];
   tags: TagRow[];
   rating: { average: number; count: number; distribution: { stars: number; count: number; pct: number }[] } | null;
   shareYear: number;
@@ -92,7 +93,7 @@ const HISTORY_PAGE = 20;
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink, BarChartComponent, HeatMapComponent, DatoDirective],
+  imports: [CommonModule, IonicModule, RouterLink, BarChartComponent, CalendarioMesComponent, MarcaComponent, DatoDirective],
   templateUrl: './estadisticas.page.html',
   styleUrl: './estadisticas.page.scss',
 })
@@ -104,6 +105,14 @@ export class EstadisticasPage {
   private modalController = inject(ModalController);
   private achievements = inject(AchievementsService);
   private profiles = inject(ProfileService);
+  private settings = inject(SettingsService);
+
+  // Etiqueta del día tocado en el calendario de 6 meses (presentación; no persiste).
+  diaCalendario = '';
+
+  get discreto(): boolean {
+    return this.settings.discreet().enabled;
+  }
 
   readonly periods: { value: Period; label: string }[] = [
     { value: 'semana', label: 'Semana' },
@@ -229,7 +238,7 @@ export class EstadisticasPage {
           compania: c,
         };
       }),
-      heat: heatMap(stats.days, now),
+      meses: ultimosMeses(stats.days, now, 6),
       tags: tagRows(stats),
       rating: ratingSummary(stats),
       shareYear: state.period === 'anio' ? state.anchor.getFullYear() : now.getFullYear(),

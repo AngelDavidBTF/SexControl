@@ -381,7 +381,7 @@
       "src/app/components/stats/bar-chart.component.ts",
       "tests/design/estadisticas.check.js"
     ],
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "id": "E3-T2",

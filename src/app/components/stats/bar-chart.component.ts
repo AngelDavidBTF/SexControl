@@ -62,14 +62,14 @@ interface Column extends Bar {
     :host {
       display: block;
       --gap: 2px;
-      --compania: #fc445f;
-      --solitario: #1e94cf;
+      --compania: var(--f-pink);
+      --solitario: var(--f-solo);
     }
     .legend {
       display: flex;
       gap: 16px;
       font-size: 12px;
-      color: var(--ion-color-medium);
+      color: var(--f-muted);
       margin-bottom: 6px;
     }
     .legend span {
@@ -103,7 +103,7 @@ interface Column extends Bar {
       font-weight: 600;
     }
     .muted {
-      color: var(--ion-color-medium);
+      color: var(--f-muted);
     }
     .plot {
       position: relative;
@@ -113,7 +113,7 @@ interface Column extends Bar {
       position: absolute;
       left: 0;
       right: 0;
-      border-top: 1px solid var(--ion-color-step-150, #e6e6e6);
+      border-top: 1px solid var(--f-line);
     }
     .grid .line span {
       position: absolute;
@@ -122,7 +122,7 @@ interface Column extends Bar {
       width: 18px;
       text-align: right;
       font-size: 10px;
-      color: var(--ion-color-medium);
+      color: var(--f-muted);
     }
     .columns {
       position: absolute;
@@ -144,7 +144,7 @@ interface Column extends Bar {
       cursor: pointer;
     }
     .column.selected {
-      background: var(--ion-color-step-50, rgba(0, 0, 0, 0.04));
+      background: var(--f-surface-2);
     }
     .stack {
       width: 100%;
@@ -169,7 +169,7 @@ interface Column extends Bar {
       flex: 1;
       text-align: center;
       font-size: 10px;
-      color: var(--ion-color-medium);
+      color: var(--f-muted);
       white-space: nowrap;
       overflow: visible;
     }

@@ -1,37 +1,38 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>Estadísticas</ion-title>
+    <ion-buttons slot="start">
+      <app-marca titulo="estadísticas"></app-marca>
+    </ion-buttons>
     <ion-buttons slot="end">
       <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes">
         <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  <ion-toolbar class="periodos">
-    <ion-segment [value]="state.period" mode="md" color="secondary" (ionChange)="onPeriodChange($event)">
-      <ion-segment-button *ngFor="let p of periods" [value]="p.value">{{ p.label }}</ion-segment-button>
-    </ion-segment>
-  </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="stats">
+  <ion-segment [value]="state.period" mode="ios" (ionChange)="onPeriodChange($event)" class="periodos">
+    <ion-segment-button *ngFor="let p of periods" [value]="p.value">{{ p.label }}</ion-segment-button>
+  </ion-segment>
+
   <ng-container *ngIf="vm$ | async as vm; else cargando">
     <div *ngIf="!vm.hasData" class="vacio">
       <div class="vacio-emoji" aria-hidden="true">📊</div>
       <h2>Aún no hay nada que contar</h2>
       <p>Cuando sumes tu primer registro verás aquí tus rachas, récords y gráficas.</p>
-      <ion-button routerLink="/tabs/sumar" color="secondary">Ir a Sumar</ion-button>
+      <ion-button routerLink="/tabs/sumar" class="f-key pink">Ir a Sumar</ion-button>
     </div>
 
     <ng-container *ngIf="vm.hasData">
       <!-- Navegación del periodo -->
       <div class="navegacion" *ngIf="state.period !== 'rango'">
-        <ion-button fill="clear" size="small" (click)="move(-1)" [disabled]="state.period === 'siempre'" aria-label="Periodo anterior" class="nav-prev">
-          <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+        <ion-button fill="clear" size="small" (click)="move(-1)" [disabled]="state.period === 'siempre'" aria-label="Periodo anterior" class="f-ghost nav-prev">
+          <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
         </ion-button>
         <h2 class="titulo-periodo">{{ vm.title }}</h2>
-        <ion-button fill="clear" size="small" (click)="move(1)" [disabled]="!vm.canGoNext" aria-label="Periodo siguiente" class="nav-next">
-          <ion-icon slot="icon-only" name="chevron-forward"></ion-icon>
+        <ion-button fill="clear" size="small" (click)="move(1)" [disabled]="!vm.canGoNext" aria-label="Periodo siguiente" class="f-ghost nav-next">
+          <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
         </ion-button>
       </div>
 
@@ -59,22 +60,22 @@
       </div>
 
       <!-- Resumen del periodo -->
-      <section class="tarjeta resumen">
+      <section class="f-card resumen">
         <div class="hero">
-          <span class="hero-numero total-periodo" dato>{{ vm.totals.total }}</span>
+          <span class="f-big total-periodo" dato>{{ vm.totals.total }}</span>
           <div class="hero-texto">
             <span>{{ vm.totals.total === 1 ? 'vez' : 'veces' }}</span>
-            <span class="muted">{{ vm.totals.activeDays }} {{ vm.totals.activeDays === 1 ? 'día activo' : 'días activos' }}</span>
+            <span class="f-muted">{{ vm.totals.activeDays }} {{ vm.totals.activeDays === 1 ? 'día activo' : 'días activos' }}</span>
           </div>
         </div>
 
         <div class="delta" *ngIf="vm.delta as delta">
           <ng-container *ngIf="delta.diff !== 0; else igual">
-            <span class="flecha" aria-hidden="true">{{ delta.diff > 0 ? '▲' : '▼' }}</span>
+            <span aria-hidden="true">{{ delta.diff > 0 ? '▲' : '▼' }}</span>
             <strong>{{ delta.pct !== null ? (delta.pct > 0 ? '+' : '') + delta.pct + ' %' : (delta.diff > 0 ? '+' : '') + delta.diff }}</strong>
-            <span class="muted">vs {{ delta.label }}</span>
+            <span class="f-muted">vs {{ delta.label }}</span>
           </ng-container>
-          <ng-template #igual><span class="muted">Igual que {{ delta.label }}</span></ng-template>
+          <ng-template #igual><span class="f-muted">Igual que {{ delta.label }}</span></ng-template>
         </div>
 
         <div class="reparto" *ngIf="vm.totals.total > 0">
@@ -82,56 +83,56 @@
             <div class="compania" [style.flex-grow]="vm.totals.compania"></div>
             <div class="solitario" [style.flex-grow]="vm.totals.solitario"></div>
           </div>
-          <div class="reparto-leyenda">
-            <span><i class="swatch compania"></i>Compañía <strong class="reparto-compania" dato>{{ vm.totals.compania }}</strong> · {{ vm.pctCompania }} %</span>
-            <span><i class="swatch solitario"></i>Solitario <strong class="reparto-solitario" dato>{{ vm.totals.solitario }}</strong> · {{ 100 - vm.pctCompania }} %</span>
+          <div class="f-legend">
+            <span><i class="c"></i>Compañía <strong class="f-num-c reparto-compania" dato>{{ vm.totals.compania }}</strong> · {{ vm.pctCompania }} %</span>
+            <span><i class="s"></i>Solitario <strong class="f-num-s reparto-solitario" dato>{{ vm.totals.solitario }}</strong> · {{ 100 - vm.pctCompania }} %</span>
           </div>
         </div>
       </section>
 
       <!-- Evolución -->
-      <section class="tarjeta">
-        <h3>Evolución</h3>
+      <section class="f-card">
+        <span class="f-label">evolución</span>
         <app-bar-chart [bars]="vm.bars" [height]="150"></app-bar-chart>
       </section>
 
       <!-- Rachas -->
-      <section class="tarjeta rachas">
+      <section class="f-card rachas">
         <div class="racha">
-          <span class="racha-emoji" aria-hidden="true">🔥</span>
-          <span class="racha-numero racha-actual">{{ vm.streaks.current }}</span>
-          <span class="muted">{{ vm.streaks.current === 1 ? 'día de racha' : 'días de racha' }}</span>
+          <ion-icon name="flame-outline" aria-hidden="true"></ion-icon>
+          <span class="f-mid racha-actual">{{ vm.streaks.current }}</span>
+          <span class="f-muted">{{ vm.streaks.current === 1 ? 'día de racha' : 'días de racha' }}</span>
         </div>
         <div class="racha">
-          <span class="racha-emoji" aria-hidden="true">⭐</span>
-          <span class="racha-numero racha-mejor">{{ vm.streaks.best }}</span>
-          <span class="muted">mejor racha</span>
+          <ion-icon name="star-outline" aria-hidden="true"></ion-icon>
+          <span class="f-mid racha-mejor">{{ vm.streaks.best }}</span>
+          <span class="f-muted">mejor racha</span>
         </div>
         <div class="racha">
-          <span class="racha-emoji" aria-hidden="true">⏱️</span>
-          <span class="racha-numero dias-ultimo">{{ vm.streaks.daysSinceLast === 0 ? 'Hoy' : (vm.streaks.daysSinceLast ?? '—') }}</span>
-          <span class="muted">{{ vm.streaks.daysSinceLast === 0 ? 'último registro' : vm.streaks.daysSinceLast === 1 ? 'día desde el último' : 'días desde el último' }}</span>
+          <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+          <span class="f-mid dias-ultimo">{{ vm.streaks.daysSinceLast === 0 ? 'Hoy' : (vm.streaks.daysSinceLast ?? '—') }}</span>
+          <span class="f-muted">{{ vm.streaks.daysSinceLast === 0 ? 'último registro' : vm.streaks.daysSinceLast === 1 ? 'día desde el último' : 'días desde el último' }}</span>
         </div>
       </section>
 
       <!-- Curiosidades -->
-      <h3 class="seccion">Curiosidades</h3>
+      <div class="f-section"><span class="f-label">curiosidades</span></div>
       <div class="curiosidades">
-        <section class="tarjeta curiosidad" *ngFor="let insight of vm.insights">
-          <span class="curiosidad-icono" aria-hidden="true">{{ insight.icon }}</span>
-          <span class="muted">{{ insight.label }}</span>
-          <strong class="curiosidad-valor">{{ insight.value }}</strong>
-          <span class="curiosidad-detalle muted">{{ insight.detail }}</span>
+        <section class="f-card curiosidad" *ngFor="let insight of vm.insights">
+          <span aria-hidden="true">{{ insight.icon }}</span>
+          <span class="f-muted">{{ insight.label }}</span>
+          <strong>{{ insight.value }}</strong>
+          <span class="f-muted">{{ insight.detail }}</span>
         </section>
       </div>
 
       <!-- Resumen anual compartible -->
-      <section class="tarjeta compartir">
+      <section class="f-card compartir">
         <div class="compartir-texto">
           <strong>Tu {{ vm.shareYear }} en una imagen</strong>
-          <span class="muted">Racha, mejor mes, franja favorita… listo para compartir.</span>
+          <span class="f-muted">Racha, mejor mes, franja favorita… listo para compartir.</span>
         </div>
-        <ion-button color="secondary" (click)="shareYear(vm.shareYear)" class="compartir-anio">
+        <ion-button class="f-key pink compartir-anio" (click)="shareYear(vm.shareYear)">
           <ion-icon slot="start" name="share-social-outline"></ion-icon>
           Crear
         </ion-button>
@@ -139,25 +140,25 @@
 
       <!-- Logros -->
       <ng-container *ngIf="achievements$ | async as achievementList">
-        <h3 class="seccion">Logros · {{ unlockedCount(achievementList) }}/{{ achievementList.length }}</h3>
+        <div class="f-section"><span class="f-label">logros · {{ unlockedCount(achievementList) }}/{{ achievementList.length }}</span></div>
         <div class="logros">
-          <div class="logro" *ngFor="let a of achievementList" [class.bloqueado]="!a.unlocked" [attr.aria-label]="a.title + (a.unlocked ? ', conseguido' : ', pendiente')">
-            <span class="logro-emoji" aria-hidden="true">{{ a.emoji }}</span>
+          <div class="f-card logro" *ngFor="let a of achievementList" [class.bloqueado]="!a.unlocked" [attr.aria-label]="a.title + (a.unlocked ? ', conseguido' : ', pendiente')">
+            <span aria-hidden="true">{{ a.emoji }}</span>
             <strong>{{ a.title }}</strong>
-            <span class="muted">{{ a.description }}</span>
+            <span class="f-muted">{{ a.description }}</span>
             <div class="logro-progreso" *ngIf="!a.unlocked"><div [style.width.%]="a.progress * 100"></div></div>
           </div>
         </div>
       </ng-container>
 
       <!-- Etiquetas y valoración -->
-      <section class="tarjeta" *ngIf="vm.tags.length || vm.rating">
+      <section class="f-card" *ngIf="vm.tags.length || vm.rating">
         <ng-container *ngIf="vm.rating as rating">
-          <h3>Valoración media</h3>
+          <span class="f-label">valoración media</span>
           <div class="valoracion">
-            <span class="valoracion-media" dato>{{ rating.average | number: '1.1-1' }}</span>
-            <span class="valoracion-estrellas" aria-hidden="true">★</span>
-            <span class="muted">{{ rating.count }} {{ rating.count === 1 ? 'valorada' : 'valoradas' }}</span>
+            <span class="f-big valoracion-media" dato>{{ rating.average | number: '1.1-1' }}</span>
+            <ion-icon name="star" aria-hidden="true"></ion-icon>
+            <span class="f-muted">{{ rating.count }} {{ rating.count === 1 ? 'valorada' : 'valoradas' }}</span>
           </div>
           <div class="fila-barra" *ngFor="let d of rating.distribution">
             <span class="fila-etiqueta">{{ d.stars }} ★</span>
@@ -167,7 +168,7 @@
         </ng-container>
 
         <ng-container *ngIf="vm.tags.length">
-          <h3 [class.separado]="vm.rating">Etiquetas</h3>
+          <span class="f-label" [class.separado]="vm.rating">etiquetas</span>
           <div class="fila-barra etiqueta-fila" *ngFor="let row of vm.tags.slice(0, 8)">
             <span class="fila-etiqueta">#{{ row.tag }}</span>
             <div class="barra"><div [style.width.%]="row.pct"></div></div>
@@ -176,35 +177,45 @@
         </ng-container>
       </section>
 
-      <!-- Actividad -->
-      <section class="tarjeta">
-        <h3>Actividad de los últimos 6 meses</h3>
-        <app-heat-map [map]="vm.heat"></app-heat-map>
+      <!-- Calendario de los últimos 6 meses -->
+      <section class="f-card f-paper es-calcard">
+        <p class="es-detalle" aria-live="polite">{{ diaCalendario || 'Toca un día para ver cuántas veces' }}</p>
+        <div class="es-meses">
+          <div class="es-mes" *ngFor="let mes of vm.meses">
+            <div class="f-month-head"><strong>{{ mes.nombre }}</strong><span>{{ mes.total }}</span></div>
+            <app-calendario-mes [mes]="mes" [discreto]="discreto" (diaElegido)="diaCalendario = $event.etiqueta"></app-calendario-mes>
+          </div>
+        </div>
+        <div class="f-legend">
+          <span><i class="c"></i>{{ discreto ? 'con alguien' : 'compañía' }}</span>
+          <span><i class="s"></i>{{ discreto ? 'por mi cuenta' : 'solitario' }}</span>
+          <span><i class="b"></i>los dos</span>
+        </div>
       </section>
 
-      <section class="tarjeta">
-        <h3>Por día de la semana</h3>
+      <section class="f-card">
+        <span class="f-label">por día de la semana</span>
         <app-bar-chart [bars]="vm.weekdayBars" [height]="110" emptyHint="Toca un día para ver el detalle"></app-bar-chart>
       </section>
 
-      <section class="tarjeta">
-        <h3>Por franja horaria</h3>
+      <section class="f-card">
+        <span class="f-label">por franja horaria</span>
         <app-bar-chart [bars]="vm.timeSlotBars" [height]="110" emptyHint="Toca una franja para ver el detalle"></app-bar-chart>
       </section>
 
       <!-- Historial -->
-      <section class="tarjeta historial">
-        <h3>Historial</h3>
+      <section class="f-card historial">
+        <span class="f-label">historial</span>
         <ng-container *ngIf="!historyOpen; else lista">
-          <p class="muted">Consulta tus registros uno a uno y borra los que quieras.</p>
-          <ion-button expand="block" fill="outline" color="medium" (click)="openHistory()" class="ver-historial">Ver historial</ion-button>
+          <p class="f-muted">Consulta tus registros uno a uno y borra los que quieras.</p>
+          <ion-button expand="block" class="f-btn ver-historial" (click)="openHistory()">Ver historial</ion-button>
         </ng-container>
 
         <ng-template #lista>
           <ion-list lines="full">
             <ion-item-sliding *ngFor="let entry of history; trackBy: trackById" #sliding>
-              <ion-item class="registro" button (click)="editEntry(entry)">
-                <ion-icon slot="start" [name]="entry.solitario ? 'person' : 'people'" [color]="entry.solitario ? 'primary' : 'secondary'"></ion-icon>
+              <ion-item class="f-row registro" button (click)="editEntry(entry)">
+                <ion-icon slot="start" [name]="entry.solitario ? 'person-outline' : 'people-outline'"></ion-icon>
                 <ion-label>
                   <h2>{{ formatEntry(entry) }}</h2>
                   <p>
@@ -224,11 +235,11 @@
               </ion-item-options>
             </ion-item-sliding>
           </ion-list>
-          <p class="muted ayuda" *ngIf="history.length > 0">Desliza un registro hacia la izquierda para borrarlo.</p>
+          <p class="f-muted ayuda" *ngIf="history.length > 0">Desliza un registro hacia la izquierda para borrarlo.</p>
           <div class="ion-text-center" *ngIf="historyLoading">
-            <ion-spinner name="circular" color="danger"></ion-spinner>
+            <ion-spinner name="circular"></ion-spinner>
           </div>
-          <ion-button *ngIf="historyHasMore && !historyLoading" expand="block" fill="clear" (click)="loadMoreHistory()" class="cargar-mas">Cargar más</ion-button>
+          <ion-button *ngIf="historyHasMore && !historyLoading" expand="block" fill="clear" class="f-ghost cargar-mas" (click)="loadMoreHistory()">Cargar más</ion-button>
         </ng-template>
       </section>
     </ng-container>
@@ -240,16 +251,16 @@
       <img [src]="previewYearCard" alt="Resumen del año" />
       <div class="vista-previa-botones">
         <a [href]="previewYearCard" [download]="previewYearName" class="descargar">
-          <ion-button color="secondary">Descargar imagen</ion-button>
+          <ion-button class="f-key pink">Descargar imagen</ion-button>
         </a>
-        <ion-button fill="clear" color="light" (click)="closeYearPreview()">Cerrar</ion-button>
+        <ion-button fill="clear" class="f-ghost" (click)="closeYearPreview()">Cerrar</ion-button>
       </div>
     </div>
   </div>
 
   <ng-template #cargando>
     <div class="ion-text-center ion-margin">
-      <ion-spinner name="circular" color="danger"></ion-spinner>
+      <ion-spinner name="circular"></ion-spinner>
     </div>
   </ng-template>
 </ion-content>
