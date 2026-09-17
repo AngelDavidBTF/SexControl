@@ -16,7 +16,7 @@ async function run() {
       const link = document.querySelector('link[rel="manifest"]');
       return link ? await (await fetch(link.href)).json() : null;
     });
-    expectEqual('el manifiesto declara la app', manifest?.name, 'SexControl');
+    expectEqual('el manifiesto declara la app', manifest?.name, 'Follendario');
     expectEqual('se instala como aplicación', manifest?.display, 'standalone');
     expectTrue('tiene iconos', (manifest?.icons?.length ?? 0) > 0);
 
@@ -28,7 +28,7 @@ async function run() {
     await page.reload({ waitUntil: 'load' });
     await page.waitForSelector('ion-button', { timeout: 30000 });
     const texto = await page.evaluate(() => document.body.innerText);
-    expectTrue('sin conexión la app sigue abriendo', texto.includes('Login'));
+    expectTrue('sin conexión la app sigue abriendo', texto.includes('Entrar'));
     await context.setOffline(false);
   } finally {
     await browser.close();
