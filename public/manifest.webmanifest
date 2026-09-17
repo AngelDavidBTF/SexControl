@@ -1,17 +1,17 @@
 {
-  "name": "SexControl",
-  "short_name": "SexControl",
-  "description": "Lleva la cuenta, compite con tus amigos y descubre tus estadísticas.",
+  "name": "Follendario",
+  "short_name": "Follendario",
+  "description": "Lleva la cuenta, pícate con tus amigos y mira tu calendario.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#fc445f",
+  "background_color": "#10081a",
+  "theme_color": "#10081a",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
