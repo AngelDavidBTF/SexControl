@@ -36,7 +36,13 @@ const DEFAULTS: StoredSettings = {
 };
 
 const NEUTRAL_TITLE = 'Notas';
-const APP_TITLE = 'SexControl';
+const APP_TITLE = 'Follendario';
+
+// Color de la barra del navegador (<meta name="theme-color">): el fondo de cada piel de _tokens.scss.
+const THEME_COLOR = {
+  claro: { normal: '#f4e6de', discreto: '#f2f1ee' },
+  oscuro: { normal: '#10081a', discreto: '#151618' },
+} as const;
 
 // Ajustes propios de cada dispositivo (localStorage): tema, modo discreto y recordatorios.
 // Objetivos y privacidad viajan con la cuenta (Firestore), no aquí.
@@ -60,8 +66,16 @@ export class SettingsService {
 
     effect(() => document.body.classList.toggle('dark', this.isDark()));
     effect(() => document.body.classList.toggle('discreto-numeros', this.hideNumbers()));
+    // Piel neutra del modo discreto (tokens de body.discreto en src/theme/_tokens.scss).
+    effect(() => document.body.classList.toggle('discreto', this.discreet().enabled));
+    effect(() => {
+      const piel = THEME_COLOR[this.isDark() ? 'oscuro' : 'claro'];
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', this.discreet().enabled ? piel.discreto : piel.normal);
+    });
     effect(() => {
       const neutral = this.discreet().enabled && this.discreet().neutralName;
+      // body.neutro: las pantallas sin sesión (login, registro) cambian la marca por «Notas» solo con CSS.
+      document.body.classList.toggle('neutro', neutral);
       document.title = neutral ? NEUTRAL_TITLE : APP_TITLE;
       const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
       if (icon) {

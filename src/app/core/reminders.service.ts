@@ -46,7 +46,7 @@ export class RemindersService {
         notifications: [
           {
             id: REMINDER_ID,
-            title: this.settings.discreet().enabled ? 'Notas' : 'SexControl',
+            title: this.settings.discreet().enabled ? 'Notas' : 'Follendario',
             body: this.settings.discreet().enabled ? 'Tienes algo pendiente' : MESSAGES[Math.floor(Math.random() * MESSAGES.length)],
             schedule: { at, allowWhileIdle: true },
           },
