@@ -1,0 +1,175 @@
+// Tokens de Follendario. Única fuente de color, tipografía, radios y curvas de toda la app.
+// Tema claro = papel crema (por defecto, en body). Oscuro = ciruela del logo (body.dark, lo pone
+// SettingsService). Discreto = piel neutra que no delata la app (body.discreto, también de
+// SettingsService). El calendario del logo (--f-cal-*) es igual en claro y en oscuro.
+// Compañía = rosa del logotipo. Solitario = cian de siempre. Contrastes comprobados por
+// tests/design/contraste.check.js.
+
+body {
+  --f-font: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --f-radius-sm: 10px;
+  --f-radius: 16px;
+  --f-radius-lg: 22px;
+
+  --f-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --f-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --f-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --f-pink: #fc2a6c;
+  --f-on-pink: #10081a;
+  --f-cream: #fcf3ed;
+  --f-plum: #10081a;
+  --f-egg: #681581;
+
+  --f-cal-paper: #fcf3ed;
+  --f-cal-head: #fc2a6c;
+  --f-cal-ink: #10081a;
+  --f-cal-muted: #5e4e68;
+  --f-cal-cell: #e8d0d3;
+  --f-cal-line: #e2c5c9;
+  --f-tile: #10081a;
+  --f-tile-ink: #fcf3ed;
+
+  /* Claro: papel crema */
+  --f-bg: #f4e6de;
+  --f-bg-rgb: 244, 230, 222;
+  --f-deep: #fffaf6;
+  --f-surface: #fdf7f2;
+  --f-surface-2: #f1e1da;
+  --f-line: #e2c5c9;
+  --f-text: #10081a;
+  --f-text-rgb: 16, 8, 26;
+  --f-muted: #6e5e78;
+  --f-dim: #8c7a88;
+
+  --f-pink-text: #c8124f;
+  --f-pink-top: #ff76a0;
+  --f-pink-side: #b3164a;
+  --f-glow-pink: rgba(252, 42, 108, 0.35);
+
+  --f-solo: #6fc8f1;
+  --f-on-solo: #10081a;
+  --f-solo-text: #0a6c9b;
+  --f-solo-top: #bfe7f9;
+  --f-solo-side: #3a8fbb;
+  --f-glow-solo: rgba(58, 143, 187, 0.35);
+
+  --f-up: #1f7a45;
+  --f-down: #c8124f;
+  --f-cell: #eddad8;
+  --f-ticket: #ffffff;
+  --f-ticket-ink: #10081a;
+  --f-toast: #10081a;
+  --f-toast-ink: #fcf3ed;
+  --f-overlay: rgba(16, 8, 26, 0.45);
+  --f-shadow: 0 18px 34px -22px rgba(104, 21, 129, 0.45);
+}
+
+/* Oscuro: ciruela del logo */
+body.dark {
+  --f-bg: #10081a;
+  --f-bg-rgb: 16, 8, 26;
+  --f-deep: #0a0511;
+  --f-surface: #1a1125;
+  --f-surface-2: #241832;
+  --f-line: #2e2340;
+  --f-text: #fcf3ed;
+  --f-text-rgb: 252, 243, 237;
+  --f-muted: #a597b3;
+  --f-dim: #75688a;
+
+  --f-pink-text: #ff5c8d;
+  --f-glow-pink: rgba(252, 42, 108, 0.55);
+
+  --f-solo-text: #6fc8f1;
+  --f-glow-solo: rgba(111, 200, 241, 0.5);
+
+  --f-up: #6fdc95;
+  --f-down: #ff8095;
+  --f-cell: #241832;
+  --f-ticket: #fcf3ed;
+  --f-toast: #fcf3ed;
+  --f-toast-ink: #10081a;
+  --f-overlay: rgba(5, 2, 9, 0.62);
+  --f-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.8);
+}
+
+/* Discreto en claro: parece una app de notas */
+body.discreto:not(.dark) {
+  --f-bg: #f2f1ee;
+  --f-bg-rgb: 242, 241, 238;
+  --f-deep: #ffffff;
+  --f-surface: #fafaf8;
+  --f-surface-2: #e9e7e3;
+  --f-line: #d9d6d0;
+  --f-text: #1c1d20;
+  --f-text-rgb: 28, 29, 32;
+  --f-muted: #5d6168;
+  --f-dim: #8b8f95;
+  --f-pink: #cfc7ba;
+  --f-on-pink: #1c1d20;
+  --f-pink-text: #5f594f;
+  --f-pink-top: #e2dcd2;
+  --f-pink-side: #a39b8d;
+  --f-glow-pink: transparent;
+  --f-solo: #9aaaba;
+  --f-on-solo: #1c1d20;
+  --f-solo-text: #4f6274;
+  --f-solo-top: #c7d0d8;
+  --f-solo-side: #718191;
+  --f-glow-solo: transparent;
+  --f-up: #4f6a44;
+  --f-down: #7a5a50;
+  --f-cell: #e6e3de;
+  --f-toast: #1c1d20;
+  --f-toast-ink: #f2f1ee;
+  --f-cal-paper: #ffffff;
+  --f-cal-head: #b9bfc6;
+  --f-cal-ink: #1c1d20;
+  --f-cal-muted: #5d6168;
+  --f-cal-cell: #e6e3de;
+  --f-cal-line: #d9d6d0;
+  --f-tile: #1c1d20;
+  --f-tile-ink: #f2f1ee;
+}
+
+/* Discreto en oscuro */
+body.dark.discreto {
+  --f-bg: #151618;
+  --f-bg-rgb: 21, 22, 24;
+  --f-deep: #0f1012;
+  --f-surface: #1c1e21;
+  --f-surface-2: #26292d;
+  --f-line: #33363b;
+  --f-text: #ecebe8;
+  --f-text-rgb: 236, 235, 232;
+  --f-muted: #9ea2a9;
+  --f-dim: #6c7178;
+  --f-pink: #d9d3c9;
+  --f-on-pink: #151618;
+  --f-pink-text: #ddd7cd;
+  --f-pink-top: #ebe6de;
+  --f-pink-side: #aaa397;
+  --f-glow-pink: transparent;
+  --f-solo: #93a3b3;
+  --f-on-solo: #151618;
+  --f-solo-text: #b1bdc9;
+  --f-solo-top: #c3ccd5;
+  --f-solo-side: #6d7c8a;
+  --f-glow-solo: transparent;
+  --f-up: #b7c4ae;
+  --f-down: #d0b3a9;
+  --f-cell: #26292d;
+  --f-toast: #ecebe8;
+  --f-toast-ink: #151618;
+  --f-cal-paper: #e9e8e4;
+  --f-cal-head: #a7adb4;
+  --f-cal-ink: #17181a;
+  --f-cal-muted: #52565c;
+  --f-cal-cell: #d5d3ce;
+  --f-cal-line: #cfccc6;
+  --f-tile: #26292d;
+  --f-tile-ink: #ecebe8;
+}

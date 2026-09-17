@@ -54,7 +54,7 @@
       "tests/design/contraste.check.js",
       "src/styles.scss"
     ],
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "id": "E1-T3",
