@@ -23,9 +23,9 @@ import { DEFAULT_TAGS, FapDetails, MAX_NOTE, MAX_TAGS, normalizeTag } from '../.
     </ion-header>
 
     <ion-content class="ion-padding">
-      <p class="muted" *ngIf="subtitle">{{ subtitle }}</p>
+      <p class="f-muted" *ngIf="subtitle">{{ subtitle }}</p>
 
-      <h4>¿Qué tal fue?</h4>
+      <span class="f-label">¿qué tal fue?</span>
       <div class="estrellas" role="radiogroup" aria-label="Valoración">
         <button
           type="button"
@@ -39,7 +39,7 @@ import { DEFAULT_TAGS, FapDetails, MAX_NOTE, MAX_TAGS, normalizeTag } from '../.
         >★</button>
       </div>
 
-      <h4>Etiquetas</h4>
+      <span class="f-label">etiquetas</span>
       <div class="etiquetas">
         <ion-chip *ngFor="let tag of suggestions" [outline]="!selected.has(tag)" (click)="toggle(tag)" [class.seleccionada]="selected.has(tag)" class="etiqueta">
           {{ tag }}
@@ -57,7 +57,7 @@ import { DEFAULT_TAGS, FapDetails, MAX_NOTE, MAX_TAGS, normalizeTag } from '../.
         <ion-button slot="end" fill="clear" (click)="addTag()" aria-label="Añadir etiqueta"><ion-icon slot="icon-only" name="add"></ion-icon></ion-button>
       </ion-input>
 
-      <h4>Nota</h4>
+      <span class="f-label">nota</span>
       <ion-textarea
         fill="outline"
         [autoGrow]="true"
@@ -70,14 +70,12 @@ import { DEFAULT_TAGS, FapDetails, MAX_NOTE, MAX_TAGS, normalizeTag } from '../.
     </ion-content>
   `,
   styles: `
-    .muted {
-      color: var(--ion-color-medium);
+    .f-muted {
       margin-top: 0;
     }
-    h4 {
+    .f-label {
+      display: block;
       margin: 20px 0 8px;
-      font-size: 15px;
-      font-weight: 600;
     }
     .estrellas {
       display: flex;
@@ -88,11 +86,11 @@ import { DEFAULT_TAGS, FapDetails, MAX_NOTE, MAX_TAGS, normalizeTag } from '../.
       border: 0;
       font-size: 36px;
       line-height: 1;
-      color: var(--ion-color-step-250, #ccc);
+      color: var(--f-line);
       padding: 0 2px;
     }
     .estrella.activa {
-      color: var(--ion-color-warning);
+      color: var(--f-pink-text);
     }
     .etiquetas {
       display: flex;

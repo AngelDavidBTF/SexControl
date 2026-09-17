@@ -16,9 +16,9 @@ const PIN_LENGTH = 4;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="bloqueo" role="dialog" aria-modal="true" aria-label="Introduce tu PIN">
-      <div class="icono" aria-hidden="true">🔒</div>
-      <h2>{{ settings.discreet().neutralName ? 'Notas' : 'SexControl' }}</h2>
-      <p class="muted">Introduce tu PIN</p>
+      <ion-icon name="lock-closed-outline" class="icono" aria-hidden="true"></ion-icon>
+      <h2 translate="no">{{ settings.discreet().neutralName ? 'Notas' : 'Follendario' }}</h2>
+      <p class="f-lead" aria-live="polite">{{ error() ? 'Ese no es. Otra vez.' : 'Pon tu PIN' }}</p>
 
       <div class="puntos" [class.error]="error()" aria-hidden="true">
         <span *ngFor="let i of dots" [class.lleno]="i < pin().length"></span>
@@ -31,7 +31,7 @@ const PIN_LENGTH = 4;
         </button>
       </div>
 
-      <button type="button" class="olvidado" (click)="forgot()">He olvidado el PIN</button>
+      <button type="button" class="olvidado" (click)="forgot()">¿has olvidado el PIN?</button>
     </div>
   `,
   styles: `
@@ -39,8 +39,8 @@ const PIN_LENGTH = 4;
       position: fixed;
       inset: 0;
       z-index: 99999;
-      background: var(--ion-background-color, #fff);
-      color: var(--ion-text-color, #000);
+      background: var(--f-bg);
+      color: var(--f-text);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -49,34 +49,32 @@ const PIN_LENGTH = 4;
     }
     .icono {
       font-size: 48px;
+      color: var(--f-muted);
     }
     h2 {
       margin: 8px 0 0;
       font-weight: 700;
     }
-    .muted {
-      color: var(--ion-color-medium);
-    }
     .puntos {
       display: flex;
       gap: 16px;
-      margin: 24px 0 32px;
+      margin: 8px 0 32px;
     }
     .puntos span {
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      border: 2px solid var(--ion-color-medium);
+      border: 2px solid var(--f-line);
     }
     .puntos span.lleno {
-      background: var(--ion-text-color, #000);
-      border-color: var(--ion-text-color, #000);
+      background: var(--f-text);
+      border-color: var(--f-text);
     }
     .puntos.error {
       animation: temblor 0.35s;
     }
     .puntos.error span {
-      border-color: var(--ion-color-danger);
+      border-color: var(--f-down);
     }
     @keyframes temblor {
       25% { transform: translateX(-8px); }
@@ -93,8 +91,9 @@ const PIN_LENGTH = 4;
       border-radius: 50%;
       border: 0;
       font-size: 26px;
-      background: var(--ion-color-step-100, #eee);
-      color: var(--ion-text-color, #000);
+      background: var(--f-surface-2);
+      color: var(--f-text);
+      box-shadow: inset 0 -3px 0 rgba(16, 8, 26, 0.18);
     }
     .teclado button.vacia {
       visibility: hidden;
@@ -103,8 +102,10 @@ const PIN_LENGTH = 4;
       margin-top: 28px;
       background: none;
       border: 0;
-      color: var(--ion-color-medium);
+      color: var(--f-muted);
+      font-family: var(--f-mono);
       text-decoration: underline;
+      text-underline-offset: 4px;
     }
   `,
 })

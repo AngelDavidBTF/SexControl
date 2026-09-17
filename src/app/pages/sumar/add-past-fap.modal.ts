@@ -22,12 +22,12 @@ export interface PastFap {
             <ion-icon slot="icon-only" name="close"></ion-icon>
           </ion-button>
         </ion-buttons>
-        <ion-title>Añadir una olvidada</ion-title>
+        <ion-title>¿Se te olvidó apuntar una?</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding">
-      <ion-segment [value]="solitario ? 'solitario' : 'compania'" (ionChange)="solitario = $event.detail.value === 'solitario'" class="tipo">
+      <ion-segment [value]="solitario ? 'solitario' : 'compania'" (ionChange)="solitario = $event.detail.value === 'solitario'" mode="ios" class="tipo">
         <ion-segment-button value="compania" class="tipo-compania">
           <ion-icon name="people"></ion-icon>
           <ion-label>En compañía</ion-label>
@@ -44,26 +44,27 @@ export interface PastFap {
         </ion-chip>
       </div>
 
-      <ion-datetime
-        class="fecha"
-        presentation="date-time"
-        locale="es-ES"
-        [firstDayOfWeek]="1"
-        hourCycle="h23"
-        [max]="max"
-        [value]="value"
-        (ionChange)="onDateChange($event)"
-      >
-        <span slot="time-label">Hora</span>
-      </ion-datetime>
+      <section class="f-card f-paper">
+        <ion-datetime
+          class="fecha"
+          presentation="date-time"
+          locale="es-ES"
+          [firstDayOfWeek]="1"
+          hourCycle="h23"
+          [max]="max"
+          [value]="value"
+          (ionChange)="onDateChange($event)"
+        >
+          <span slot="time-label">Hora</span>
+        </ion-datetime>
+      </section>
 
       <p class="resumen">
         {{ solitario ? 'En solitario' : 'En compañía' }} · <strong class="resumen-fecha">{{ summary }}</strong>
       </p>
 
-      <ion-button expand="block" [color]="solitario ? 'primary' : 'secondary'" (click)="confirm()" class="confirmar">
-        <ion-icon slot="start" name="add-circle"></ion-icon>
-        Añadir
+      <ion-button expand="block" class="f-key confirmar" [class.pink]="!solitario" [class.solo]="solitario" (click)="confirm()">
+        AÑADIR
       </ion-button>
     </ion-content>
   `,
@@ -79,7 +80,6 @@ export interface PastFap {
     }
     .fecha {
       margin: 0 auto;
-      border-radius: 16px;
     }
     .resumen {
       text-align: center;
