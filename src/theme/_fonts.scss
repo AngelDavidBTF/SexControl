@@ -1,0 +1,9 @@
+// Geist y Geist Mono autoalojadas con @fontsource (licencia OFL-1.1): la PWA pinta sin conexión y
+// sin pedir nada a Google. Solo el subconjunto latino (incluye á, é, ñ, ¿, «») y solo los pesos que
+// usa el diseño. La build las copia a www/media/ y ngsw-config.json las cachea.
+@import "@fontsource/geist/latin-400.css";
+@import "@fontsource/geist/latin-500.css";
+@import "@fontsource/geist/latin-600.css";
+@import "@fontsource/geist-mono/latin-400.css";
+@import "@fontsource/geist-mono/latin-500.css";
+@import "@fontsource/geist-mono/latin-700.css";

@@ -1,4 +1,5 @@
-/* You can add global styles to this file, and also import other style files */
+/* Estilos globales de Follendario. El orden importa: fuentes → variables de Ionic → estilos globales. */
 
+@import "theme/fonts";
 @import "theme/variables.scss";
 @import "global.scss";
