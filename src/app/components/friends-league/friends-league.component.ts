@@ -14,10 +14,10 @@ const MEDALS = ['🥇', '🥈', '🥉'];
   standalone: true,
   imports: [CommonModule, IonicModule, DatoDirective],
   template: `
-    <div class="liga" *ngIf="rows.length > 1">
-      <div class="cabecera">
-        <strong>Liga de amigos</strong>
-        <ion-segment [value]="period" mode="md" (ionChange)="onPeriodChange($event)" class="periodo-liga">
+    <section class="f-card am-liga" *ngIf="rows.length > 1">
+      <div class="f-card-head">
+        <span class="f-label">liga de amigos</span>
+        <ion-segment [value]="period" mode="ios" (ionChange)="onPeriodChange($event)" class="periodo-liga">
           <ion-segment-button value="semana"><ion-label>Semana</ion-label></ion-segment-button>
           <ion-segment-button value="mes"><ion-label>Mes</ion-label></ion-segment-button>
           <ion-segment-button value="total"><ion-label>Total</ion-label></ion-segment-button>
@@ -25,34 +25,25 @@ const MEDALS = ['🥇', '🥈', '🥉'];
       </div>
 
       <div class="puesto" *ngFor="let row of visibleRows; trackBy: trackByUid" [class.yo]="row.isMe">
-        <span class="medalla" aria-hidden="true">{{ medal(row) }}</span>
+        <span class="pos mono" aria-hidden="true">{{ medal(row) }}</span>
         <ion-avatar>
-          <img [src]="row.photoURL || 'assets/icon-user.svg'" alt="" />
+          <img [src]="row.photoURL || 'assets/icon-user.svg'" width="32" height="32" alt="" />
         </ion-avatar>
         <span class="nombre">{{ row.isMe ? 'Tú' : row.displayName || 'Sin nombre' }}</span>
-        <span class="delta" *ngIf="row.delta" [class.sube]="row.delta > 0" [class.baja]="row.delta < 0">
+        <span class="delta mono" *ngIf="row.delta" [class.f-up]="row.delta > 0" [class.f-down]="row.delta < 0">
           {{ row.delta > 0 ? '▲' : '▼' }}{{ abs(row.delta) }}
         </span>
-        <span class="valor" dato>{{ row.value }}</span>
+        <span class="valor mono" dato>{{ row.value }}</span>
       </div>
 
-      <ion-button *ngIf="rows.length > limit" fill="clear" size="small" (click)="expanded = !expanded" class="ver-liga">
+      <ion-button *ngIf="rows.length > limit" fill="clear" size="small" (click)="expanded = !expanded" class="f-ghost ver-liga">
         {{ expanded ? 'Ver menos' : 'Ver la clasificación completa' }}
       </ion-button>
-      <p class="nota" *ngIf="period !== 'total'">Quien comparte solo su total no entra en esta clasificación.</p>
-    </div>
+      <p class="f-muted nota" *ngIf="period !== 'total'">Quien comparte solo su total no entra en esta clasificación.</p>
+    </section>
   `,
   styles: [
     `
-      .liga {
-        padding: 12px 16px 4px;
-      }
-      .cabecera {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
       .puesto {
         display: flex;
         align-items: center;
@@ -61,13 +52,13 @@ const MEDALS = ['🥇', '🥈', '🥉'];
         border-radius: 10px;
       }
       .puesto.yo {
-        background: var(--ion-color-step-100, rgba(0, 0, 0, 0.06));
+        background: var(--f-surface-2);
       }
-      .medalla {
+      .pos {
         width: 24px;
         text-align: center;
-        font-size: 0.95rem;
-        color: var(--ion-color-medium);
+        font-size: 0.8rem;
+        color: var(--f-dim);
       }
       ion-avatar {
         width: 32px;
@@ -81,13 +72,7 @@ const MEDALS = ['🥇', '🥈', '🥉'];
       }
       .delta {
         font-size: 0.75rem;
-        color: var(--ion-color-medium);
-      }
-      .delta.sube {
-        color: var(--ion-color-success);
-      }
-      .delta.baja {
-        color: var(--ion-color-danger);
+        color: var(--f-muted);
       }
       .valor {
         font-weight: 700;
@@ -96,7 +81,6 @@ const MEDALS = ['🥇', '🥈', '🥉'];
       }
       .nota {
         font-size: 0.75rem;
-        color: var(--ion-color-medium);
         margin: 4px 0 0;
       }
     `,

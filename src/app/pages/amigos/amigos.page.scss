@@ -1,98 +1,57 @@
-.reacciones {
-  margin: 12px 16px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--ion-color-step-50, #f4f5f8);
-}
-
-.reacciones-cabecera {
-  display: flex;
+.am-duelo {
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.reaccion {
+.am-duelo-text {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  flex: 1 1 180px;
+  font-size: 14.5px;
+
+  ion-icon {
+    font-size: 20px;
+    flex: none;
+    color: var(--f-pink-text);
+    margin-top: 1px;
+  }
+}
+
+.am-duelo-acts {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  font-size: 14px;
+  gap: 8px;
+
+  ion-button.f-key {
+    min-height: 40px;
+    font-size: 13px;
+    --padding-start: 14px;
+    --padding-end: 14px;
+    --border-radius: 12px;
+  }
 }
 
-.reaccion-emoji {
-  font-size: 24px;
+.am-marcador {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 22px;
+  font-weight: 500;
+
+  .gano {
+    color: var(--f-up);
+  }
 }
 
-.reaccion-texto {
-  flex: 1;
-}
-
-.muted {
-  color: var(--ion-color-medium);
-  font-size: 12px;
+.am-note {
+  margin: 8px 16px 0;
+  font-size: 12.5px;
+  color: var(--f-muted);
 }
 
 .ve-de-ti {
   font-size: 12px;
-}
-
-.oculto {
-  font-size: 20px;
-}
-
-/* ---------------------------------------------------------------- duelos (S3) */
-
-.duelos {
-  padding: 4px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.duelo-aviso,
-.duelo-vivo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: var(--ion-color-step-100, rgba(0, 0, 0, 0.05));
-  font-size: 0.85rem;
-}
-
-.duelo-emoji {
-  font-size: 1.2rem;
-}
-
-.duelo-texto {
-  flex: 1;
-}
-
-.duelo-marcador {
-  display: flex;
-  gap: 6px;
-  font-weight: 700;
-
-  .gano {
-    color: var(--ion-color-success);
-  }
-}
-
-/* Novedades de los amigos desde la última visita (S3). */
-.novedades {
-  padding: 8px 16px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.85rem;
-}
-
-.novedad {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.novedad-emoji {
-  font-size: 1.1rem;
 }

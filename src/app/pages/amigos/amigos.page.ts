@@ -16,6 +16,7 @@ import { SharingService } from '../../core/sharing.service';
 import { UiService } from '../../core/ui.service';
 import { FriendAction, FriendDetailModal } from '../../components/friend-detail/friend-detail.modal';
 import { FriendsLeagueComponent } from '../../components/friends-league/friends-league.component';
+import { MarcaComponent } from '../../components/ui/marca.component';
 import { ShareInviteModal } from '../../components/share-invite/share-invite.modal';
 import { DatoDirective } from '../../shared/dato.directive';
 import {
@@ -92,7 +93,7 @@ const EMPTY_SOCIAL: Social = {
 @Component({
   selector: 'app-amigos',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink, FiltroPipe, DatoDirective, FriendsLeagueComponent],
+  imports: [CommonModule, IonicModule, RouterLink, FiltroPipe, DatoDirective, FriendsLeagueComponent, MarcaComponent],
   templateUrl: './amigos.page.html',
   styleUrl: './amigos.page.scss',
 })

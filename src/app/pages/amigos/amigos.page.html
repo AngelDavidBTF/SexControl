@@ -1,60 +1,66 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>Amigos</ion-title>
+    <ion-buttons slot="start">
+      <app-marca titulo="amigos"></app-marca>
+    </ion-buttons>
     <ion-buttons slot="end">
       <ion-button routerLink="/ajustes" aria-label="Perfil y ajustes">
         <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-
-  <ion-segment [value]="segment" mode="md" color="secondary" (ionChange)="onSegmentChange($event)">
-    <ion-segment-button value="amigos">Amigos</ion-segment-button>
-    <ion-segment-button value="grupos">Grupos</ion-segment-button>
-  </ion-segment>
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <ion-segment [value]="segment" mode="ios" (ionChange)="onSegmentChange($event)">
+    <ion-segment-button value="amigos">Amigos</ion-segment-button>
+    <ion-segment-button value="grupos">Grupos</ion-segment-button>
+  </ion-segment>
+
   <ng-container *ngIf="segment === 'amigos'">
-    <ion-item button routerLink="/add-friend">
-      <ion-icon slot="start" name="add-circle" color="secondary"></ion-icon>
+    <ion-item button routerLink="/add-friend" class="f-row">
+      <ion-icon slot="start" name="add-circle"></ion-icon>
       <ion-label>Añadir amigo</ion-label>
     </ion-item>
 
-    <ion-item button (click)="shareMyInvite()" class="invitar-amigo">
-      <ion-icon slot="start" name="share-social-outline" color="tertiary"></ion-icon>
+    <ion-item button (click)="shareMyInvite()" class="f-row invitar-amigo">
+      <ion-icon slot="start" name="share-social-outline"></ion-icon>
       <ion-label>Invitar con enlace o QR</ion-label>
     </ion-item>
 
-    <ion-item button routerLink="/request-friends">
-      <ion-icon slot="start" name="people" color="primary"></ion-icon>
+    <ion-item button routerLink="/request-friends" class="f-row">
+      <ion-icon slot="start" name="people"></ion-icon>
       <ion-label>Solicitudes de amistad</ion-label>
-      <ion-badge *ngIf="(pendingRequests$ | async) as pending" color="secondary" class="solicitudes-badge">{{ pending }}</ion-badge>
+      <ion-badge *ngIf="(pendingRequests$ | async) as pending" class="f-badge c solicitudes-badge">{{ pending }}</ion-badge>
     </ion-item>
 
     <!-- Novedades desde la última visita -->
     <ng-container *ngIf="activity$ | async as novedades">
-      <div class="novedades" *ngIf="novedades.length > 0">
-        <div class="novedad" *ngFor="let evento of novedades">
-          <span class="novedad-emoji" aria-hidden="true">{{ evento.emoji }}</span>
+      <section class="f-console" *ngIf="novedades.length > 0">
+        <div class="f-console-head"><span>~/novedades</span><span>desde tu última visita</span></div>
+        <div class="f-line" *ngFor="let evento of novedades">
+          <span class="glyph" aria-hidden="true">{{ evento.emoji }}</span>
           <span>{{ discreto ? evento.discreto : evento.text }}</span>
+          <span class="when"></span>
         </div>
-      </div>
+      </section>
     </ng-container>
 
     <!-- Duelos que me han propuesto -->
     <ng-container *ngIf="pendingChallenges$ | async as pendientes">
-      <div class="duelos" *ngIf="pendientes.length > 0">
-        <div class="duelo-aviso" *ngFor="let duelo of pendientes; trackBy: trackByUid">
-          <span class="duelo-emoji" aria-hidden="true">⚔️</span>
-          <span class="duelo-texto">
+      <div class="f-card am-duelo duelo-aviso" *ngFor="let duelo of pendientes; trackBy: trackByUid">
+        <div class="am-duelo-text">
+          <ion-icon name="flash-outline" aria-hidden="true"></ion-icon>
+          <span>
             <strong>{{ duelo.friend?.displayName || 'Un amigo' }}</strong> te reta: {{ retoTexto(duelo) }}
           </span>
-          <ion-button size="small" color="secondary" (click)="answerChallenge(duelo.friend!, duelo.friend?.displayName || 'tu amigo', true)" class="aceptar-reto">
+        </div>
+        <div class="am-duelo-acts">
+          <ion-button size="small" class="f-key pink aceptar-reto" (click)="answerChallenge(duelo.friend!, duelo.friend?.displayName || 'tu amigo', true)">
             Aceptar
           </ion-button>
-          <ion-button size="small" fill="clear" color="medium" (click)="answerChallenge(duelo.friend!, duelo.friend?.displayName || 'tu amigo', false)" class="rechazar-reto">
-            No
+          <ion-button size="small" fill="clear" class="f-ghost rechazar-reto" (click)="answerChallenge(duelo.friend!, duelo.friend?.displayName || 'tu amigo', false)">
+            no, gracias
           </ion-button>
         </div>
       </div>
@@ -62,91 +68,83 @@
 
     <!-- Duelos en juego, con marcador en vivo -->
     <ng-container *ngIf="liveChallenges$ | async as enJuego">
-      <div class="duelos" *ngIf="enJuego.length > 0">
-        <div class="duelo-vivo" *ngFor="let duelo of enJuego; trackBy: trackByDuelo">
-          <span class="duelo-emoji" aria-hidden="true">⚔️</span>
-          <span class="duelo-texto">
+      <div class="f-card am-duelo duelo-vivo" *ngFor="let duelo of enJuego; trackBy: trackByDuelo">
+        <div class="am-duelo-text">
+          <ion-icon name="flash-outline" aria-hidden="true"></ion-icon>
+          <span>
             <strong>{{ duelo.challenge.friend?.displayName || 'Un amigo' }}</strong>
-            <span class="muted"> · {{ retoTexto(duelo.challenge) }}</span>
-          </span>
-          <span class="duelo-marcador">
-            <span [class.gano]="duelo.mine > duelo.theirs" dato>{{ duelo.mine }}</span>
-            <span class="muted">–</span>
-            <span [class.gano]="duelo.theirs > duelo.mine" dato>{{ duelo.theirs }}</span>
+            <span class="f-muted"> · {{ retoTexto(duelo.challenge) }}</span>
           </span>
         </div>
+        <span class="am-marcador duelo-marcador mono">
+          <span [class.gano]="duelo.mine > duelo.theirs" dato>{{ duelo.mine }}</span>
+          <span class="f-muted">–</span>
+          <span [class.gano]="duelo.theirs > duelo.mine" dato>{{ duelo.theirs }}</span>
+        </span>
       </div>
     </ng-container>
 
     <!-- Pullas y reacciones recibidas -->
     <ng-container *ngIf="pokes$ | async as pokes">
-      <div class="reacciones" *ngIf="pokes.length > 0">
-        <div class="reacciones-cabecera">
-          <strong>Te han escrito</strong>
-          <ion-button fill="clear" size="small" color="medium" (click)="clearReactions()" class="limpiar-reacciones">Limpiar</ion-button>
+      <section class="f-console" *ngIf="pokes.length > 0">
+        <div class="f-console-head">
+          <span>~/te-han-escrito</span>
+          <ion-button fill="clear" size="small" class="f-ghost limpiar-reacciones" (click)="clearReactions()">limpiar</ion-button>
         </div>
-        <div class="reaccion" *ngFor="let poke of pokes; trackBy: trackByPoke">
-          <span class="reaccion-texto"><strong>{{ poke.displayName || 'Un amigo' }}</strong>: {{ discreto ? poke.discreto : poke.label }}</span>
-          <span class="muted">{{ timeAgo(poke.at) }}</span>
+        <div class="f-line" *ngFor="let poke of pokes; trackBy: trackByPoke">
+          <span class="glyph" aria-hidden="true">›</span>
+          <span class="reaccion-texto"><b class="who">{{ poke.displayName || 'Un amigo' }}</b>: {{ discreto ? poke.discreto : poke.label }}</span>
+          <span class="when">{{ timeAgo(poke.at) }}</span>
         </div>
-      </div>
+      </section>
     </ng-container>
 
     <!-- Clasificación entre amigos; se calcula con los datos que ya trae social/{uid}. -->
     <app-friends-league *ngIf="friends$ | async as friends" [friends]="friends" [me]="(me$ | async) ?? null"></app-friends-league>
 
-    <ion-item-divider>
-      <ion-label>Amigos agregados</ion-label>
-    </ion-item-divider>
+    <div class="f-section"><span class="f-label">amigos agregados</span></div>
 
     <ion-searchbar placeholder="Buscar amigo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
     <ng-container *ngIf="friends$ | async as friends; else cargando">
-      <ion-list *ngIf="friends.length > 0">
-        <ion-item *ngFor="let friend of friends | filtro: textoBuscar; trackBy: trackByUid" class="amigo" button (click)="friendActions(friend)">
-          <ion-avatar slot="start">
-            <img [src]="friend.photoURL || 'assets/icon-user.svg'" alt="" />
-          </ion-avatar>
-          <ion-label>
-            <h2>{{ friend.displayName || 'Sin nombre' }}</h2>
-            <p *ngIf="privacyFor(friend.uid) !== 'todo'" class="ve-de-ti">Ve de ti: {{ privacyFor(friend.uid) === 'total' ? 'solo el total' : 'nada' }}</p>
-          </ion-label>
-          <ng-container [ngSwitch]="shareMode(friend)">
-            <ion-note *ngSwitchCase="'hidden'" class="oculto" aria-label="No comparte sus números">🙈</ion-note>
-            <ion-badge *ngSwitchCase="'total'" color="tertiary" class="badge-total" dato>{{ friend.total ?? 0 }}</ion-badge>
-            <ng-container *ngSwitchDefault>
-              <ion-badge color="secondary" class="ion-margin-horizontal badge-compania" dato>{{ friend.compania ?? 0 }}</ion-badge>
-              <ion-badge color="primary" class="badge-solitario" dato>{{ friend.solitario ?? 0 }}</ion-badge>
-            </ng-container>
+      <ion-item *ngFor="let friend of friends | filtro: textoBuscar; trackBy: trackByUid" class="f-row amigo" button (click)="friendActions(friend)">
+        <ion-avatar slot="start">
+          <img [src]="friend.photoURL || 'assets/icon-user.svg'" width="40" height="40" alt="" />
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ friend.displayName || 'Sin nombre' }}</h2>
+          <p *ngIf="privacyFor(friend.uid) !== 'todo'" class="ve-de-ti">Ve de ti: {{ privacyFor(friend.uid) === 'total' ? 'solo el total' : 'nada' }}</p>
+        </ion-label>
+        <ng-container [ngSwitch]="shareMode(friend)">
+          <span *ngSwitchCase="'hidden'" aria-label="No comparte sus números">🙈</span>
+          <ion-badge *ngSwitchCase="'total'" class="f-badge t" dato>{{ friend.total ?? 0 }}</ion-badge>
+          <ng-container *ngSwitchDefault>
+            <ion-badge class="f-badge c" dato>{{ friend.compania ?? 0 }}</ion-badge>
+            <ion-badge class="f-badge s" dato>{{ friend.solitario ?? 0 }}</ion-badge>
           </ng-container>
-        </ion-item>
-      </ion-list>
+        </ng-container>
+      </ion-item>
       <h5 *ngIf="friends.length === 0" class="ion-text-center">No has agregado ningún amigo todavía.</h5>
     </ng-container>
   </ng-container>
 
   <ng-template #cargando>
     <div class="ion-text-center ion-margin">
-      <ion-spinner name="circular" color="danger"></ion-spinner>
+      <ion-spinner name="circular"></ion-spinner>
     </div>
   </ng-template>
 
   <ng-container *ngIf="segment === 'grupos'">
-    <ion-item button routerLink="/create-group">
-      <ion-icon slot="start" name="add-circle" color="secondary"></ion-icon>
-      <ion-label>Crear grupo</ion-label>
-    </ion-item>
+    <ion-button expand="block" class="f-key pink" routerLink="/create-group">Crear grupo</ion-button>
 
-    <ion-item-divider>
-      <ion-label>Grupos</ion-label>
-    </ion-item-divider>
+    <div class="f-section"><span class="f-label">tus grupos</span></div>
 
     <ion-searchbar placeholder="Buscar grupo" (ionInput)="onSearchChange($event)" inputmode="text" animated></ion-searchbar>
 
     <ng-container *ngIf="groups$ | async as groups; else cargando">
-      <ion-item *ngFor="let group of groups | filtro: textoBuscar; trackBy: trackById" button [routerLink]="['/group', group.id]" class="grupo">
+      <ion-item *ngFor="let group of groups | filtro: textoBuscar; trackBy: trackById" button [routerLink]="['/group', group.id]" class="f-row grupo">
         <ion-avatar slot="start">
-          <img [src]="group.imageUrl || 'assets/groups/icon-group.svg'" alt="" />
+          <img [src]="group.imageUrl || 'assets/groups/icon-group.svg'" width="40" height="40" alt="" />
         </ion-avatar>
         <ion-label>
           <h2>{{ group.name }}</h2>
@@ -154,6 +152,7 @@
         </ion-label>
       </ion-item>
       <h5 *ngIf="groups.length === 0" class="ion-text-center">No tienes ningún grupo aún.</h5>
+      <p *ngIf="groups.length === 0" class="am-note">¿Sin grupo con tu cuadrilla? Crea uno y que empiece el pique.</p>
     </ng-container>
   </ng-container>
 </ion-content>
