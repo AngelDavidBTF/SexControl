@@ -1,16 +1,16 @@
 <app-header titulo="Añadir amigo"></app-header>
 
 <ion-content>
-  <div class="mi-usuario">
+  <section class="f-card mi-usuario">
     <ng-container *ngIf="miUsuario; else sinUsuario">
-      <span class="muted">Tu usuario</span>
-      <strong class="mi-handle">&#64;{{ miUsuario }}</strong>
+      <span class="f-label">tu usuario</span>
+      <strong class="mi-handle mono">&#64;{{ miUsuario }}</strong>
     </ng-container>
     <ng-template #sinUsuario>
-      <span class="muted">Aún no tienes &#64;usuario: sin él no apareces en las búsquedas.</span>
-      <ion-button size="small" color="secondary" (click)="elegirUsuario()" class="elegir-mi-usuario">Elegir mi &#64;usuario</ion-button>
+      <span class="f-muted">Aún no tienes &#64;usuario: sin él no apareces en las búsquedas.</span>
+      <ion-button size="small" class="f-key pink elegir-mi-usuario" (click)="elegirUsuario()">Elegir mi &#64;usuario</ion-button>
     </ng-template>
-  </div>
+  </section>
 
   <ion-searchbar
     placeholder="Nombre o @usuario"
@@ -28,7 +28,7 @@
     </ion-list>
 
     <div *ngIf="buscando && sugerencias.length === 0" class="ion-text-center ion-margin">
-      <ion-spinner name="circular" color="danger"></ion-spinner>
+      <ion-spinner name="circular"></ion-spinner>
     </div>
 
     <p *ngIf="buscado && !buscando && sugerencias.length === 0" class="vacio">
@@ -39,7 +39,7 @@
   <!-- Antes de escribir: gente de tus grupos -->
   <ng-template #antesDeEscribir>
     <ng-container *ngIf="genteDeGrupos.length > 0; else ayuda">
-      <h3 class="seccion">Personas de tus grupos</h3>
+      <div class="f-section"><span class="f-label">personas de tus grupos</span></div>
       <ion-list lines="none">
         <ng-container *ngTemplateOutlet="filas; context: { $implicit: genteDeGrupos.slice(0, 8) }"></ng-container>
       </ion-list>
@@ -50,7 +50,7 @@
   </ng-template>
 
   <ng-template #filas let-users>
-    <ion-item *ngFor="let user of users; trackBy: trackByUid" class="resultado">
+    <ion-item *ngFor="let user of users; trackBy: trackByUid" class="f-row resultado">
       <ion-avatar slot="start">
         <img [src]="user.photoURL || 'assets/icon-user.svg'" alt="" />
       </ion-avatar>
@@ -61,8 +61,9 @@
       <ion-button
         slot="end"
         size="small"
+        [class.f-key]="!enviados.has(user.uid)"
+        [class.pink]="!enviados.has(user.uid)"
         [fill]="enviados.has(user.uid) ? 'clear' : 'solid'"
-        color="secondary"
         [disabled]="enviados.has(user.uid)"
         (click)="enviarPeticion(user)"
         class="anadir-amigo"
@@ -72,11 +73,11 @@
     </ion-item>
   </ng-template>
 
-  <div class="invitar">
-    <span class="muted">¿No lo encuentras? ¿Ya lo tienes en WhatsApp?</span>
-    <ion-button expand="block" fill="outline" color="tertiary" (click)="invitar()" class="invitar-enlace">
+  <section class="f-card invitar">
+    <span class="f-muted">¿No lo encuentras? ¿Ya lo tienes en WhatsApp?</span>
+    <ion-button expand="block" class="f-btn invitar-enlace" (click)="invitar()">
       <ion-icon slot="start" name="share-social-outline"></ion-icon>
       Mandarle mi enlace o QR
     </ion-button>
-  </div>
+  </section>
 </ion-content>

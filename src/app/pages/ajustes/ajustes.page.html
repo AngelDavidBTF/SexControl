@@ -2,14 +2,15 @@
 
 <ion-content class="ajustes">
   <!-- Perfil -->
-  <section class="tarjeta perfil">
+  <div class="f-section"><span class="f-label">perfil</span></div>
+  <section class="f-card perfil">
     <div class="avatar-wrap">
       <button type="button" class="avatar" (click)="photoInput.click()" aria-label="Cambiar foto">
         <img [src]="photoURL || 'assets/icon-user.svg'" alt="" />
         <span class="editar"><ion-icon name="camera"></ion-icon></span>
       </button>
       <input #photoInput type="file" accept="image/*" hidden (change)="onPhotoSelected($event)" />
-      <ion-button *ngIf="photoURL" fill="clear" size="small" color="medium" (click)="removePhoto()">Quitar foto</ion-button>
+      <ion-button *ngIf="photoURL" fill="clear" size="small" class="f-ghost" (click)="removePhoto()">Quitar foto</ion-button>
     </div>
     <ion-input
       label="Nombre"
@@ -21,30 +22,30 @@
       class="nombre"
     ></ion-input>
     <div class="usuario">
-      <span class="muted">Usuario</span>
-      <strong class="mi-usuario">{{ username ? '@' + username : 'Sin elegir' }}</strong>
-      <ion-button fill="clear" size="small" (click)="chooseUsername()" class="cambiar-usuario">{{ username ? 'Cambiar' : 'Elegir' }}</ion-button>
+      <span class="f-label">usuario</span>
+      <strong class="mi-usuario mono">{{ username ? '@' + username : 'Sin elegir' }}</strong>
+      <ion-button fill="clear" size="small" class="f-ghost cambiar-usuario" (click)="chooseUsername()">{{ username ? 'Cambiar' : 'Elegir' }}</ion-button>
     </div>
-    <p class="muted email">{{ email }} · solo lo ves tú</p>
-    <ion-button expand="block" color="secondary" (click)="saveProfile()" [disabled]="!profileDirty || savingProfile" class="guardar-perfil">
+    <p class="f-muted email">{{ email }} · solo lo ves tú</p>
+    <ion-button expand="block" class="f-key pink guardar-perfil" (click)="saveProfile()" [disabled]="!profileDirty || savingProfile">
       Guardar perfil
     </ion-button>
   </section>
 
   <!-- Objetivos -->
-  <h3 class="seccion">🎯 Objetivos</h3>
-  <section class="tarjeta">
-    <p class="muted">Ponte una meta y verás tu progreso en Sumar. Déjalo vacío para no tener objetivo.</p>
+  <div class="f-section"><span class="f-label">objetivos</span></div>
+  <section class="f-card">
+    <p class="f-muted">Ponte una meta y verás tu progreso en Sumar. Déjalo vacío para no tener objetivo.</p>
     <div class="fila-2">
       <ion-input label="Por semana" labelPlacement="stacked" fill="outline" type="number" min="1" max="999" [(ngModel)]="goalWeek" (ionInput)="goalsDirty = true" class="objetivo-semana"></ion-input>
       <ion-input label="Por mes" labelPlacement="stacked" fill="outline" type="number" min="1" max="999" [(ngModel)]="goalMonth" (ionInput)="goalsDirty = true" class="objetivo-mes"></ion-input>
     </div>
-    <ion-button expand="block" fill="outline" (click)="saveGoals()" class="guardar-objetivos">Guardar objetivos</ion-button>
+    <ion-button expand="block" class="f-btn guardar-objetivos" (click)="saveGoals()">Guardar objetivos</ion-button>
   </section>
 
   <!-- Privacidad -->
-  <h3 class="seccion">🛡️ Privacidad</h3>
-  <section class="tarjeta lista">
+  <div class="f-section"><span class="f-label">privacidad</span></div>
+  <section class="f-card lista">
     <ion-item lines="none">
       <ion-toggle [checked]="paused" (ionChange)="onPausedChange($event)" class="pausar">
         <ion-label>
@@ -61,22 +62,22 @@
         </ion-label>
       </ion-toggle>
     </ion-item>
-    <p class="muted nota">Para elegir qué ve cada amigo, tócalo en la pestaña Amigos.</p>
+    <p class="f-muted nota">Para elegir qué ve cada amigo, tócalo en la pestaña Amigos.</p>
   </section>
 
   <ng-container *ngIf="blocked.length > 0">
-    <h3 class="seccion">Personas bloqueadas</h3>
-    <section class="tarjeta lista">
+    <div class="f-section"><span class="f-label">personas bloqueadas</span></div>
+    <section class="f-card lista">
       <ion-item lines="none" *ngFor="let person of blocked; trackBy: trackByUid" class="bloqueado">
         <ion-label>{{ person.displayName || 'Sin nombre' }}</ion-label>
-        <ion-button slot="end" fill="clear" size="small" (click)="unblock(person)" class="desbloquear">Desbloquear</ion-button>
+        <ion-button slot="end" fill="clear" size="small" class="f-ghost desbloquear" (click)="unblock(person)">Desbloquear</ion-button>
       </ion-item>
     </section>
   </ng-container>
 
   <!-- Recordatorios -->
-  <h3 class="seccion">🔔 Recordatorios</h3>
-  <section class="tarjeta lista">
+  <div class="f-section"><span class="f-label">recordatorios</span></div>
+  <section class="f-card lista">
     <ion-item lines="none">
       <ion-toggle [checked]="settings.reminders().enabled" (ionChange)="onRemindersChange($event)" class="recordatorios">
         <ion-label>
@@ -100,8 +101,8 @@
   </section>
 
   <!-- Modo discreto -->
-  <h3 class="seccion">🥷 Modo discreto</h3>
-  <section class="tarjeta lista">
+  <div class="f-section"><span class="f-label">modo discreto</span></div>
+  <section class="f-card lista">
     <ion-item lines="none">
       <ion-toggle [checked]="settings.discreet().enabled" (ionChange)="onDiscreetChange($event)" class="discreto">
         <ion-label>
@@ -142,27 +143,32 @@
   </section>
 
   <!-- Apariencia -->
-  <h3 class="seccion">🎨 Apariencia</h3>
-  <section class="tarjeta">
-    <ion-segment [value]="settings.theme()" (ionChange)="setTheme($event)" class="tema">
+  <div class="f-section"><span class="f-label">apariencia</span></div>
+  <section class="f-card">
+    <p class="f-muted">Oscuro: ciruela y crema. Claro: papel crema.</p>
+    <ion-segment [value]="settings.theme()" mode="ios" (ionChange)="setTheme($event)" class="tema">
       <ion-segment-button value="sistema"><ion-label>Sistema</ion-label></ion-segment-button>
       <ion-segment-button value="claro"><ion-label>Claro</ion-label></ion-segment-button>
       <ion-segment-button value="oscuro"><ion-label>Oscuro</ion-label></ion-segment-button>
     </ion-segment>
   </section>
 
-  <section class="tarjeta" *ngIf="install.canInstall() && !install.installed()">
-    <p class="muted">Instala la app en tu dispositivo para abrirla como una app normal, incluso sin conexión.</p>
-    <ion-button expand="block" color="tertiary" (click)="installApp()">
+  <!-- Instalar -->
+  <ng-container *ngIf="install.canInstall() && !install.installed()">
+    <div class="f-section"><span class="f-label">instalar</span></div>
+  </ng-container>
+  <section class="f-card" *ngIf="install.canInstall() && !install.installed()">
+    <p class="f-muted">Instala la app en tu dispositivo para abrirla como una app normal, incluso sin conexión.</p>
+    <ion-button expand="block" class="f-btn" (click)="installApp()">
       <ion-icon slot="start" name="download-outline"></ion-icon>
       Instalar app
     </ion-button>
   </section>
 
   <!-- Cuenta -->
-  <h3 class="seccion">👤 Cuenta</h3>
-  <section class="tarjeta">
-    <ion-button expand="block" fill="outline" color="medium" (click)="logout()" class="cerrar-sesion">Cerrar sesión</ion-button>
-    <ion-button expand="block" fill="clear" color="danger" (click)="confirmDeleteAccount()" class="borrar-cuenta">Borrar mi cuenta</ion-button>
+  <div class="f-section"><span class="f-label">cuenta</span></div>
+  <section class="f-card">
+    <ion-button expand="block" class="f-btn cerrar-sesion" (click)="logout()">Cerrar sesión</ion-button>
+    <ion-button expand="block" fill="clear" class="f-ghost danger borrar-cuenta" (click)="confirmDeleteAccount()">Borrar mi cuenta</ion-button>
   </section>
 </ion-content>

@@ -548,6 +548,6 @@
       "src/app/pages/add-friend/add-friend.page.scss",
       "tests/design/final.check.js"
     ],
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
