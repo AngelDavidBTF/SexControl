@@ -16,5 +16,5 @@ export const firebaseConfig = {
   // Firebase Analytics (GA4). Se saca de la consola de Firebase (Configuración del proyecto → Tus
   // apps → la app web) tras activar Google Analytics en el proyecto. Formato 'G-XXXXXXXXXX'.
   // Vacío = sin medición: no se pide consentimiento ni se carga el SDK.
-  measurementId: '',
+  measurementId: 'G-G4VQPGCY34',
 };
