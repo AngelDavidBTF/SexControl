@@ -2,6 +2,7 @@ import { Component, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { toDataURL } from 'qrcode';
+import { AnalyticsService } from '../../core/analytics.service';
 import { UiService } from '../../core/ui.service';
 
 // Enlace de invitación con su QR, para amigos o para un grupo. El QR se dibuja en el dispositivo:
@@ -96,15 +97,19 @@ export class ShareInviteModal implements OnInit {
   @Input() subtitle = 'Comparte este enlace o enseña el QR.';
   @Input() warning = '';
   @Input() canRenew = false;
+  // Para la medición del bucle viral: solo si la invitación es de amistad o de grupo.
+  @Input() tipo: 'amigo' | 'grupo' = 'amigo';
   // La devuelve el llamante con el código nuevo, para no meter aquí lógica de datos.
   @Input() onRenew?: () => Promise<string>;
 
   private modalController = inject(ModalController);
   private ui = inject(UiService);
+  private analytics = inject(AnalyticsService);
 
   qr: string | null = null;
 
   async ngOnInit(): Promise<void> {
+    this.analytics.log('invitacion_creada', { tipo: this.tipo });
     await this.drawQr();
   }
 
@@ -119,6 +124,7 @@ export class ShareInviteModal implements OnInit {
 
   async share(): Promise<void> {
     if (navigator.share) {
+      this.analytics.log('invitacion_compartida', { tipo: this.tipo, via: 'sistema' });
       await navigator.share({ title: this.title, url: this.url }).catch(() => undefined);
       return;
     }
@@ -126,6 +132,7 @@ export class ShareInviteModal implements OnInit {
   }
 
   async copy(): Promise<void> {
+    this.analytics.log('invitacion_compartida', { tipo: this.tipo, via: 'enlace' });
     try {
       await navigator.clipboard.writeText(this.url);
       await this.ui.toast('Enlace copiado');

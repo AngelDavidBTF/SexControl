@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { format, getISOWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AchievementsService } from '../../core/achievements.service';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapRef, FapService } from '../../core/fap.service';
 import { SettingsService } from '../../core/settings.service';
@@ -36,6 +37,7 @@ interface GoalView {
 })
 export class SumarPage implements OnInit, OnDestroy {
   private authService = inject(AuthService);
+  private analytics = inject(AnalyticsService);
   private fapService = inject(FapService);
   private modalController = inject(ModalController);
   private ui = inject(UiService);
@@ -124,6 +126,9 @@ export class SumarPage implements OnInit, OnDestroy {
     // El sello cae en la casilla de hoy al instante; el número llega con la escucha de stats.
     this.ultimoApunte = { tipo: solitario ? 's' : 'c', seq: (this.ultimoApunte?.seq ?? 0) + 1 };
     const fap = await this.fapService.addFap(uid, solitario);
+    // Activación: solo que esta instalación ha llegado a usar la app. Una vez en la vida y sin
+    // ningún dato de lo apuntado: ni el tipo, ni la fecha, ni cuántas lleva.
+    this.analytics.activacion();
     void this.achievements.announceNew(uid);
     await this.offerUndo(uid, fap, solitario ? 'Sumada en solitario' : 'Sumada en compañía');
   }

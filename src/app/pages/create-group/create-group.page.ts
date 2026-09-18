@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Observable, firstValueFrom, map, of, switchMap } from 'rxjs';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { ProfileService } from '../../core/profile.service';
@@ -31,6 +32,7 @@ export class CreateGroupPage {
   private ui = inject(UiService);
   private router = inject(Router);
   private profiles = inject(ProfileService);
+  private analytics = inject(AnalyticsService);
 
   nameGroup = '';
   imageUrl: string | null = null;
@@ -98,6 +100,7 @@ export class CreateGroupPage {
         this.imageUrl,
         this.selectedUsers
       );
+      this.analytics.log('grupo_creado', { miembros_invitados: this.selectedUsers.length });
       // Rellena mi entrada con los recuentos de semana y mes para los rankings por periodo.
       void this.fapService.publish(me.uid);
       await this.router.navigate(['/group', groupId], { replaceUrl: true });

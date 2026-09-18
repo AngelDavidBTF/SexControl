@@ -4,6 +4,7 @@ import { ActionSheetController, AlertController, IonicModule, ModalController } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, Observable, catchError, combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { getISOWeek } from 'date-fns';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
@@ -118,6 +119,7 @@ export class GroupPage {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private analytics = inject(AnalyticsService);
   private groupsService = inject(GroupsService);
   private groupFeedService = inject(GroupFeedService);
   private friendsService = inject(FriendsService);
@@ -509,6 +511,7 @@ export class GroupPage {
           subtitle: 'Quien abra el enlace o escanee el QR podrá entrar en el grupo.',
           warning: 'Cualquiera con el enlace puede entrar, aunque no sea amigo tuyo. Si se te va de las manos, genera uno nuevo.',
           canRenew: true,
+          tipo: 'grupo',
           onRenew: async () => `${location.origin}/unirse/${await this.groupsService.renewInviteCode(group)}`,
         },
       });
@@ -525,6 +528,7 @@ export class GroupPage {
     const loading = await this.ui.loading('Preparando el resumen…');
     try {
       const blob = await drawWeekCard(weekSummary(group, new Date()));
+      this.analytics.log('tarjeta_compartida', { tipo: 'semana-grupo' });
       const file = new File([blob], `resumen-${group.name.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
       await loading.dismiss();
       if (navigator.canShare?.({ files: [file] })) {

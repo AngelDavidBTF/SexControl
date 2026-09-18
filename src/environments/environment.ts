@@ -15,4 +15,8 @@ export const firebaseConfig = {
   storageBucket: 'sexcontrol-6c000.appspot.com',
   messagingSenderId: '275373132188',
   appId: '1:275373132188:web:45d08dd98202852df2a059',
+  // Firebase Analytics (GA4). Vacío = sin medición: no se pide consentimiento ni se carga el SDK.
+  // En desarrollo se deja vacío para no ensuciar los datos; para probar con DebugView, pega aquí
+  // el mismo identificador que en environment.prod.ts y quítalo al terminar.
+  measurementId: '',
 };

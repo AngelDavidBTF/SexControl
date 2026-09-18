@@ -50,6 +50,9 @@ async function appContext(browser, options = {}) {
   await context.addInitScript((token) => {
     try {
       localStorage.setItem('sexcontrol.appCheckDebugToken', token);
+      // Decisión de medición ya tomada: la hoja de consentimiento no tapa la app en los E2E y las
+      // pruebas no ensucian las estadísticas de producción.
+      localStorage.setItem('sexcontrol.analytics.v1', JSON.stringify({ consent: 'rechazado', fecha: null }));
     } catch {
       // Páginas sin almacenamiento local (about:blank, por ejemplo).
     }

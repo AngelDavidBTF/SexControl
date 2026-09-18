@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { GroupsService } from '../../core/groups.service';
@@ -86,6 +87,7 @@ export class JoinGroupPage implements OnInit {
   private profiles = inject(ProfileService);
   private fapService = inject(FapService);
   private ui = inject(UiService);
+  private analytics = inject(AnalyticsService);
 
   invite: GroupInvite | null = null;
   error: string | null = null;
@@ -100,6 +102,9 @@ export class JoinGroupPage implements OnInit {
     try {
       this.invite = await firstValueFrom(this.groupsService.invite$(code));
       this.error = this.invite ? null : 'Esta invitación ya no sirve. Pide una nueva al creador del grupo.';
+      if (this.invite) {
+        this.analytics.log('invitacion_abierta', { tipo: 'grupo' });
+      }
     } catch (error) {
       console.error('No se pudo leer la invitación al grupo', error);
       this.error = 'No se pudo abrir la invitación';
@@ -121,6 +126,7 @@ export class JoinGroupPage implements OnInit {
         photoURL: profile.photoURL,
         counts: { solitario: stats.solitario, compania: stats.compania },
       });
+      this.analytics.log('invitacion_aceptada', { tipo: 'grupo' });
       await this.ui.toast(`Ya estás en "${this.invite?.groupName ?? 'el grupo'}"`);
       await this.router.navigate(['/group', groupId], { replaceUrl: true });
     } catch (error) {

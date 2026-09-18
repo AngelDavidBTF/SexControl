@@ -62,6 +62,14 @@
         </ion-label>
       </ion-toggle>
     </ion-item>
+    <ion-item lines="none" *ngIf="puedeMedir">
+      <ion-toggle [checked]="analytics.consent() === 'concedido'" (ionChange)="onAnalyticsChange($event)" class="medicion">
+        <ion-label>
+          Ayudar a mejorar la app
+          <p>Datos anónimos de uso: qué pantallas se usan y si los errores dan la lata. Nunca lo que apuntas.</p>
+        </ion-label>
+      </ion-toggle>
+    </ion-item>
     <p class="f-muted nota">Para elegir qué ve cada amigo, tócalo en la pestaña Amigos.</p>
   </section>
 

@@ -5,6 +5,7 @@ import { AlertController, IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Subscription, combineLatest, firstValueFrom, of, switchMap } from 'rxjs';
 import { AccountService } from '../../core/account.service';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
@@ -32,6 +33,7 @@ const AVATAR_SIZE = 64;
 export class AjustesPage implements OnInit, OnDestroy {
   readonly settings = inject(SettingsService);
   readonly install = inject(InstallService);
+  readonly analytics = inject(AnalyticsService);
   private auth = inject(AuthService);
   private account = inject(AccountService);
   private fapService = inject(FapService);
@@ -164,6 +166,13 @@ export class AjustesPage implements OnInit, OnDestroy {
     if (uid) {
       await this.usernamePrompt.choose(uid);
     }
+  }
+
+  // El interruptor solo se enseña si hay medición configurada (measurementId en environment).
+  readonly puedeMedir = this.analytics.available;
+
+  onAnalyticsChange(event: CustomEvent): void {
+    this.analytics.setEnabled(event.detail.checked === true);
   }
 
   async onSearchableChange(event: CustomEvent): Promise<void> {

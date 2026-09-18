@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -15,6 +16,7 @@ export class LoginPage implements OnInit {
   private authSvc = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private analytics = inject(AnalyticsService);
 
   // Si el login con Google tuvo que hacerse por redirección, al volver se termina aquí.
   async ngOnInit(): Promise<void> {
@@ -27,6 +29,7 @@ export class LoginPage implements OnInit {
   async onLogin(email: string | number | null | undefined, password: string | number | null | undefined): Promise<void> {
     const user = await this.authSvc.login(String(email ?? ''), String(password ?? ''));
     if (user) {
+      this.analytics.log('sesion_iniciada', { metodo: 'email' });
       this.redirectUser(this.authSvc.isEmailVerified(user));
     }
   }
@@ -34,6 +37,7 @@ export class LoginPage implements OnInit {
   async onLoginGoogle(): Promise<void> {
     const user = await this.authSvc.loginGoogle();
     if (user) {
+      this.analytics.log('sesion_iniciada', { metodo: 'google' });
       this.redirectUser(this.authSvc.isEmailVerified(user));
     }
   }

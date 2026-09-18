@@ -6,6 +6,7 @@ import { Observable, combineLatest, firstValueFrom, map, of, shareReplay, switch
 import { Timestamp } from '@angular/fire/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
@@ -99,6 +100,7 @@ const EMPTY_SOCIAL: Social = {
 })
 export class AmigosPage {
   private authService = inject(AuthService);
+  private analytics = inject(AnalyticsService);
   private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private groupsService = inject(GroupsService);
@@ -353,6 +355,7 @@ export class AmigosPage {
         friend.uid,
         newChallenge(uid, kind as ChallengeKind, target ? Number(target) : null, new Date())
       );
+      this.analytics.log('duelo_creado', { tipo: kind });
       await this.ui.toast(`Duelo enviado a ${name}`);
     } catch (error) {
       console.error('Error enviando el duelo', error);
@@ -368,6 +371,7 @@ export class AmigosPage {
     }
     try {
       await this.friendsService.updateChallenge(uid, friend.uid, plain(challenge), accept ? 'aceptado' : 'rechazado');
+      this.analytics.log('duelo_aceptado', { aceptado: accept });
       await this.ui.toast(accept ? `¡Duelo con ${name} en marcha!` : 'Duelo rechazado');
     } catch (error) {
       console.error('Error respondiendo al duelo', error);
@@ -424,6 +428,7 @@ export class AmigosPage {
     }
     try {
       await this.friendsService.sendPoke(uid, friend.uid, { msg });
+      this.analytics.log('pulla_enviada');
       await this.ui.toast(`Pulla enviada a ${name}`);
     } catch (error) {
       console.error('Error enviando la pulla', error);
@@ -444,6 +449,7 @@ export class AmigosPage {
     }
     try {
       await this.friendsService.sendPoke(uid, friend.uid, { emoji });
+      this.analytics.log('reaccion_enviada');
       await this.ui.toast(`Le has mandado ${emoji} a ${name}`);
     } catch (error) {
       console.error('Error enviando reacción', error);

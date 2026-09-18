@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { FriendsService } from '../../core/friends.service';
@@ -73,6 +74,7 @@ export class InvitePage implements OnInit {
   private profiles = inject(ProfileService);
   private fapService = inject(FapService);
   private ui = inject(UiService);
+  private analytics = inject(AnalyticsService);
 
   user: User | null = null;
   error: string | null = null;
@@ -94,6 +96,7 @@ export class InvitePage implements OnInit {
       // desde que existe), la invitación sigue valiendo: solo falta el nombre.
       this.user = (await this.friendsService.publicProfile(uid)) ?? { uid, email: null, displayName: null, photoURL: null };
       this.error = null;
+      this.analytics.log('invitacion_abierta', { tipo: 'amigo' });
     } catch (error) {
       console.error('No se pudo leer la invitación', error);
       this.error = 'No se pudo abrir la invitación';
@@ -109,6 +112,7 @@ export class InvitePage implements OnInit {
     try {
       const [me, stats] = await Promise.all([this.profiles.current(uid), firstValueFrom(this.fapService.stats$(uid))]);
       await this.friendsService.sendRequest(me, { solitario: stats.solitario, compania: stats.compania }, this.user);
+      this.analytics.log('invitacion_aceptada', { tipo: 'amigo' });
       await this.ui.toast('Solicitud enviada');
       await this.router.navigate(['/tabs/amigos'], { replaceUrl: true });
     } catch (error) {

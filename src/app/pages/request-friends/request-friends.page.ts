@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActionSheetController, IonicModule } from '@ionic/angular';
 import { Observable, firstValueFrom, map, of, switchMap } from 'rxjs';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapService } from '../../core/fap.service';
 import { ProfileService } from '../../core/profile.service';
@@ -19,6 +20,7 @@ import { FiltroPipe } from '../../shared/filtro.pipe';
 })
 export class RequestFriendsPage {
   private authService = inject(AuthService);
+  private analytics = inject(AnalyticsService);
   private fapService = inject(FapService);
   private friendsService = inject(FriendsService);
   private ui = inject(UiService);
@@ -84,6 +86,7 @@ export class RequestFriendsPage {
       await this.friendsService.acceptRequest(profile, myCounts, request);
       // Aplica la privacidad y la pausa a la nueva amistad.
       await this.fapService.publish(me.uid);
+      this.analytics.log('amigo_aceptado');
       await this.ui.toast('Solicitud aceptada');
     } catch (error) {
       console.error('Error aceptando solicitud', error);

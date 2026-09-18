@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { ProfileService } from '../../core/profile.service';
 import { UiService } from '../../core/ui.service';
@@ -19,6 +20,7 @@ export class VerifyEmailPage {
   private router = inject(Router);
   private profiles = inject(ProfileService);
   private ui = inject(UiService);
+  private analytics = inject(AnalyticsService);
 
   readonly user$ = this.authSvc.user$;
   checking = false;
@@ -37,6 +39,7 @@ export class VerifyEmailPage {
     try {
       const user = await this.authSvc.reloadUser();
       if (user?.emailVerified) {
+        this.analytics.log('email_verificado');
         // Ya se le puede encontrar por su email.
         this.profiles.ensurePublic(user).catch((error) => console.warn('No se pudo publicar el perfil público', error));
         await this.router.navigate(['/tabs/sumar'], { replaceUrl: true });

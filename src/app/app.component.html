@@ -1,4 +1,5 @@
 <ion-app>
   <ion-router-outlet></ion-router-outlet>
   <app-lock-screen *ngIf="lock.locked()"></app-lock-screen>
+  <app-analytics-consent *ngIf="analytics.shouldAsk() && !lock.locked()"></app-analytics-consent>
 </ion-app>

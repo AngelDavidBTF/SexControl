@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable, combineLatest, firstValueFrom, map, of, sw
 import { addDays, format, parseISO, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { QueryDocumentSnapshot } from '@angular/fire/firestore';
+import { AnalyticsService } from '../../core/analytics.service';
 import { AuthService } from '../../core/auth.service';
 import { FapEntry, FapService } from '../../core/fap.service';
 import { UiService } from '../../core/ui.service';
@@ -99,6 +100,7 @@ const HISTORY_PAGE = 20;
 })
 export class EstadisticasPage {
   private authService = inject(AuthService);
+  private analytics = inject(AnalyticsService);
   private fapService = inject(FapService);
   private ui = inject(UiService);
   private alertController = inject(AlertController);
@@ -256,6 +258,7 @@ export class EstadisticasPage {
     try {
       const [stats, profile] = await Promise.all([firstValueFrom(this.fapService.stats$(uid)), this.profiles.current(uid)]);
       const blob = await drawYearCard(yearSummary(stats, year), profile.displayName);
+      this.analytics.log('tarjeta_compartida', { tipo: 'anual' });
       const file = new File([blob], `resumen-${year}.png`, { type: 'image/png' });
       await loading.dismiss();
       if (navigator.canShare?.({ files: [file] })) {

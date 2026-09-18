@@ -2,20 +2,23 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
+import { NavigationEnd, Router } from '@angular/router';
 import { combineLatest, filter, of, switchMap, take } from 'rxjs';
+import { AnalyticsService } from './core/analytics.service';
 import { AuthService } from './core/auth.service';
 import { FapService } from './core/fap.service';
 import { LockService } from './core/lock.service';
 import { ProfileService } from './core/profile.service';
 import { RemindersService } from './core/reminders.service';
 import { SettingsService } from './core/settings.service';
+import { AnalyticsConsentComponent } from './components/analytics-consent/analytics-consent.component';
 import { LockScreenComponent } from './components/lock-screen/lock-screen.component';
 import { STATS_VERSION } from './shared/fap.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, IonicModule, LockScreenComponent],
+  imports: [CommonModule, IonicModule, LockScreenComponent, AnalyticsConsentComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -23,6 +26,7 @@ export class AppComponent {
   // Aplica tema y modo discreto desde el arranque (efectos del servicio).
   readonly settings = inject(SettingsService);
   readonly lock = inject(LockService);
+  readonly analytics = inject(AnalyticsService);
 
   constructor() {
     const fapService = inject(FapService);
@@ -31,6 +35,14 @@ export class AppComponent {
     const profiles = inject(ProfileService);
     const destroyRef = inject(DestroyRef);
     const rebuilt = new Set<string>();
+
+    // Vistas de pantalla. La ruta se limpia de identificadores antes de salir del dispositivo.
+    inject(Router)
+      .events.pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(destroyRef)
+      )
+      .subscribe((event) => this.analytics.page(event.urlAfterRedirects));
 
     // Si fapStats no tiene el formato actual (usuarios con faps anteriores a los recuentos por
     // día/hora, o recién registrados), se reconstruye una única vez. El documento ya lo escucha
