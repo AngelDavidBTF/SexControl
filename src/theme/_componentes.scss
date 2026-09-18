@@ -76,8 +76,10 @@ ion-badge.f-badge, .f-badge { min-width: 32px; height: 26px; padding: 0 7px; bor
 .f-ticket h3 { margin: 0; font-size: 12.5px; text-align: center; letter-spacing: 0.12em; font-weight: 700; }
 .f-ticket .sub { text-align: center; color: #4a3b55; margin: 0 0 6px; }
 .f-ticket hr { border: 0; border-top: 1px dashed currentColor; margin: 6px 0; opacity: 0.5; }
-.f-tline { display: flex; gap: 6px; }
-.f-tline span:nth-child(2) { flex: 1; border-bottom: 1px dotted rgba(16, 8, 26, 0.5); transform: translateY(-6px); }
+.f-tline { display: flex; flex-wrap: wrap; gap: 0 6px; }
+.f-tline span:first-child { flex: 0 1 auto; min-width: 0; }
+.f-tline span:nth-child(2) { flex: 1 1 12px; min-width: 12px; border-bottom: 1px dotted rgba(16, 8, 26, 0.5); transform: translateY(-6px); }
+.f-tline span:last-child { flex: 0 1 100%; min-width: 0; text-align: right; white-space: normal; word-break: break-word; }
 .f-ticket .foot { text-align: center; margin: 6px 0 0; }
 
 // Tarjeta-calendario del logo (cabecera rosa, anillas, papel)
