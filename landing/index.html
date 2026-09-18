@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Follendario</title>
+  <meta name="description" content="Lleva la cuenta, pícate con tus amigos y mira tu año como un calendario.">
+  <meta name="theme-color" content="#10081a">
+  <link rel="canonical" href="https://follendario.com/">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    :root {
+      --f-bg: #10081a;
+      --f-text: #fcf3ed;
+      --f-muted: #a597b3;
+      --f-pink: #fc2a6c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+      background: var(--f-bg);
+      color: var(--f-text);
+      font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      text-align: center;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(2.5rem, 12vw, 4.5rem); letter-spacing: -0.03em; }
+    h1 span { color: var(--f-pink); }
+    p { margin: 0 0 32px; color: var(--f-muted); max-width: 32ch; }
+    a {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 999px;
+      background: var(--f-pink);
+      color: var(--f-text);
+      font-weight: 600;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 translate="no">Follen<span>dario</span></h1>
+    <p>La web está calentando motores. La app ya está lista para que empieces a sumar.</p>
+    <a href="https://app.follendario.com/">Abrir la app</a>
+  </main>
+</body>
+</html>

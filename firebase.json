@@ -41,6 +41,16 @@
           "destination": "/index.html"
         }
       ]
+    },
+    {
+      "target": "landing",
+      "public": "landing",
+      "ignore": [
+        "**/.*",
+        "README.md"
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
     }
   ]
 }

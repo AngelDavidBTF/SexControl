@@ -37,9 +37,12 @@ function enableAppCheckDebugToken(): void {
 // authDomain es otro dominio (firebaseapp.com) la ventana de Google termina pero el resultado nunca
 // llega a la app. Cuando la app se sirve desde Firebase Hosting, ese mismo dominio publica el
 // manejador /__/auth/*, así que se usa como authDomain. En localhost se mantiene el de la config.
+const APP_HOSTS = ['app.follendario.com'];
+
 function authDomainForHost(): string {
   const host = typeof location === 'undefined' ? '' : location.hostname;
-  return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com') ? host : firebaseConfig.authDomain;
+  const enHosting = host.endsWith('.web.app') || host.endsWith('.firebaseapp.com') || APP_HOSTS.includes(host);
+  return enHosting ? host : firebaseConfig.authDomain;
 }
 
 export const appConfig: ApplicationConfig = {

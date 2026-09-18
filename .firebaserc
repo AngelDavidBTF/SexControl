@@ -4,6 +4,9 @@
       "hosting": {
         "app": [
           "sexcontrol-6c000"
+        ],
+        "landing": [
+          "follendario-web"
         ]
       }
     }
