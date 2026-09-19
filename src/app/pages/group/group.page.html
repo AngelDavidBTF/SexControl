@@ -3,7 +3,10 @@
 
   <ion-content>
     <div class="gr-head">
-      <span class="gr-tile" aria-hidden="true">{{ vm.group.name.split(' ').pop()?.slice(0, 1) }}</span>
+      <img *ngIf="vm.group.imageUrl; else inicial" class="gr-tile gr-foto" [src]="vm.group.imageUrl" width="60" height="60" alt="" />
+      <ng-template #inicial>
+        <span class="gr-tile" aria-hidden="true">{{ vm.group.name.split(' ').pop()?.slice(0, 1) }}</span>
+      </ng-template>
       <div>
         <h1 class="f-title">{{ vm.group.name }}</h1>
         <p class="f-lead">{{ vm.group.memberUids.length }} {{ vm.group.memberUids.length === 1 ? 'miembro' : 'miembros' }}</p>
