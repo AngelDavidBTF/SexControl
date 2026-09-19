@@ -26,7 +26,7 @@ import { UiService } from '../../core/ui.service';
 
       <div class="qr" *ngIf="qr; else generando">
         <img [src]="qr" alt="Código QR de la invitación" />
-        <img class="qr-logo" src="assets/follendario/simbolo.png" alt="" width="48" height="46" />
+        <img class="qr-logo" src="assets/follendario/simbolo.png" alt="" width="48" height="51" />
       </div>
       <ng-template #generando>
         <div class="ion-text-center ion-margin"><ion-spinner name="circular"></ion-spinner></div>
@@ -69,7 +69,7 @@ import { UiService } from '../../core/ui.service';
         position: absolute;
         top: 50%;
         left: 50%;
-        margin: -23px 0 0 -24px;
+        margin: -26px 0 0 -24px;
         background: #fff;
         border-radius: 8px;
         padding: 3px;

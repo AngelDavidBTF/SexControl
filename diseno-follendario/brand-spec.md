@@ -9,9 +9,10 @@
 | Activo | Ruta | Notas |
 |---|---|---|
 | Logo A, fondo casi negro, con lema | `POSIBLES LOGOS/07282DDE-…png` | Calendario inclinado, berenjena delante, lema «TU VIDA SEXUAL, ORGANIZADA». Esquinas opacas |
-| Logo B, fondo ciruela, sin lema | `POSIBLES LOGOS/E0820D4D-…png` | Calendario recto, berenjena a la derecha. Esquinas transparentes. **Base de los recortes** |
-| Símbolo (calendario + berenjena) | `diseno-follendario/assets/follendario-simbolo.png` | Recorte del logo B, fondo transparente, 300 px de ancho |
-| Logotipo «Follendario» | `diseno-follendario/assets/follendario-logotipo.png` | Recorte del logo B, fondo transparente, 475 px de ancho |
+| Logo B, fondo ciruela, sin lema | (retirado) | Calendario recto, berenjena a la derecha. Fue la base de los recortes hasta el 19-09-2026 |
+| Logo A, **logo oficial desde el 19-09-2026** | `LOGO/07282DDE-…png` | Calendario inclinado, berenjena a la izquierda, la «i» de «dario» con un corazón. **Base de los recortes** |
+| Símbolo (calendario + berenjena) | `src/assets/follendario/simbolo.png` (y copia en `diseno-follendario/assets/`) | Recorte del logo A, fondo transparente, 320 × 342 px |
+| Logotipo «Follendario» | `src/assets/follendario/logotipo.png` y `logotipo-tinta.png` | Recorte del logo A, fondo transparente, 475 × 78 px; en tinta, «Follen» pasa a `#10081A` |
 
 Pendiente para producción: vectorizar símbolo y logotipo (SVG). Los PNG son generados y tienen bordes
 suavizados; valen para prototipos, no para el icono final de 48 px (el logotipo es ilegible a ese tamaño:

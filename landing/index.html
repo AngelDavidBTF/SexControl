@@ -3,49 +3,857 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Follendario</title>
-  <meta name="description" content="Lleva la cuenta, pícate con tus amigos y mira tu año como un calendario.">
+  <title>Follendario · Tu vida sexual, organizada</title>
+  <meta name="description" content="Apunta cada vez con un toque, pícate con tus amigos y mira tu año pintado en un calendario. Con modo discreto para que nadie cotillee.">
   <meta name="theme-color" content="#10081a">
   <link rel="canonical" href="https://follendario.com/">
   <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/img/icono-192.png">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="Follendario">
+  <meta property="og:url" content="https://follendario.com/">
+  <meta property="og:title" content="Follendario · Tu vida sexual, organizada">
+  <meta property="og:description" content="Apunta cada vez con un toque, pícate con tus amigos y mira tu año pintado en un calendario.">
+  <meta property="og:image" content="https://follendario.com/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="/fonts/archivo-black-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geist-400.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add('js')</script>
   <style>
+    /* Fuentes autoalojadas (OFL): nada se pide a terceros. Archivo Black hace de «PolySans Bulky»
+       del DESIGN.md; Geist es la de la app, para que la web y la app hablen igual. */
+    @font-face { font-family: 'Archivo Black'; src: url('/fonts/archivo-black-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Geist'; src: url('/fonts/geist-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Geist'; src: url('/fonts/geist-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+    @font-face { font-family: 'Geist Mono'; src: url('/fonts/geist-mono-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+    @font-face { font-family: 'Geist Mono'; src: url('/fonts/geist-mono-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
     :root {
-      --f-bg: #10081a;
-      --f-text: #fcf3ed;
-      --f-muted: #a597b3;
-      --f-pink: #fc2a6c;
+      /* Estructura en blanco y tinta; el rosa es el único color de la web.
+         El cian solo aparece dentro de las pantallas, porque en la app significa «en solitario». */
+      --ink: #10081a;
+      --paper: #ffffff;
+      --pink: #fc2a6c;
+      --pink-hover: #ff4a82;
+      --pink-text: #c8124f;
+      --pink-on-ink: #ff5c8d;
+      --muted: #56495f;
+      --ash: #e3dde6;
+      --mist: #f5f1f6;
+      --cream: #fcf3ed;
+
+      /* La app por dentro (tema oscuro) */
+      --app-bg: #10081a;
+      --app-surface: #1a1125;
+      --app-surface-2: #241832;
+      --app-line: #3a2c4a;
+      --app-text: #fcf3ed;
+      --app-muted: #a597b3;
+      --app-solo: #6fc8f1;
+      --app-up: #6fdc95;
+      --cal-cell: #e8d0d3;
+      --cal-line: #e2c5c9;
+      --cal-muted: #5e4e68;
+
+      --display: 'Archivo Black', 'Arial Black', system-ui, sans-serif;
+      --sans: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+      --ease: cubic-bezier(0.23, 1, 0.32, 1);
+      --shadow-cta: 0 1px 30px rgba(16, 8, 26, 0.28);
+      --shadow-card: 0 1px 10px rgba(16, 8, 26, 0.05);
+      --gutter: 16px;
+      --max: 1200px;
     }
-    * { box-sizing: border-box; }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
     body {
       margin: 0;
-      min-height: 100dvh;
-      display: grid;
-      place-items: center;
-      padding: 24px 16px;
-      background: var(--f-bg);
-      color: var(--f-text);
-      font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
-      text-align: center;
+      background: var(--paper);
+      color: var(--ink);
+      font: 400 16px/1.5 var(--sans);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
-    h1 { margin: 0 0 8px; font-size: clamp(2.5rem, 12vw, 4.5rem); letter-spacing: -0.03em; }
-    h1 span { color: var(--f-pink); }
-    p { margin: 0 0 32px; color: var(--f-muted); max-width: 32ch; }
-    a {
-      display: inline-block;
-      padding: 14px 28px;
-      border-radius: 999px;
-      background: var(--f-pink);
-      color: var(--f-text);
-      font-weight: 600;
-      text-decoration: none;
+    img { display: block; max-width: 100%; height: auto; }
+    a { color: inherit; }
+    p { margin: 0; }
+    :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+    .dark :focus-visible { outline-color: var(--cream); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    section[id] { scroll-margin-top: 88px; }
+
+    /* ---------- Botones ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 52px; padding: 0 24px; border: 0; border-radius: 12px;
+      font: 600 16px/1 var(--sans); text-decoration: none; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 160ms var(--ease), background-color 160ms ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    /* Texto en tinta sobre rosa: el blanco no llega a 4,5:1 a tamaño de botón. */
+    .btn-pink { background: var(--pink); color: var(--ink); box-shadow: var(--shadow-cta); }
+    .btn-ink { background: var(--ink); color: var(--paper); }
+    .btn-line { background: transparent; color: var(--cream); box-shadow: inset 0 0 0 1.5px var(--app-line); }
+    @media (hover: hover) {
+      .btn-pink:hover { background: var(--pink-hover); }
+      .btn-ink:hover { background: #2a1d38; }
+      .btn-line:hover { box-shadow: inset 0 0 0 1.5px var(--cream); }
+    }
+
+    /* ---------- Navegación: píldora de tinta flotante ---------- */
+    .nav-wrap { position: fixed; inset: 12px var(--gutter) auto; z-index: 20; display: flex; justify-content: center; pointer-events: none; }
+    .nav {
+      pointer-events: auto; width: 100%; max-width: var(--max);
+      display: flex; align-items: center; gap: 24px;
+      padding: 7px 7px 7px 22px; border-radius: 999px; background: var(--ink); color: var(--cream);
+    }
+    .nav-logo { display: block; flex: none; }
+    .nav-logo img { width: 119px; }
+    .nav-links { display: flex; gap: 28px; margin: 0 auto; padding: 0; list-style: none; font-size: 14px; }
+    .nav-links a { text-decoration: none; opacity: 0.82; transition: opacity 160ms ease; }
+    .nav-links a:hover { opacity: 1; }
+    .nav .btn { min-height: 42px; padding: 0 18px; font-size: 14px; border-radius: 999px; box-shadow: none; }
+    @media (max-width: 760px) {
+      .nav { padding-left: 18px; }
+      .nav-links { display: none; }
+      .nav-logo { margin-right: auto; }
+      .nav-logo img { width: 104px; }
+    }
+
+    /* ---------- Portada: el único degradado de la web ---------- */
+    .hero {
+      position: relative; overflow: hidden; text-align: center;
+      padding: 128px var(--gutter) 0;
+      background:
+        radial-gradient(55% 60% at 10% 8%, #e6d4f4 0, rgba(230, 212, 244, 0) 70%),
+        radial-gradient(50% 55% at 92% 14%, #bfe6f8 0, rgba(191, 230, 248, 0) 70%),
+        radial-gradient(60% 60% at 14% 96%, #ffc3d6 0, rgba(255, 195, 214, 0) 70%),
+        radial-gradient(55% 60% at 92% 92%, #ffdcb8 0, rgba(255, 220, 184, 0) 70%),
+        #fcecef;
+    }
+    .hero-copy { max-width: 1000px; margin: 0 auto; }
+    .news {
+      display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+      padding: 5px 16px 5px 5px; border-radius: 999px; background: var(--ink); color: var(--paper);
+      font-size: 14px; line-height: 1.3; text-align: left;
+    }
+    .news b { flex: none; padding: 5px 10px; border-radius: 999px; background: var(--pink); color: var(--ink); font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    .display {
+      margin: 26px 0 0; font: 400 clamp(2.35rem, 9.4vw, 5.6rem)/0.9 var(--display);
+      letter-spacing: -0.01em; text-transform: uppercase; text-wrap: balance;
+    }
+    .lede { max-width: 36ch; margin: 22px auto 0; font-size: clamp(1.0625rem, 2.1vw, 1.25rem); line-height: 1.45; text-wrap: pretty; }
+    .cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+    .fine { margin-top: 14px; font-size: 14px; color: var(--muted); }
+
+    /* Abanico de móviles: salen del borde inferior de la portada */
+    .fan { position: relative; height: 480px; max-width: 960px; margin: 56px auto 0; }
+    .fan .phone { position: absolute; left: 50%; top: 0; --k: 1; --dx: 262px; transform-origin: 50% 0; }
+    .fan .p-left { transform: translateX(calc(-50% - var(--dx))) translateY(64px) rotate(-8deg) scale(var(--k)); }
+    .fan .p-mid { transform: translateX(-50%) scale(var(--k)); z-index: 2; }
+    .fan .p-right { transform: translateX(calc(-50% + var(--dx))) translateY(64px) rotate(8deg) scale(var(--k)); }
+    @media (max-width: 700px) {
+      .fan { height: 380px; margin-top: 40px; }
+      .fan .phone { --k: 0.8; --dx: 168px; }
+    }
+    /* Portada: una sola secuencia de entrada (texto de arriba abajo y luego el abanico).
+       Al bajar, los móviles laterales se abren un poco donde hay scroll-timeline. */
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-copy > * { animation: rise 560ms var(--ease) both; }
+      .hero-copy > :nth-child(2) { animation-delay: 70ms; }
+      .hero-copy > :nth-child(3) { animation-delay: 140ms; }
+      .hero-copy > :nth-child(4) { animation-delay: 210ms; }
+      @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+      .fan .phone { animation: fan-in 720ms var(--ease) both; }
+      .fan .p-mid { animation-delay: 260ms; }
+      .fan .p-left, .fan .p-right { animation-delay: 380ms; }
+      @keyframes fan-in { from { transform: translateX(-50%) translateY(160px) scale(var(--k)); opacity: 0; } }
+      @supports (animation-timeline: view()) {
+        .fan .phone { animation: fan-in 720ms var(--ease) both, drift linear both; animation-timeline: auto, view(); animation-range: normal, exit 0% exit 100%; }
+        .fan .p-mid { --drift: 0px; animation-delay: 260ms, 0s; }
+        .fan .p-left { --drift: -48px; animation-delay: 380ms, 0s; }
+        .fan .p-right { --drift: 48px; animation-delay: 380ms, 0s; }
+        @keyframes drift { to { translate: var(--drift) -40px; } }
+      }
+      html { scroll-behavior: smooth; }
+    }
+
+    /* ---------- Tira de tres ---------- */
+    .strip { max-width: var(--max); margin: 0 auto; padding: 56px var(--gutter); display: grid; grid-template-columns: repeat(3, 1fr); }
+    .strip > div { display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; padding: 4px 28px; border-left: 1px solid var(--ash); }
+    .strip > div:first-child { border-left: 0; padding-left: 0; }
+    .strip .ic { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--ink); display: grid; place-items: center; font: 700 14px var(--mono); }
+    .strip .ic svg { width: 20px; height: 20px; }
+    .strip h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; }
+    .strip p { font-size: 14px; line-height: 1.45; color: var(--muted); margin-top: 3px; }
+    @media (max-width: 820px) {
+      .strip { grid-template-columns: 1fr; padding-block: 40px; }
+      .strip > div { padding: 18px 0; border-left: 0; border-top: 1px solid var(--ash); }
+      .strip > div:first-child { border-top: 0; padding-top: 0; }
+    }
+
+    /* ---------- Secciones de texto + móvil ---------- */
+    .feature { max-width: var(--max); margin: 0 auto; padding: 96px var(--gutter); display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .feature.flip .feature-copy { order: 2; }
+    .feature-demo { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .eyebrow { margin: 0 0 14px; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--pink-text); }
+    .dark .eyebrow { color: var(--pink-on-ink); }
+    .h2 { margin: 0; font: 400 clamp(2.1rem, 6vw, 4.4rem)/0.92 var(--display); letter-spacing: -0.01em; text-transform: uppercase; text-wrap: balance; }
+    .statement { margin-top: 24px; max-width: 32ch; font-size: 19px; font-weight: 600; line-height: 1.4; }
+    .copy { margin-top: 14px; max-width: 46ch; color: var(--muted); }
+    .dark .copy { color: var(--app-muted); }
+    .ticks { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 46ch; }
+    .ticks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+    .ticks li::before { content: ''; width: 12px; height: 12px; margin: 6px 0 0 4px; border-radius: 4px; background: var(--pink); }
+    .ticks li:nth-child(2)::before { background: var(--app-solo); }
+    .ticks li:nth-child(3)::before { background: linear-gradient(135deg, var(--pink) 50%, var(--app-solo) 50%); }
+    .demo-note { font-size: 14px; color: var(--muted); text-align: center; max-width: 34ch; }
+    @media (max-width: 900px) {
+      .feature { grid-template-columns: 1fr; gap: 44px; padding-block: 72px; }
+      .feature.flip .feature-copy { order: 0; }
+    }
+
+    /* ---------- Banda oscura: amigos y grupos ---------- */
+    .dark { background: var(--ink); color: var(--cream); }
+    .band-inner { max-width: var(--max); margin: 0 auto; padding: 96px var(--gutter); display: grid; grid-template-columns: 5fr 7fr; gap: 56px; align-items: start; }
+    .board { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .ticket-slot { transform: rotate(-2deg); overflow: hidden; padding-bottom: 2px; }
+    .ticket {
+      background: var(--cream); color: var(--ink);
+      padding: 22px 20px 34px; font: 500 13px/1.75 var(--mono);
+      /* Borde de papel rasgado abajo */
+      -webkit-mask: radial-gradient(7px at 50% 100%, #0000 98%, #000) 50% 100% / 14px 100%;
+              mask: radial-gradient(7px at 50% 100%, #0000 98%, #000) 50% 100% / 14px 100%;
+    }
+    .ticket h3 { margin: 0; text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 0.12em; }
+    .ticket .sub { text-align: center; color: #4a3b55; }
+    .ticket hr { border: 0; border-top: 1px dashed rgba(16, 8, 26, 0.5); margin: 8px 0; }
+    .ticket dl { margin: 0; }
+    .ticket dt { font-weight: 700; }
+    .ticket dd { margin: 0 0 6px; display: flex; gap: 6px; }
+    .ticket dd::before { content: ''; flex: 1; border-bottom: 1px dotted rgba(16, 8, 26, 0.5); transform: translateY(-6px); }
+    .ticket .foot { text-align: center; margin-top: 6px; }
+    .side { display: grid; gap: 20px; }
+    .duel { background: var(--app-surface); border-radius: 20px; padding: 20px; }
+    .duel p { font-size: 14px; color: var(--app-muted); }
+    .duel p b { color: var(--cream); font-weight: 600; }
+    .duel .score { margin: 10px 0 4px; font: 700 52px/1 var(--mono); color: var(--cream); letter-spacing: -0.02em; }
+    .duel .score span { color: var(--pink-on-ink); }
+    .pullas-title { font-size: 14px; color: var(--app-muted); margin-bottom: 10px; }
+    .pullas { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    .pullas li { padding: 8px 14px; border-radius: 999px; background: var(--app-surface-2); font-size: 14px; line-height: 1.3; }
+    @media (max-width: 1000px) {
+      .band-inner { grid-template-columns: 1fr; padding-block: 72px; gap: 44px; }
+    }
+    @media (max-width: 560px) {
+      .board { grid-template-columns: 1fr; }
+      .ticket-slot { transform: rotate(-1.5deg); }
+    }
+
+    /* ---------- Interruptor del modo discreto ---------- */
+    .switch {
+      display: inline-flex; align-items: center; gap: 14px; margin-top: 28px; padding: 10px 18px 10px 10px;
+      border: 0; border-radius: 999px; background: var(--mist); color: var(--ink);
+      font: 600 16px/1 var(--sans); cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .switch-track { position: relative; width: 52px; height: 32px; border-radius: 999px; background: #cfc6d4; transition: background-color 200ms ease; }
+    .switch-thumb { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 3px rgba(16, 8, 26, 0.3); transition: transform 220ms var(--ease); }
+    .switch[aria-checked="true"] .switch-track { background: var(--ink); }
+    .switch[aria-checked="true"] .switch-thumb { transform: translateX(20px); }
+
+    /* ---------- Cierre ---------- */
+    .closing { padding: 104px var(--gutter) 112px; text-align: center; background: var(--mist); }
+    .closing img { width: 168px; margin: 0 auto 28px; }
+    .closing .h2 { font-size: clamp(2.2rem, 7.4vw, 5.2rem); }
+    .closing .copy { margin: 18px auto 0; }
+    .closing .cta-row { margin-top: 32px; }
+
+    .foot-bar { background: var(--ink); color: var(--app-muted); font-size: 14px; }
+    .foot-bar div { max-width: var(--max); margin: 0 auto; padding: 28px var(--gutter) calc(28px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+    .foot-bar img { width: 104px; margin-right: auto; }
+    .foot-bar a { color: var(--cream); text-decoration: none; }
+    .foot-bar a:hover { text-decoration: underline; }
+
+    /* =====================================================================
+       Pantallas de la app, dibujadas en HTML (pesan menos que capturas y se ven nítidas).
+       Réplica del tema oscuro de la app: ciruela, crema, rosa = compañía, cian = solitario.
+       ===================================================================== */
+    .phone {
+      width: 280px; padding: 8px; border-radius: 46px; background: #241832;
+      box-shadow: inset 0 0 0 1.5px #3a2c4a; text-align: left;
+    }
+    .screen {
+      --c: var(--pink); --s: var(--app-solo); --head: var(--pink); --cell: var(--cal-cell);
+      position: relative; height: 564px; overflow: hidden; border-radius: 38px;
+      background: var(--app-bg); color: var(--app-text);
+      padding: 44px 14px 16px; display: flex; flex-direction: column; gap: 10px;
+      font: 400 12px/1.35 var(--sans);
+    }
+    .phone-lg { width: 316px; }
+    .phone-lg .screen { height: auto; min-height: 640px; padding-inline: 16px; }
+    .screen::before { content: ''; position: absolute; top: 11px; left: 50%; width: 86px; height: 25px; margin-left: -43px; border-radius: 999px; background: #000; }
+    .s-time { position: absolute; top: 15px; left: 28px; font-size: 12px; font-weight: 600; }
+    .s-bar { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
+    .s-bar img { width: 96px; }
+    .s-me { width: 28px; height: 28px; border-radius: 50%; background: var(--app-surface-2); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+    .s-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+    .s-title small { font: 500 12px var(--mono); color: var(--app-muted); margin-left: 6px; }
+    .s-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--app-surface); }
+    .s-seg span { flex: 1; padding: 5px 0; border-radius: 8px; text-align: center; font-size: 11px; color: var(--app-muted); }
+    .s-seg .on { background: var(--app-line); color: var(--app-text); font-weight: 600; }
+    .s-card { background: var(--app-surface); border-radius: 16px; padding: 12px; }
+    .s-label { font: 500 10px/1.3 var(--mono); color: var(--app-muted); letter-spacing: 0.02em; }
+    .s-h { font-size: 15px; font-weight: 600; text-align: center; }
+
+    /* Calendario de papel */
+    .s-paper { background: var(--cream); color: var(--ink); border-radius: 16px; padding: 12px; }
+    .s-mhead { display: flex; justify-content: space-between; align-items: baseline; font: 700 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+    .s-mhead span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--cal-muted); }
+    .s-wd, .s-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .s-wd { margin-bottom: 3px; }
+    .s-wd span { text-align: center; font: 500 9px var(--mono); color: var(--cal-muted); }
+    .s-grid i {
+      position: relative; height: 26px; border-radius: 7px; background: var(--cell); padding: 3px 4px;
+      font: 600 9px/1 var(--mono); font-style: normal; color: var(--cal-muted);
+    }
+    .s-grid i:empty { background: transparent; }
+    .s-grid .c { background: var(--c); color: var(--ink); }
+    .s-grid .s { background: var(--s); color: var(--ink); }
+    .s-grid .b { background: linear-gradient(135deg, var(--c) 50%, var(--s) 50%); color: var(--ink); }
+    .s-grid .f { background: transparent; box-shadow: inset 0 0 0 1px var(--cal-line); color: #9a8a98; }
+    .s-grid .t { box-shadow: 0 0 0 2px var(--cream), 0 0 0 3.5px var(--ink); }
+    .s-grid i[data-x]::after { content: attr(data-x); position: absolute; right: 3px; bottom: 2px; font-size: 8px; }
+
+    /* Estadísticas */
+    .s-big { display: flex; align-items: center; gap: 10px; }
+    .s-big strong { font: 700 44px/1 var(--mono); letter-spacing: -0.03em; }
+    .s-big span { font-size: 13px; font-weight: 600; line-height: 1.3; }
+    .s-big em { font-style: normal; font-weight: 400; color: var(--app-muted); }
+    .s-delta { margin: 6px 0 10px; font: 500 11px var(--mono); color: var(--app-muted); }
+    .s-delta b { color: var(--app-up); font-weight: 500; }
+    .s-reparto { display: grid; grid-template-columns: 2fr 1fr; gap: 3px; height: 10px; }
+    .s-reparto i { border-radius: 99px; background: var(--c); }
+    .s-reparto i + i { background: var(--s); }
+    .s-ley { display: flex; justify-content: space-between; margin-top: 8px; font: 500 10px var(--mono); color: var(--app-muted); }
+    .s-ley b { color: var(--app-text); }
+    .s-rachas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .s-rachas .s-card { padding: 10px; }
+    .s-rachas strong { display: block; font: 700 20px/1.1 var(--mono); }
+
+    /* Amigos */
+    .s-duelo p { color: var(--app-muted); }
+    .s-duelo p b { color: var(--app-text); font-weight: 600; }
+    .s-duelo .s-score { margin-top: 4px; font: 700 26px/1 var(--mono); color: var(--app-text); }
+    .s-duelo .s-score span { color: var(--c); }
+    .s-con { border-radius: 14px; padding: 10px 12px; background: #0a0511; box-shadow: inset 0 0 0 1px var(--app-surface-2); font: 500 10.5px/1.6 var(--mono); }
+    .s-con p b { color: var(--c); font-weight: 500; }
+    .s-liga { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+    .s-liga li { display: grid; grid-template-columns: 20px 22px 1fr auto 22px; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 10px; }
+    .s-liga .yo { background: var(--app-surface-2); }
+    .s-liga .pos { font: 500 10px var(--mono); color: var(--app-muted); }
+    .s-liga .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 600; color: var(--ink); background: var(--cream); }
+    .s-liga .av.c { background: var(--c); }
+    .s-liga .av.s { background: var(--s); }
+    .s-liga .d { font: 500 9px var(--mono); }
+    .s-liga .up { color: var(--app-up); }
+    .s-liga .dn { color: #ff8095; }
+    .s-liga .v { font: 700 13px var(--mono); text-align: right; }
+
+    /* Logros */
+    .s-logros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .s-logros div { background: var(--app-surface); border-radius: 12px; padding: 8px 6px; text-align: center; font-size: 10px; font-weight: 600; line-height: 1.2; }
+    .s-logros div span { display: block; font-size: 20px; line-height: 1.3; margin-bottom: 2px; }
+    .s-logros .lock { color: var(--app-muted); }
+    .s-logros .lock span { filter: grayscale(1); opacity: 0.45; }
+    .s-logros .lock::after { content: ''; display: block; height: 3px; margin: 6px 4px 0; border-radius: 3px; background: linear-gradient(90deg, var(--c) var(--p, 30%), var(--app-line) 0); }
+
+    /* Sumar: calendario con anillas, marcador de fichas y teclas */
+    .s-hello { font-size: 15px; font-weight: 600; }
+    .s-hello > span:last-child { color: var(--app-muted); font-weight: 400; }
+    .s-cal { position: relative; margin-top: 8px; }
+    .s-cal::before, .s-cal::after { content: ''; position: absolute; top: -10px; width: 11px; height: 26px; border-radius: 6px; background: var(--cream); box-shadow: inset 0 -3px 0 rgba(16, 8, 26, 0.2), 0 2px 0 rgba(16, 8, 26, 0.35); z-index: 1; }
+    .s-cal::before { left: 22%; }
+    .s-cal::after { right: 22%; }
+    .s-cal-head { display: flex; justify-content: space-between; align-items: flex-end; padding: 20px 12px 9px; border-radius: 16px 16px 0 0; background: var(--head); color: var(--ink); font: 700 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+    .s-cal-head span { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 11px; }
+    .s-cal-body { background: var(--cream); color: var(--ink); border-radius: 0 0 16px 16px; padding: 12px; display: grid; gap: 10px; }
+    .s-cal-body .s-label { color: var(--cal-muted); display: block; margin-bottom: 3px; }
+    .s-marcador { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+    .s-marcador-side { display: grid; gap: 6px; text-align: right; }
+    .tiles { display: inline-flex; gap: 2px; }
+    .tiles b {
+      position: relative; display: inline-block; overflow: hidden; min-width: 0.95em; padding: 1px 3px; border-radius: 5px; text-align: center;
+      background: var(--ink); color: var(--cream); font: 700 15px/1.3 var(--mono);
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .tiles b::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0, 0, 0, 0.45); }
+    .tiles.big b { font-size: 30px; padding: 2px 5px; border-radius: 7px; }
+    .tiles.c b { color: var(--c); }
+    .tiles.s b { color: var(--s); }
+    .s-goal { display: grid; gap: 5px; }
+    .s-goal-text { display: flex; justify-content: space-between; font-size: 11px; }
+    .s-goal-text strong { font: 700 11px var(--mono); }
+    .s-segs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+    .s-segs i { height: 7px; border-radius: 3px; background: var(--cell); }
+    .s-segs i.on { background: var(--ink); }
+    .s-segs.done i { background: var(--c); }
+    .s-keys { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .key {
+      display: flex; flex-direction: column; justify-content: space-between; height: 84px; padding: 10px 12px;
+      border: 0; border-radius: 16px; text-align: left; cursor: default; color: var(--ink);
+      font: 700 12px var(--mono); letter-spacing: 0.03em;
+      box-shadow: inset 0 -4px 0 rgba(16, 8, 26, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .key.c { background: var(--c); }
+    .key.s { background: var(--s); }
+    .key-top { display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+    .key-top::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: rgba(16, 8, 26, 0.35); }
+    button.key { cursor: pointer; transition: transform 120ms var(--ease), box-shadow 120ms var(--ease); }
+    button.key:active { transform: translateY(3px) scale(0.985); box-shadow: inset 0 -1px 0 rgba(16, 8, 26, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+    button.key:focus-visible { outline-color: var(--cream); }
+    .s-ghost { align-self: center; padding: 8px 12px; border: 0; background: none; color: var(--app-muted); font: 500 12px var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .s-ghost:disabled { opacity: 0.4; cursor: default; }
+    .s-ghost:focus-visible { outline-color: var(--cream); }
+    @media (prefers-reduced-motion: no-preference) {
+      .tiles b.roll { animation: roll 260ms var(--ease); }
+      .s-grid i.pop { animation: pop 300ms var(--ease); }
+      @keyframes roll { from { transform: translateY(-45%); opacity: 0; } }
+      @keyframes pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.18); } }
+    }
+
+    /* Modo discreto: piel gris, números difuminados, nombre «Notas» */
+    .neutral-name { display: none; font-size: 15px; font-weight: 600; }
+    .only-d { display: none; }
+    .screen.discreto { --c: #a39aa8; --s: #cfc9d3; --head: #bdb5c2; --cell: #e6e2e8; }
+    .screen.discreto .brand { display: none; }
+    .screen.discreto .neutral-name { display: block; }
+    .screen.discreto .only-n { display: none; }
+    .screen.discreto .only-d { display: inline; }
+    .screen.discreto .tiles.c b, .screen.discreto .tiles.s b { color: var(--cream); }
+    .screen.discreto .dato { filter: blur(6px); }
+    .screen .dato { transition: filter 200ms ease; }
+    .screen .s-cal-head, .screen .s-grid i { transition: background-color 200ms ease; }
+    .screen .key { transition: background-color 200ms ease, transform 120ms var(--ease), box-shadow 120ms var(--ease); }
+
+    /* ---------- Animaciones al llegar a cada parte ----------
+       Solo transform y opacity; se marcan una vez (JS añade .in) y no se repiten.
+       Sin JS o con movimiento reducido, todo está quieto y visible. */
+    @media (prefers-reduced-motion: no-preference) {
+      /* El ticket sale de la ranura, como en la app */
+      .js .ticket-slot .ticket { transform: translateY(-100%); transition: transform 1100ms var(--ease); }
+      .js .ticket-slot.in .ticket { transform: none; }
+
+      /* El reto entra y las pullas llegan una detrás de otra, como mensajes */
+      .js .duel { opacity: 0; transform: translateY(12px); transition: opacity 420ms var(--ease), transform 420ms var(--ease); transition-delay: 250ms; }
+      .js .duel.in { opacity: 1; transform: none; }
+      .js .pullas li { opacity: 0; transform: translateY(8px) scale(0.96); transition: opacity 280ms var(--ease), transform 280ms var(--ease); transition-delay: calc(500ms + var(--i) * 140ms); }
+      .js .pullas.in li { opacity: 1; transform: none; }
+
+      /* Cierre: el símbolo cae con un pequeño rebote */
+      .js .closing-sym { opacity: 0; transform: translateY(-24px) rotate(-10deg) scale(0.94); transition: opacity 300ms var(--ease), transform 700ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+      .js .closing-sym.in { opacity: 1; transform: none; }
+
+      /* Demo de Sumar: la página pulsa la tecla una vez para enseñarla */
+      .screen .key.auto { transform: translateY(3px) scale(0.985); box-shadow: inset 0 -1px 0 rgba(16, 8, 26, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
     }
   </style>
 </head>
 <body>
+  <header class="nav-wrap">
+    <nav class="nav" aria-label="Principal">
+      <a class="nav-logo" href="#inicio"><img src="/img/logotipo.webp" width="475" height="78" alt="Follendario"></a>
+      <ul class="nav-links">
+        <li><a href="#sumar">Sumar</a></li>
+        <li><a href="#amigos">Amigos</a></li>
+        <li><a href="#discreto">Modo discreto</a></li>
+      </ul>
+      <a class="btn btn-pink" href="https://app.follendario.com/">Abrir la app</a>
+    </nav>
+  </header>
+
   <main>
-    <h1 translate="no">Follen<span>dario</span></h1>
-    <p>La web está calentando motores. La app ya está lista para que empieces a sumar.</p>
-    <a href="https://app.follendario.com/">Abrir la app</a>
+    <section class="hero" id="inicio">
+      <div class="hero-copy">
+        <h1 class="display">Tu vida sexual, organizada.</h1>
+        <p class="lede">Apunta cada vez con un toque, pícate con tu cuadrilla y mira tu año pintado en un calendario.</p>
+        <div class="cta-row">
+          <a class="btn btn-pink" href="https://app.follendario.com/register">Empieza a sumar</a>
+          <a class="btn btn-ink" href="#sumar">Cómo funciona</a>
+        </div>
+        <p class="fine">Se abre en el navegador del móvil. No hay nada que descargar.</p>
+      </div>
+
+      <div class="fan" role="img" aria-label="Tres pantallas de Follendario: la liga de amigos con un duelo, tu calendario del mes y los logros.">
+        <!-- Amigos -->
+        <div class="phone p-left" aria-hidden="true">
+          <div class="screen">
+            <span class="s-time">23:47</span>
+            <div class="s-bar"><p class="s-title">Amigos</p><span class="s-me">T</span></div>
+            <div class="s-seg"><span class="on">Amigos</span><span>Grupos</span></div>
+            <div class="s-card s-duelo">
+              <p>⚔️ <b>Dani</b> · Quién suma más esta semana</p>
+              <p class="s-score"><span>1</span> – 4</p>
+            </div>
+            <div class="s-con">
+              <p class="s-label">~/te-han-escrito</p>
+              <p><b>Laura</b>: ¿Te has jubilado o qué?</p>
+              <p><b>Dani</b>: Te como el polvo</p>
+              <p><b>Javi</b>: Semana floja, ¿eh?</p>
+            </div>
+            <div class="s-card">
+              <p class="s-label">liga de amigos · semana</p>
+              <ol class="s-liga">
+                <li><span class="pos">01</span><span class="av c">L</span><span>Laura</span><span class="d up">▲2</span><span class="v">7</span></li>
+                <li><span class="pos">02</span><span class="av s">D</span><span>Dani</span><span class="d"></span><span class="v">5</span></li>
+                <li class="yo"><span class="pos">03</span><span class="av">T</span><span>Tú</span><span class="d dn">▼1</span><span class="v">4</span></li>
+                <li><span class="pos">04</span><span class="av">S</span><span>Sara</span><span class="d up">▲1</span><span class="v">3</span></li>
+                <li><span class="pos">05</span><span class="av">J</span><span>Javi</span><span class="d"></span><span class="v">0</span></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="phone p-mid" aria-hidden="true">
+          <div class="screen">
+            <span class="s-time">23:47</span>
+            <div class="s-bar"><img src="/img/logotipo.webp" width="475" height="78" alt=""><span class="s-me">T</span></div>
+            <div class="s-seg"><span>Semana</span><span class="on">Mes</span><span>Año</span><span>Siempre</span></div>
+            <p class="s-h">Septiembre de 2026</p>
+            <div class="s-card">
+              <div class="s-big"><strong>12</strong><span>veces<br><em>10 días activos</em></span></div>
+              <p class="s-delta"><b>▲ +29 %</b> vs agosto</p>
+              <div class="s-reparto"><i></i><i></i></div>
+              <div class="s-ley"><span>compañía <b>8</b></span><span>solitario <b>4</b></span></div>
+            </div>
+            <div class="s-paper">
+              <div class="s-mhead">Septiembre<span>12 veces</span></div>
+              <div class="s-wd"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+              <div class="s-grid"><i></i><i>1</i><i class="c">2</i><i>3</i><i>4</i><i class="s">5</i><i class="c" data-x="×2">6</i><i>7</i><i>8</i><i class="s">9</i><i class="c">10</i><i>11</i><i class="c">12</i><i>13</i><i class="c">14</i><i>15</i><i class="s">16</i><i class="b" data-x="×2">17</i><i>18</i><i class="c t">19</i><i class="f">20</i><i class="f">21</i><i class="f">22</i><i class="f">23</i><i class="f">24</i><i class="f">25</i><i class="f">26</i><i class="f">27</i><i class="f">28</i><i class="f">29</i><i class="f">30</i></div>
+            </div>
+            <div class="s-rachas">
+              <div class="s-card"><strong>🔥 4</strong><span class="s-label">días de racha</span></div>
+              <div class="s-card"><strong>Noche</strong><span class="s-label">franja favorita</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logros -->
+        <div class="phone p-right" aria-hidden="true">
+          <div class="screen">
+            <span class="s-time">23:47</span>
+            <div class="s-bar"><p class="s-title">Logros<small>13/19</small></p><span class="s-me">T</span></div>
+            <div class="s-logros">
+              <div><span>🎉</span>La primera</div>
+              <div><span>🔟</span>Diez</div>
+              <div><span>💯</span>Centenario</div>
+              <div><span>🔥</span>En racha</div>
+              <div><span>⚡</span>Día épico</div>
+              <div><span>🌙</span>Noctámbulo</div>
+              <div><span>☀️</span>Buenos días</div>
+              <div><span>🤝</span>Social</div>
+              <div><span>⚔️</span>Duelista</div>
+              <div class="lock" style="--p: 40%"><span>🛡️</span>Invicto</div>
+              <div class="lock" style="--p: 20%"><span>🌋</span>Imparable</div>
+              <div class="lock" style="--p: 0%"><span>👑</span>Campeón</div>
+              <div class="lock" style="--p: 29%"><span>🏅</span>Leyenda</div>
+              <div class="lock" style="--p: 51%"><span>🎂</span>Un año</div>
+              <div class="lock" style="--p: 0%"><span>🏆</span>Tricampeón</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="strip" aria-label="En corto">
+      <div>
+        <span class="ic" aria-hidden="true">+1</span>
+        <h3>Un toque y apuntada</h3>
+        <p>Dos botones: en compañía o en solitario. Sin formularios.</p>
+      </div>
+      <div>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>
+        <h3>19 logros que desbloquear</h3>
+        <p>Del Noctámbulo al Día épico. Algunos cuestan más que otros.</p>
+      </div>
+      <div>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3 3.8M6.6 6.6C3.9 8.3 2.5 12 2.5 12S6 19 12 19a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></span>
+        <h3>Tú decides qué ven</h3>
+        <p>Cada amigo ve todo, solo tu total o nada de nada.</p>
+      </div>
+    </section>
+
+    <section class="feature" id="sumar">
+      <div class="feature-copy">
+        <p class="eyebrow">Sumar</p>
+        <h2 class="h2">Un toque. Apuntada.</h2>
+        <p class="statement">Tocas, suma, y el día se pinta en tu calendario.</p>
+        <p class="copy">¿Se te pasó apuntar una? La añades luego con su fecha. Y cuando quieras mirar atrás, tienes tu semana, tu mes y tu año.</p>
+        <ul class="ticks">
+          <li>Rosa si fue en compañía.</li>
+          <li>Azul si fue por tu cuenta.</li>
+          <li>Mitad y mitad si el día dio para las dos.</li>
+        </ul>
+      </div>
+      <div class="feature-demo">
+        <div class="phone phone-lg" id="demo-phone">
+          <div class="screen" id="demo">
+            <span class="s-time" aria-hidden="true">23:47</span>
+            <div class="s-bar"><img src="/img/logotipo.webp" width="475" height="78" alt="Follendario"><span class="s-me" aria-hidden="true">T</span></div>
+            <p class="s-hello">Buenas. <span>¿Qué ha caído?</span></p>
+            <div class="s-cal">
+              <div class="s-cal-head">Septiembre<span>sem 38 · 2026</span></div>
+              <div class="s-cal-body">
+                <div class="s-marcador">
+                  <div><span class="s-label">en total</span><span class="tiles big" data-n="total" data-min="3"></span></div>
+                  <div class="s-marcador-side">
+                    <div><span class="s-label">compañía</span><span class="tiles c" data-n="c" data-min="2"></span></div>
+                    <div><span class="s-label">solitario</span><span class="tiles s" data-n="s" data-min="2"></span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="s-wd" aria-hidden="true"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+                  <div class="s-grid" aria-hidden="true"><i></i><i>1</i><i class="c">2</i><i>3</i><i>4</i><i class="s">5</i><i class="c" data-x="×2">6</i><i>7</i><i>8</i><i class="s">9</i><i>10</i><i>11</i><i class="c">12</i><i>13</i><i class="c">14</i><i>15</i><i class="s">16</i><i class="b" data-x="×2">17</i><i>18</i><i class="t" id="hoy">19</i><i class="f">20</i><i class="f">21</i><i class="f">22</i><i class="f">23</i><i class="f">24</i><i class="f">25</i><i class="f">26</i><i class="f">27</i><i class="f">28</i><i class="f">29</i><i class="f">30</i></div>
+                </div>
+                <div class="s-goal">
+                  <div class="s-goal-text"><span>Objetivo de la semana</span><strong id="meta">4/5</strong></div>
+                  <div class="s-segs" id="segs"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+                </div>
+              </div>
+            </div>
+            <div class="s-keys">
+              <button type="button" class="key c" data-k="c"><span class="key-top">+1</span><span>EN COMPAÑÍA</span></button>
+              <button type="button" class="key s" data-k="s"><span class="key-top">+1</span><span>EN SOLITARIO</span></button>
+            </div>
+            <button type="button" class="s-ghost" id="borrar" disabled>borrar la última</button>
+            <p class="sr-only" aria-live="polite" id="demo-estado"></p>
+          </div>
+        </div>
+        <p class="demo-note">Pruébalo. Aquí no se guarda nada: es de mentira, como algunas excusas.</p>
+      </div>
+    </section>
+
+    <section class="dark" id="amigos">
+      <div class="band-inner">
+        <div>
+          <p class="eyebrow">Amigos</p>
+          <h2 class="h2">Pícate con tu cuadrilla.</h2>
+          <p class="statement">Crea un grupo, invita con un enlace o un QR y que empiece el pique.</p>
+          <p class="copy">Cada semana el grupo tiene su ticket: quién fue el MVP, quién remontó y quién desapareció sin dar explicaciones. Y si alguien se pica de verdad, duelo uno contra uno.</p>
+        </div>
+        <div class="board">
+          <div class="ticket-slot" data-reveal>
+          <div class="ticket" role="group" aria-label="Ejemplo de ticket semanal de un grupo">
+            <h3>TICKET SEMANAL</h3>
+            <p class="sub">los del pueblo · sem 38</p>
+            <hr>
+            <dl>
+              <dt>MVP DE LA SEMANA</dt><dd>LAURA · 7</dd>
+              <dt>REMONTADA</dt><dd>DANI · +3</dd>
+              <dt>EL MÁS CONSTANTE</dt><dd>SARA · 5 DÍAS</dd>
+              <dt>DESAPARECIDO</dt><dd>JAVI · 12 DÍAS</dd>
+              <dt>FAROLILLO ROJO</dt><dd>TÚ · SIN ESTRENAR</dd>
+            </dl>
+            <hr>
+            <p class="foot">VUELVA PRONTO</p>
+          </div>
+          </div>
+          <div class="side">
+            <div class="duel" data-reveal>
+              <p>⚔️ <b>Dani</b> te ha retado</p>
+              <p class="score" aria-label="Vas 1 a 4"><span>1</span> – 4</p>
+              <p>Quién suma más esta semana. Quedan dos días: todavía hay partido.</p>
+            </div>
+            <div>
+              <p class="pullas-title">Y al que se duerme, una pulla:</p>
+              <ul class="pullas" data-reveal>
+                <li style="--i: 0">👴 ¿Te has jubilado o qué?</li>
+                <li style="--i: 1">😴 Semana floja, ¿eh?</li>
+                <li style="--i: 2">💨 Te como el polvo</li>
+                <li style="--i: 3">🏃 Te estoy adelantando</li>
+                <li style="--i: 4">🛌 Descansa, que te va a dar algo</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature flip" id="discreto">
+      <div class="feature-copy">
+        <p class="eyebrow">Modo discreto</p>
+        <h2 class="h2">Que nadie cotillee.</h2>
+        <p class="statement">La app se vuelve gris, los números se difuminan y la pestaña se llama Notas.</p>
+        <p class="copy">Tocas un número y lo ves unos segundos. Si aun así no te fías, la bloqueas con un PIN.</p>
+        <button type="button" class="switch" role="switch" aria-checked="false" id="discreto-switch" aria-controls="mini">
+          <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+          Activar modo discreto
+        </button>
+      </div>
+      <div class="feature-demo">
+        <div class="phone" aria-hidden="true">
+          <div class="screen" id="mini">
+            <span class="s-time">16:05</span>
+            <div class="s-bar"><img class="brand" src="/img/logotipo.webp" width="475" height="78" alt=""><span class="neutral-name">Notas</span><span class="s-me">T</span></div>
+            <p class="s-hello"><span class="only-n">Buenas.</span><span class="only-d">Hola.</span> <span><span class="only-n">¿Qué ha caído?</span><span class="only-d">Tu resumen.</span></span></p>
+            <div class="s-cal">
+              <div class="s-cal-head">Septiembre<span>sem 38 · 2026</span></div>
+              <div class="s-cal-body">
+                <div class="s-marcador">
+                  <div><span class="s-label">en total</span><span class="tiles big dato"><b>0</b><b>1</b><b>2</b></span></div>
+                  <div class="s-marcador-side">
+                    <div><span class="s-label"><span class="only-n">compañía</span><span class="only-d">con alguien</span></span><span class="tiles c dato"><b>0</b><b>8</b></span></div>
+                    <div><span class="s-label"><span class="only-n">solitario</span><span class="only-d">por mi cuenta</span></span><span class="tiles s dato"><b>0</b><b>4</b></span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="s-wd"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+                  <div class="s-grid"><i></i><i>1</i><i class="c">2</i><i>3</i><i>4</i><i class="s">5</i><i class="c">6</i><i>7</i><i>8</i><i class="s">9</i><i class="c">10</i><i>11</i><i class="c">12</i><i>13</i><i class="c">14</i><i>15</i><i class="s">16</i><i class="b">17</i><i>18</i><i class="c t">19</i><i class="f">20</i><i class="f">21</i><i class="f">22</i><i class="f">23</i><i class="f">24</i><i class="f">25</i><i class="f">26</i><i class="f">27</i><i class="f">28</i><i class="f">29</i><i class="f">30</i></div>
+                </div>
+              </div>
+            </div>
+            <div class="s-keys">
+              <span class="key c"><span class="key-top">+1</span><span><span class="only-n">EN COMPAÑÍA</span><span class="only-d">CON ALGUIEN</span></span></span>
+              <span class="key s"><span class="key-top">+1</span><span><span class="only-n">EN SOLITARIO</span><span class="only-d">POR MI CUENTA</span></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <img class="closing-sym" data-reveal src="/img/simbolo.webp" width="320" height="342" alt="" loading="lazy">
+      <h2 class="h2">¿Cuántas llevas este año?</h2>
+      <p class="copy">Si no lo sabes, ya vas tarde. Empieza hoy y a final de año tendrás el calendario lleno. O no, pero eso ya es cosa tuya.</p>
+      <div class="cta-row">
+        <a class="btn btn-pink" href="https://app.follendario.com/register">Empieza a sumar</a>
+        <a class="btn btn-ink" href="https://app.follendario.com/login">Ya tengo cuenta</a>
+      </div>
+    </section>
   </main>
+
+  <footer class="foot-bar">
+    <div>
+      <img src="/img/logotipo.webp" width="475" height="78" alt="Follendario" loading="lazy">
+      <a href="https://app.follendario.com/login">Entrar</a>
+      <a href="https://app.follendario.com/register">Crear cuenta</a>
+      <span>© 2026 Follendario</span>
+    </div>
+  </footer>
+
+  <script>
+    // Demo de Sumar: todo en memoria, nada sale del navegador.
+    (function () {
+      var demo = document.getElementById('demo');
+      var hoy = document.getElementById('hoy');
+      var borrar = document.getElementById('borrar');
+      var estado = document.getElementById('demo-estado');
+      var meta = document.getElementById('meta');
+      var segs = document.getElementById('segs');
+      var base = { c: 7, s: 4 };
+      var semanaBase = 4;
+      var objetivo = 5;
+      var historial = [];
+
+      function pintar(el, valor) {
+        var min = Number(el.getAttribute('data-min')) || 1;
+        var txt = String(valor).padStart(min, '0');
+        var antes = el.textContent;
+        el.innerHTML = '';
+        for (var i = 0; i < txt.length; i++) {
+          var b = document.createElement('b');
+          b.textContent = txt[i];
+          // Solo ruedan las cifras que cambian
+          if (antes && antes.length === txt.length && antes[i] !== txt[i]) b.className = 'roll';
+          el.appendChild(b);
+        }
+      }
+
+      function render(anunciar) {
+        var c = base.c, s = base.s, hc = 0, hs = 0;
+        historial.forEach(function (k) { if (k === 'c') hc++; else hs++; });
+        c += hc; s += hs;
+        demo.querySelectorAll('.tiles').forEach(function (el) {
+          var n = el.getAttribute('data-n');
+          pintar(el, n === 'total' ? c + s : n === 'c' ? c : s);
+        });
+        hoy.className = 't' + (hc && hs ? ' b' : hc ? ' c' : hs ? ' s' : '');
+        var t = hc + hs;
+        if (t > 1) hoy.setAttribute('data-x', '×' + t); else hoy.removeAttribute('data-x');
+        var hecho = Math.min(semanaBase + t, objetivo);
+        meta.textContent = hecho + '/' + objetivo;
+        segs.querySelectorAll('i').forEach(function (i, n) { i.className = n < semanaBase + t ? 'on' : ''; });
+        segs.classList.toggle('done', semanaBase + t >= objetivo);
+        borrar.disabled = historial.length === 0;
+        if (anunciar) {
+          estado.textContent = 'Llevas ' + (c + s) + ' este mes. Hoy: ' + (t === 0 ? 'nada' : t === 1 ? '1 vez' : t + ' veces') + '.';
+        }
+      }
+
+      demo.querySelectorAll('button.key').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          historial.push(btn.getAttribute('data-k'));
+          render(true);
+          hoy.classList.remove('pop');
+          void hoy.offsetWidth;
+          hoy.classList.add('pop');
+        });
+      });
+      borrar.addEventListener('click', function () {
+        historial.pop();
+        render(true);
+      });
+      render(false);
+
+      var quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var hayIO = 'IntersectionObserver' in window;
+
+      // La demo se enseña sola una vez al aparecer, salvo que ya la hayas tocado.
+      var tocada = false;
+      demo.addEventListener('pointerdown', function () { tocada = true; });
+      if (hayIO && !quieto) {
+        var ioDemo = new IntersectionObserver(function (entradas) {
+          if (!entradas[0].isIntersecting) return;
+          ioDemo.disconnect();
+          var tecla = demo.querySelector('button.key.c');
+          setTimeout(function () {
+            if (tocada) return;
+            tecla.classList.add('auto');
+            setTimeout(function () { tecla.classList.remove('auto'); tecla.click(); }, 160);
+          }, 700);
+        }, { threshold: 0.6 });
+        ioDemo.observe(document.getElementById('demo-phone'));
+      }
+
+      // Revelados al llegar: se marcan una vez
+      var revelar = document.querySelectorAll('[data-reveal]');
+      if (hayIO) {
+        var io = new IntersectionObserver(function (entradas) {
+          entradas.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.35 });
+        revelar.forEach(function (el) { io.observe(el); });
+      } else {
+        revelar.forEach(function (el) { el.classList.add('in'); });
+      }
+
+      // Modo discreto
+      var sw = document.getElementById('discreto-switch');
+      var mini = document.getElementById('mini');
+      sw.addEventListener('click', function () {
+        var on = sw.getAttribute('aria-checked') !== 'true';
+        sw.setAttribute('aria-checked', String(on));
+        mini.classList.toggle('discreto', on);
+      });
+    })();
+  </script>
 </body>
 </html>

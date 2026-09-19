@@ -16,7 +16,7 @@ import { SettingsService } from '../../core/settings.service';
     span { font-family: var(--f-mono); font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   `,
   template: `
-    <img *ngIf="!neutral()" src="assets/follendario/simbolo.png" width="26" height="25" alt="" />
+    <img *ngIf="!neutral()" src="assets/follendario/simbolo.png" width="26" height="28" alt="" />
     <svg *ngIf="neutral()" viewBox="0 0 24 24" aria-hidden="true">
       <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="3.5" width="14" height="17" rx="2.5" /><path d="M8.5 8h7M8.5 12h7M8.5 16h4" /></g>
     </svg>
