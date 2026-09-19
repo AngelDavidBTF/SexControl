@@ -1,4 +1,7 @@
 {
+  "projects": {
+    "default": "sexcontrol-6c000"
+  },
   "targets": {
     "sexcontrol-6c000": {
       "hosting": {
